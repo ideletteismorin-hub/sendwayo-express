@@ -465,7 +465,6 @@ async function realizarLogin(){
    await initFirebase();
    let found=Object.values(state.users||{}).find(u=>u.authEmail===identifier||u.username===identifier);
    const email=found?authEmailFor(found):identifier.toLowerCase();
-   if(firebase.auth().currentUser)await firebase.auth().signOut();
    await firebase.auth().signInWithEmailAndPassword(email,password);
    const authUser=firebase.auth().currentUser;
    await loadAuthorizedState(authUser);
