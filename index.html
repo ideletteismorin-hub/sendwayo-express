@@ -595,9 +595,16 @@ async function createTransaction(collection,fields,amount){
  state[collection][id]=record;
  addAudit('Crear '+collection,id);
  const ok=await persist();
- if(!ok){if(record.balanceDebited)await updateUserFinancials(currentUser.id,Number(record.amount||0),0);delete state[collection][id];return null;}
+ if(!ok){
+   if(record.balanceDebited)await updateUserFinancials(currentUser.id,Number(record.amount||0),0);
+   delete state[collection][id];
+   return null;
+ }
  await addNotification('Administrador','Nueva '+collection+' de '+currentUser.name,collection,id);
- await persist();
+ const notificationSaved=await persist();
+ if(!notificationSaved){
+   toast('La operación sí fue guardada, pero no se pudo enviar la notificación al Administrador. Revise el panel de notificaciones.','warn');
+ }
  renderAll();return id;
 }
 async function guardBalance(amount){if(isAdmin())return true;const needed=Number(amount||0);if(needed<=0)return true;if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+currentUser.id+'/balance');const tx=await ref.transaction(v=>{const b=Number(v||0);return b>=needed?b-needed:undefined});if(!tx.committed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(tx.snapshot.val()||0);if(state.users?.[currentUser.id])state.users[currentUser.id].balance=currentUser.balance;if(lastSyncedState?.users?.[currentUser.id])lastSyncedState.users[currentUser.id].balance=currentUser.balance;localSave();return true}catch(e){console.warn('Balance transaction:',e);toast('No se pudo actualizar el balance.','error');return false}}if(Number(currentUser.balance||0)<needed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(currentUser.balance)-needed;state.users[currentUser.id]=currentUser;return true}
@@ -626,6 +633,7 @@ async function guardarEnvio(){
  if(!await guardBalance(amount))return;
  let c=calcEnvio(amount),type=document.getElementById('env-tipo-trans').value,ben=state.beneficiaries[benId],rem=userById(remId);
  let id=await createTransaction('envios',{type,remitenteId:remId,remitentePhone:rem.phone||'',remitenteDoc:rem.doc||'',beneficiarioId:benId,beneficiario:ben?.name||'',beneficiarioPhone:ben?.phone||'',net:c.net,commission:c.commission,destination:c.total,route:type},amount);
+ if(!id)return;
  closeModal('envioModal');toast('Envío guardado como PENDIENTE y notificado en tiempo real.')
 }
 function guardarBeneficiario(){
