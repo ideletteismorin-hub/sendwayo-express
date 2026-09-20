@@ -352,6 +352,11 @@ function authEmailFor(user){
   if(!user)return '';
   if(user.id==='admin')return 'sendwayoexpress@gmail.com';
   const base=String(user.name||user.username||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  return (base||String(user.staffId||'').toLowerCase())+'@comercial.com';
+}
+function legacyAuthEmailFor(user){
+  if(!user||user.id==='admin')return '';
+  const base=String(user.name||user.username||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
   return (base||String(user.staffId||'').toLowerCase())+'@gmail.com';
 }
 function ensureStaffDirectory(){
@@ -361,6 +366,8 @@ function ensureStaffDirectory(){
    if(!/^ID\d{8}$/.test(String(u.staffId||'')))u.staffId=makePermanentId();
    const generated=normalizeUsername(u.name);
    if(generated&&!u.usernameCustomized)u.username=generated;
+   const previousEmail=String(u.authEmail||'').toLowerCase();
+   if(previousEmail&&previousEmail!==authEmailFor(u)&&!u.legacyAuthEmail)u.legacyAuthEmail=previousEmail;
    u.accountSchemaV3=1;u.authEmail=authEmailFor(u);delete u.password;
  }
  while(Object.values(state.users||{}).filter(u=>u.role==='Remitente').length<20){
@@ -503,9 +510,16 @@ async function realizarLogin(){
  if(!identifier||!password)return toast('Escriba su usuario o correo y su contraseña.','warn');
  try{
    await initFirebase();
-   let found=Object.values(state.users||{}).find(u=>u.username===identifier||u.authEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase());
-   const email=found?authEmailFor(found):identifier.toLowerCase();
-   const cred=await firebase.auth().signInWithEmailAndPassword(email,password);
+   let found=Object.values(state.users||{}).find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase());
+   let email=found?authEmailFor(found):identifier.toLowerCase();
+   let cred;
+   try{
+     cred=await firebase.auth().signInWithEmailAndPassword(email,password);
+   }catch(firstError){
+     const legacy=found?.legacyAuthEmail||((found&&!String(found.authEmail||'').endsWith('@comercial.com'))?found.authEmail:legacyAuthEmailFor(found));
+     if(!legacy||legacy.toLowerCase()===String(email).toLowerCase())throw firstError;
+     cred=await firebase.auth().signInWithEmailAndPassword(legacy,password);
+   }
    const authUser=cred.user;
    found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email==='sendwayoexpress@gmail.com')||u.authUid===authUser.uid||u.authEmail===authUser.email||u.username===identifier);
    if(!found)throw new Error('PROFILE_NOT_FOUND');
@@ -685,7 +699,8 @@ async function saveProfile(){
  const newUser=normalizeUsername(name);
  if(!newUser)return toast('El nombre no genera un usuario válido.','warn');
  if(newUser!==currentUser.username&&Object.values(state.users||{}).some(u=>u.id!==currentUser.id&&u.username===newUser))return toast('Ese usuario ya existe. Elija otro nombre.','warn');
- currentUser.name=name;currentUser.username=newUser;currentUser.usernameCustomized=false;delete currentUser.password;
+ if(currentUser.authEmail&&currentUser.authEmail!==authEmailFor({...currentUser,name,username:newUser})&&!currentUser.legacyAuthEmail)currentUser.legacyAuthEmail=currentUser.authEmail;
+currentUser.name=name;currentUser.username=newUser;currentUser.usernameCustomized=false;currentUser.authEmail=authEmailFor(currentUser);delete currentUser.password;
  if(pass){
    if(pass.length<6)return toast('La contraseña debe tener al menos 6 caracteres.','warn');
    if(firebase.auth().currentUser){try{await firebase.auth().currentUser.updatePassword(pass);document.getElementById('profile-pass').value=''}catch(e){return toast('No se pudo cambiar la contraseña. Vuelva a iniciar sesión y pruebe de nuevo.','error')}}
@@ -957,7 +972,11 @@ async function editUser(id){
    if(phone!==null)u.phone=phone.trim();
    u.active=confirm('¿Desea mantener este usuario ACTIVO?\nAceptar = Activo\nCancelar = Inactivo');
  }
- u.staffId=permanentId;u.authEmail=authEmailFor(u);delete u.password;state.users[id]=u;
+ u.staffId=permanentId;
+ const newEmail=authEmailFor(u);
+ if(u.authEmail&&u.authEmail!==newEmail&&!u.legacyAuthEmail)u.legacyAuthEmail=u.authEmail;
+ u.authEmail=newEmail;
+ delete u.password;state.users[id]=u;
  await persist();renderAll();toast('Usuario actualizado. El ID permanente '+permanentId+' no cambia.');
 }
 
