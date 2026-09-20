@@ -130,7 +130,6 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <li><a href="#" onclick="switchView('pagos')"><i class="fa-solid fa-file-invoice-dollar"></i> Pago de Facturas y Servicios</a></li>
       <li><a href="#" onclick="switchView('cuentas_depositos')"><i class="fa-solid fa-university"></i> Cuentas Bancarias y Depósitos</a></li>
       <li><a href="#" onclick="switchView('mi_cuenta')"><i class="fa-solid fa-wallet"></i> Mi Cuenta</a></li>
-      <li><a href="#" onclick="switchView('remitentes_sugeridos')"><i class="fa-solid fa-user-plus"></i> Remitentes Sugeridos</a></li>
       <li><a href="#" onclick="switchView('contacto')"><i class="fa-solid fa-address-card"></i> Contactarnos</a></li>
       <li><a href="#" onclick="switchView('comisiones')"><i class="fa-solid fa-hand-holding-dollar"></i> Retiro / Pago de Comisiones</a></li>
       <li><a href="#" onclick="switchView('solicitudes')"><i class="fa-solid fa-inbox"></i> Solicitudes y Aprobaciones</a></li>
@@ -227,12 +226,6 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
   <div class="account-card"><div class="muted">Saldo disponible de la cuenta</div><div class="account-balance" id="my-account-balance">RD$ 0.00</div><p class="muted">Los depósitos aumentan el saldo solamente después de la aprobación del administrador. Los retiros también requieren aprobación administrativa.</p><div id="admin-fund-note" class="info-box" style="margin-top:10px;display:none">Como administrador, usted puede administrar los fondos disponibles de la cuenta para las operaciones e inversiones del negocio.</div></div>
   <div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','accountMoveTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','accountMoveTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','accountMoveTable')">CSV</button></div><input class="search-box" placeholder="Buscar movimiento..." oninput="filterTable(this,'accountMoveTable')"></div>
   <div class="table-wrap"><table id="accountMoveTable"><thead><tr><th>N°</th><th>Usuario</th><th>Tipo</th><th>Monto RD$</th><th>Fecha/Hora</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
-</section>
-<section id="view-remitentes_sugeridos" class="view-section">
-  <div class="card"><div class="card-header"><h3>Remitentes Sugeridos</h3><button class="btn btn-primary" onclick="openPerson('Remitente')"><i class="fa-solid fa-plus"></i> Agregar Nuevo</button></div>
-  <p class="muted" style="margin-bottom:12px">Personas que pueden ser referidas como nuevos remitentes.</p>
-  <div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','suggestedTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','suggestedTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','suggestedTable')">CSV</button></div><input class="search-box" placeholder="Buscar por nombre o WhatsApp..." oninput="filterTable(this,'suggestedTable')"></div>
-  <div class="table-wrap"><table id="suggestedTable"><thead><tr><th>N°</th><th>Nombre</th><th>WhatsApp</th><th>Referido por</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
 </section>
 <section id="view-contacto" class="view-section">
   <div class="card"><div class="card-header"><h3><i class="fa-solid fa-address-card"></i> Contactarnos</h3><button class="btn btn-primary admin-only" id="edit-contact-btn" onclick="editContact()">Editar</button></div>
@@ -540,7 +533,7 @@ function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
  let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
  document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',agentes:'Agentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',remitentes_sugeridos:'Remitentes Sugeridos',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+ let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',agentes:'Agentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
