@@ -89,7 +89,6 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
         <h3 style="color:#0f2c59;margin-bottom:8px">Bienvenido</h3>
         <p class="muted">Elige lo que deseas hacer. Si aún no tienes cuenta, completa la solicitud y el administrador la revisará.</p>
         <div class="welcome-actions">
-          <button class="choice" onclick="openRequest('Agente')"><strong>Quiero ser agente</strong><span class="muted">Solicitar registro como agente</span></button>
           <button class="choice" onclick="openRequest('Remitente')"><strong>Quiero ser remitente</strong><span class="muted">Solicitar registro como remitente</span></button>
           <button class="choice" onclick="showLogin()"><strong>Ya tengo una cuenta / Ingresar</strong><span class="muted">Entrar con usuario y contraseña</span></button>
           <button class="choice" onclick="openRequest('Enviar dinero')"><strong>Quiero enviar dinero</strong><span class="muted">Solicitar asistencia para un envío</span></button>
@@ -124,7 +123,6 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <li><a href="#" onclick="switchView('beneficiarios')"><i class="fa-solid fa-address-book"></i> Beneficiarios</a></li>
       <li><a href="#" onclick="switchView('paquetes')"><i class="fa-solid fa-box-open"></i> Paquetes Recepción y Envío</a></li>
       <li><a href="#" onclick="switchView('remitentes')"><i class="fa-solid fa-user-tie"></i> Remitentes</a></li>
-      <li><a href="#" onclick="switchView('agentes')"><i class="fa-solid fa-users-gear"></i> Agentes</a></li>
       <li><a href="#" onclick="switchView('recargas')"><i class="fa-solid fa-mobile-screen"></i> Recargas (5 Compañías)</a></li>
       <li><a href="#" onclick="switchView('paqueticos')"><i class="fa-solid fa-gift"></i> Paqueticos (Claro, Viva, Altice)</a></li>
       <li><a href="#" onclick="switchView('pagos')"><i class="fa-solid fa-file-invoice-dollar"></i> Pago de Facturas y Servicios</a></li>
@@ -133,6 +131,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <li><a href="#" onclick="switchView('contacto')"><i class="fa-solid fa-address-card"></i> Contactarnos</a></li>
       <li><a href="#" onclick="switchView('comisiones')"><i class="fa-solid fa-hand-holding-dollar"></i> Retiro / Pago de Comisiones</a></li>
       <li><a href="#" onclick="switchView('solicitudes')"><i class="fa-solid fa-inbox"></i> Solicitudes y Aprobaciones</a></li>
+      <li><a href="#" onclick="switchView('informacion_sugerida')"><i class="fa-solid fa-circle-info"></i> Información Sugerida</a></li>
       <li><a href="#" onclick="switchView('secretas')"><i class="fa-solid fa-user-secret"></i> Información Secreta</a></li>
       <li><a href="#" onclick="switchView('perfil')"><i class="fa-solid fa-user"></i> Mi Perfil</a></li>
       <li><a href="#" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</a></li>
@@ -190,12 +189,6 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="table-wrap"><table id="remTable"><thead><tr><th>N°</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
-  <section id="view-agentes" class="view-section">
-    <div class="card"><div class="card-header"><h3>Agentes Autorizados</h3><button class="btn btn-primary admin-only" onclick="openModal('personaModal')" data-role="Agente">Agregar Nuevo</button></div>
-    <div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','agTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','agTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','agTable')">CSV</button></div><input class="search-box" placeholder="Buscar agente..." oninput="filterTable(this,'agTable')"></div>
-    <div class="table-wrap"><table id="agTable"><thead><tr><th>N°</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
-  </section>
-
   <section id="view-recargas" class="view-section">
     <div class="card"><div class="card-header"><h3>Módulo de Recargas (5 Compañías)</h3><button class="btn btn-primary" onclick="openModal('recargaModal')">Agregar Nuevo</button></div>
     <div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','recTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','recTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','recTable')">CSV</button></div><input class="search-box" placeholder="Buscar recarga..." oninput="filterTable(this,'recTable')"></div>
@@ -248,7 +241,16 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="table-wrap"><table id="reqTable"><thead><tr><th>N°</th><th>Nombre</th><th>WhatsApp</th><th>Documento</th><th>Solicitud</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
-  <section id="view-secretas" class="view-section">
+  <section id="view-informacion_sugerida" class="view-section">
+<div class="card"><div class="card-header"><h3>Información Sugerida</h3></div>
+<div class="info-box"><strong>Acceso de remitentes:</strong> el usuario se forma automáticamente con el nombre y apellido, sin espacios. El ID permanente tiene el formato ID + 8 números y es único.</div>
+<div class="info-box" style="margin-top:10px"><strong>Perfil:</strong> el remitente puede cambiar su nombre, contraseña y foto de perfil. El ID nunca cambia.</div>
+<div class="info-box" style="margin-top:10px"><strong>Beneficiarios:</strong> pueden registrarse con nombre y celular/WhatsApp y utilizarse en las operaciones.</div>
+<div class="info-box" style="margin-top:10px"><strong>Administración:</strong> el Administrador puede crear, editar y eliminar remitentes y beneficiarios y revisar las operaciones sincronizadas.</div>
+<div class="info-box" style="margin-top:10px"><strong>Reportes:</strong> los listados disponen de Excel, PDF y CSV.</div>
+</div></section>
+
+<section id="view-secretas" class="view-section">
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
     <div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
@@ -257,7 +259,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
   <section id="view-perfil" class="view-section">
     <div class="card" style="max-width:650px;margin:auto"><h3>Mi Perfil de Usuario</h3><div style="text-align:center;margin:15px"><img id="profile-preview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTAwIDUwMCI+CjxkZWZzPgogPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHgyPSIxIj48c3RvcCBzdG9wLWNvbG9yPSIjMDYxYTNhIi8+PHN0b3Agb2Zmc2V0PSIuNTgiIHN0b3AtY29sb3I9IiMwZDNjN2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNjI0NTEiLz48L2xpbmVhckdyYWRpZW50PgogPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkIiB4MT0iMCIgeDI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNmZmY1OGEiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZDQzYiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2U2OWIwMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8bGluZWFyR3JhZGllbnQgaWQ9ImJsdWUiIHgxPSIwIiB4Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU0ZTRmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA4N2NmMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI4IiByZXN1bHQ9ImIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+CjwvZGVmcz4KPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMTQ3NiIgaGVpZ2h0PSI0NzYiIHJ4PSI5MCIgZmlsbD0idXJsKCNiZykiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIxMCIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjE3NSIgZmlsbD0iIzA5MmM2MSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjEyIiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPHBhdGggZD0iTTgwIDM4NSBMMjIwIDc4IEwzNjAgMzg1IFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIyNSIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjgwIiBmaWxsPSJ1cmwoI2JsdWUpIiBzdHJva2U9IiNmZmY1OGEiIHN0cm9rZS13aWR0aD0iNyIvPgo8cGF0aCBkPSJNMTU1IDI1NWMzNS0yOCA5NS0yOCAxMzAgME0xNjUgMzAwYzMyIDIyIDc4IDIyIDExMCAwTTIyMCAxNzBjLTIyIDMwLTIyIDEyMCAwIDE2ME0yMjAgMTcwYzIyIDMwIDIyIDEyMCAwIDE2MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTlmYmZmIiBzdHJva2Utd2lkdGg9IjgiIG9wYWNpdHk9Ii45NSIvPgo8cmVjdCB4PSIxNzUiIHk9IjMwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjQyIiByeD0iOCIgZmlsbD0iIzEyM2I3OCIgc3Ryb2tlPSIjZmZmNThhIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIyMjAiIHk9IjMzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiNmZmYiPiQ8L3RleHQ+CjwhLS0gbW9uZXkgaWNvbiAtLT4gPGNpcmNsZSBjeD0iMzY1IiBjeT0iMTM1IiByPSIzOCIgZmlsbD0iIzE3Yjg2YSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIzNjUiIHk9IjE0OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIj4kPC90ZXh0Pgo8IS0tIHBhY2thZ2UgaWNvbiAtLT4gPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzQwIDM1MCkiPjxwYXRoIGQ9Ik0wIDIyIDU1IDAgMTEwIDIydjcwTDU1IDExNSAwIDkyWiIgZmlsbD0iI2Y1OWUwYiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMCAyMiA1NSA0NyAxMTAgMjJNNTUgNDd2NjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1IDE0aDQwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNSIvPjwvZz4KPHRleHQgeD0iNDMwIiB5PSIyMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTYiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSItNCIgZmlsbD0idXJsKCNnb2xkKSI+U0VORFdBWU88L3RleHQ+CjxyZWN0IHg9IjQzMCIgeT0iMjU1IiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjEwMCIgcng9IjUwIiBmaWxsPSIjZmZmIi8+Cjx0ZXh0IHg9IjcxMCIgeT0iMzI2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNzIiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSIxMCIgZmlsbD0iIzEyM2I3OCI+RVhQUkVTUzwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjEwIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNkZmY3ZmYiPkRJTkVSTyDigKIgUEFRVUVURVMg4oCiIENPTkVYScOTTjwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjUyIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY1OGEiPlNFUlZJQ0lPIOKAoiBDT05GSUFOWkEg4oCiIFNFR1VSSURBRDwvdGV4dD4KPHBhdGggZD0iTTEwMjAgMzAwaDM5MCIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCB4PSIxMDI1IiB5PSIzNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+wqFUdSBkaW5lcm8geSB0dXMgZW52w61vcyBlbiBidWVuYXMgbWFub3MhPC90ZXh0Pgo8L3N2Zz4=" style="width:95px;height:95px;border-radius:50%;object-fit:cover;border:2px solid var(--primary)"></div>
-    <div class="form-group"><label>Foto de perfil</label><input id="profile-avatar" type="file" accept="image/*" class="form-control" onchange="setProfileAvatar(this)"></div><div class="form-group"><label>ID</label><input id="profile-staff-id" class="form-control" readonly></div><div class="form-group"><label>Nombre y Apellido</label><input id="profile-name" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="profile-username" class="form-control" autocomplete="username"></div><div class="form-group"><label>WhatsApp</label><input id="profile-phone" class="form-control"></div><div class="form-group"><label>Nueva Contraseña</label><input id="profile-pass" type="password" class="form-control" autocomplete="new-password"></div><div class="field-hint">El ID no puede modificarse.</div><button class="btn btn-primary" onclick="saveProfile()">Guardar Cambios</button></div>
+    <div class="form-group"><label>Foto de perfil</label><input id="profile-avatar" type="file" accept="image/*" class="form-control" onchange="setProfileAvatar(this)"></div><div class="form-group"><label>ID</label><input id="profile-staff-id" class="form-control" readonly></div><div class="form-group"><label>Nombre y Apellido</label><input id="profile-name" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="profile-username" class="form-control" autocomplete="username" readonly><div class="field-hint">Se genera automáticamente con nombre y apellido, sin espacios.</div></div><div class="form-group"><label>WhatsApp</label><input id="profile-phone" class="form-control" readonly><div class="field-hint">El número lo administra el Administrador.</div></div><div class="form-group"><label>Nueva Contraseña</label><input id="profile-pass" type="password" class="form-control" autocomplete="new-password"></div><div class="field-hint">El ID no puede modificarse.</div><button class="btn btn-primary" onclick="saveProfile()">Guardar Cambios</button></div>
   </section>
 </div></div>
 
@@ -296,7 +298,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 <div class="modal" id="retiroCuentaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('retiroCuentaModal')">×</button><h3>Solicitar Retiro de Mi Cuenta</h3><div class="form-group"><label>Saldo disponible</label><input id="cuenta-disp" class="form-control" readonly></div><div class="form-group"><label>Monto a retirar</label><input id="cuenta-retiro-monto" type="number" min="0" step=".01" class="form-control"></div><div class="form-group"><label>Nota / Motivo</label><textarea id="cuenta-retiro-nota" class="form-control" rows="3"></textarea></div><div class="info-box">El retiro queda PENDIENTE y solamente se aplica al balance cuando el administrador lo apruebe.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('retiroCuentaModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarRetiroCuenta()">Solicitar Retiro</button></div></div></div>
 <div class="modal" id="comisionModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('comisionModal')">×</button><h3>Pago / Retiro de Comisión</h3><div class="form-group" id="com-target-wrap" style="display:none"><label>Usuario beneficiario</label><select id="com-target" class="form-control" onchange="updateCommissionTarget()"></select></div><div class="form-group"><label>Comisión disponible</label><input id="com-disp" class="form-control" readonly></div><div class="form-group"><label>Monto a pagar</label><input id="com-monto" type="number" min="0" step=".01" class="form-control"></div><div class="info-box">Este módulo es el único que se aplica inmediatamente sin aprobación administrativa, siempre que el monto sea menor o igual a la comisión disponible.</div><button class="btn btn-primary" onclick="guardarComision()">Guardar y Aplicar</button></div></div>
 
-<div class="modal" id="secretaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('secretaModal')">×</button><h3>Credencial Secreta</h3><div class="form-grid"><div class="form-group"><label>Rol</label><select id="sec-role" class="form-control"><option>Agente</option><option>Remitente</option></select></div><div class="form-group"><label>Nombre</label><input id="sec-name" class="form-control"></div><div class="form-group"><label>WhatsApp</label><input id="sec-phone" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="sec-user" class="form-control"></div><div class="form-group"><label>Contraseña</label><input id="sec-pass" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarCredencial()">Guardar</button></div></div>
+<div class="modal" id="secretaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('secretaModal')">×</button><h3>Credencial Secreta</h3><div class="form-grid"><div class="form-group"><label>Rol</label><select id="sec-role" class="form-control"><option>Remitente</option></select></div><div class="form-group"><label>Nombre</label><input id="sec-name" class="form-control"></div><div class="form-group"><label>WhatsApp</label><input id="sec-phone" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="sec-user" class="form-control"></div><div class="form-group"><label>Contraseña</label><input id="sec-pass" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarCredencial()">Guardar</button></div></div>
 
 <div class="modal" id="detailModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('detailModal')">×</button><div id="detail-content"></div></div></div>
 
@@ -314,12 +316,7 @@ const firebaseConfig={
  measurementId:"G-9RL875KYH9"
 };
 const DEMO_ACCOUNTS=[
- {id:'ag1',role:'Agente',name:'Carlos Jean',phone:'8295551001',doc:'DEMO-AG-01',username:'carlos.jean',active:true,balance:0,commission:0,referrals:0},
- {id:'ag2',role:'Agente',name:'Marie Pierre',phone:'8295551002',doc:'DEMO-AG-02',username:'marie.pierre',active:true,balance:0,commission:0,referrals:0},
- {id:'ag3',role:'Agente',name:'Jean Baptiste',phone:'8295551003',doc:'DEMO-AG-03',username:'jean.baptiste',active:true,balance:0,commission:0,referrals:0},
- {id:'ag4',role:'Agente',name:'Nathalie Joseph',phone:'8295551004',doc:'DEMO-AG-04',username:'nathalie.joseph',active:true,balance:0,commission:0,referrals:0},
- {id:'ag5',role:'Agente',name:'Michel Louis',phone:'8295551005',doc:'DEMO-AG-05',username:'michel.louis',active:true,balance:0,commission:0,referrals:0},
- {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:3},
+      {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:3},
  {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
  {id:'rm3',role:'Remitente',name:'Jean Robert',phone:'8295552003',doc:'DEMO-RM-03',username:'jean.robert',active:true,balance:0,commission:0,referrals:1},
  {id:'rm4',role:'Remitente',name:'Lucia Fernandez',phone:'8295552004',doc:'DEMO-RM-04',username:'lucia.fernandez',active:true,balance:0,commission:0,referrals:2},
@@ -347,7 +344,7 @@ function makePermanentId(){
   }while(Object.values(state.users||{}).some(u=>u.staffId===id));
   return id;
 }
-function normalizeUsername(name){return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'')}
+function normalizeUsername(name){return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function authEmailFor(user){
   if(!user)return '';
   if(user.id==='admin')return 'sendwayoexpress@gmail.com';
@@ -355,23 +352,21 @@ function authEmailFor(user){
   return String(user.authEmail||((user.username||'').toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@sendwayoexpress.com'));
 }
 function ensureStaffDirectory(){
-  for(const role of ['Agente','Remitente']){
-    let users=Object.values(state.users||{}).filter(u=>u.role===role);
-    for(const u of users){
-      if(!/^ID\d{8}$/.test(String(u.staffId||'')))u.staffId=makePermanentId();
-      if(!u.accountSchemaV3){if(!u.usernameCustomized)u.username=normalizeUsername(u.name)||u.username||role.toLowerCase();u.accountSchemaV3=1;}
-      u.authEmail=authEmailFor(u);
-      delete u.password;
-    }
-    const target=role==='Agente'?10:20;
-    while(Object.values(state.users||{}).filter(u=>u.role===role).length<target){
-      const n=Object.values(state.users||{}).filter(u=>u.role===role).length+1;
-      const username=(role==='Agente'?'agente':'remitente')+'.'+String(n).padStart(3,'0');
-      const u={id:uid(role==='Agente'?'ag':'rm'),staffId:makePermanentId(),role,name:role+' '+String(n).padStart(3,'0'),phone:'',doc:'',username,active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
-      u.authEmail=authEmailFor(u);state.users[u.id]=u;
-    }
-  }
-  if(state.users?.admin){if(!/^ID\d{8}$/.test(String(state.users.admin.staffId||'')))state.users.admin.staffId=makePermanentId();state.users.admin.authEmail='sendwayoexpress@gmail.com';delete state.users.admin.password;}
+ Object.values(state.users||{}).filter(u=>u.role==='Agente').forEach(u=>delete state.users[u.id]);
+ let users=Object.values(state.users||{}).filter(u=>u.role==='Remitente');
+ for(const u of users){
+   if(!/^ID\d{8}$/.test(String(u.staffId||'')))u.staffId=makePermanentId();
+   const generated=normalizeUsername(u.name);
+   if(generated&&!u.usernameCustomized)u.username=generated;
+   u.accountSchemaV3=1;u.authEmail=authEmailFor(u);delete u.password;
+ }
+ while(Object.values(state.users||{}).filter(u=>u.role==='Remitente').length<20){
+   const n=Object.values(state.users||{}).filter(u=>u.role==='Remitente').length+1;
+   const username='remitente'+String(n).padStart(3,'0');
+   const u={id:uid('rm'),staffId:makePermanentId(),role:'Remitente',name:'Remitente '+String(n).padStart(3,'0'),phone:'',doc:'',username,active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
+   u.authEmail=authEmailFor(u);state.users[u.id]=u;
+ }
+ if(state.users?.admin){if(!/^ID\d{8}$/.test(String(state.users.admin.staffId||'')))state.users.admin.staffId=makePermanentId();state.users.admin.authEmail='sendwayoexpress@gmail.com';delete state.users.admin.password;}
 }
 function nextStaffId(role){return makePermanentId()}
 
@@ -464,7 +459,7 @@ async function createFirebaseAccountForUser(user){
 }
 async function crearAccesosIniciales(){
   if(!isAdmin())return toast('Solo el Administrador puede crear accesos.','warn');
-  const users=Object.values(state.users||{}).filter(u=>['Agente','Remitente'].includes(u.role)&&u.active!==false);
+  const users=Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false);
   let created=0,exists=0,errors=0;
   for(const u of users){const r=await createFirebaseAccountForUser(u);if(r.status==='created')created++;else if(r.status==='exists')exists++;else if(r.status==='error')errors++;}
   await persist();renderAll();
@@ -524,7 +519,7 @@ async function loadAuthorizedState(authUser){
 function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
 function applyRoleVisibility(){
  let admin=isAdmin();
- document.querySelectorAll('#sidebar-menu li').forEach(li=>{let txt=li.innerText;li.style.display=(!admin && (txt.includes('Solicitudes')||txt.includes('Información Secreta')||txt.includes('Agentes'))) ? 'none':''});
+ document.querySelectorAll('#sidebar-menu li').forEach(li=>{let txt=li.innerText;li.style.display=(!admin && (txt.includes('Solicitudes')||txt.includes('Información Secreta'))) ? 'none':''});
  let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display=admin?'flex':'none';document.querySelectorAll('.admin-only').forEach(e=>e.style.display=admin?'':'none');
  if(!admin)document.getElementById('sidebar-role-label').textContent=currentUser.role.toUpperCase();
 }
@@ -533,7 +528,7 @@ function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
  let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
  document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',agentes:'Agentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+ let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',agentes:'Agentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',informacion_sugerida:'Información Sugerida',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
@@ -572,7 +567,7 @@ function renderNotifications(){const arr=Object.values(state.notifications||{}).
 function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,createdAt:now()}}
 function calcEnvio(m){let commission=Number(m||0)*.085,net=Number(m||0)-commission,total=net*2.10;return{commission,net,total}}
 function calcularEnvioModal(){let x=calcEnvio(document.getElementById('env-monto').value);document.getElementById('calc-neto').textContent=money(x.net);document.getElementById('calc-comision').textContent=money(x.commission);document.getElementById('calc-total').textContent=x.total.toFixed(2)+' HTG'}
-function canTransact(){return currentUser&&['Agente','Remitente','Administrador'].includes(currentUser.role)}
+function canTransact(){return currentUser&&['Remitente','Administrador'].includes(currentUser.role)}
 function owner(){return currentUser}
 function userById(id){return state.users[id]||{}}
 function isAdmin(){return currentUser?.role==='Administrador'}
@@ -625,7 +620,7 @@ function openPerson(role){document.getElementById('persona-title').textContent='
 const ip=document.getElementById('pers-initial-pass');if(ip)ip.value=INITIAL_PASSWORD;document.getElementById('pers-active').value='true';openModal('personaModal')}
 document.querySelectorAll('[data-role]').forEach(x=>x.addEventListener('click',e=>openPerson(e.currentTarget.dataset.role)));document.getElementById('pers-nombre')?.addEventListener('input',e=>{const v=normalizeUsername(e.target.value);const user=document.getElementById('pers-user'),el=document.getElementById('pers-auth-email');if(user)user.value=v;if(el)el.value=v?'Se asigna automáticamente al guardar el ID':''})
 function generateLink(username){return location.href.split('?')[0]+'?access='+encodeURIComponent(username)}
-async function guardarPersona(){const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=document.getElementById('pers-wsp').value.trim(),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid(role==='Agente'?'ag':'rm'),staffId=makePermanentId();const u={id,staffId,role,name,phone,doc,username:user,authEmail:authEmailFor({id,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
+async function guardarPersona(){const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=document.getElementById('pers-wsp').value.trim(),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid('rm'),staffId=makePermanentId();const u={id,staffId,role,name,phone,doc,username:user,authEmail:authEmailFor({id,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
 async function guardarDeposito(){
  let amount=Number(document.getElementById('dep-monto').value),accountId=document.getElementById('dep-cuenta').value;
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
@@ -655,7 +650,7 @@ async function guardarPaquete(){
  let amount=Number(document.getElementById('paq-costo').value||0);if(amount&&!(await guardBalance(amount)))return;
  await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);closeModal('paqueteModal');toast('Paquete guardado y notificado.')
 }
-function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>['Agente','Remitente'].includes(u.role)&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
+function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
 async function guardarComision(){
  let targetId=isAdmin()?document.getElementById('com-target').value:currentUser.id,target=state.users[targetId]||currentUser;
  let amount=Number(document.getElementById('com-monto').value),available=Number(target.commission||0);
@@ -672,7 +667,7 @@ async function guardarComision(){
 
 async function guardarCredencial(){
  if(!isAdmin())return toast('Solo el Administrador puede crear usuarios.','warn');
- const role=document.getElementById('sec-role').value,name=document.getElementById('sec-name').value.trim(),phone=document.getElementById('sec-phone').value.trim();
+ const role='Remitente',name=document.getElementById('sec-name').value.trim(),phone=document.getElementById('sec-phone').value.trim();
  const user=normalizeUsername(name),pass=INITIAL_PASSWORD;
  if(!name||!phone||!user)return toast('Complete rol, nombre y WhatsApp.','warn');
  if(Object.values(state.users).some(x=>x.username===user))return toast('Usuario existente.','warn');
@@ -682,13 +677,17 @@ async function guardarCredencial(){
  await persist();closeModal('secretaModal');renderAll();toast('Usuario creado. '+staffId+'. Contraseña inicial: '+pass+'.')
 }
 async function saveProfile(){
- const name=document.getElementById('profile-name').value.trim(),phone=document.getElementById('profile-phone').value.trim();
- let newUser=normalizeUsername(document.getElementById('profile-username').value.trim()),pass=document.getElementById('profile-pass').value;
- if(!name||!newUser)return toast('El nombre y el usuario son obligatorios.','warn');
- if(newUser!==currentUser.username&&Object.values(state.users||{}).some(u=>u.id!==currentUser.id&&u.username===newUser))return toast('Ese usuario ya existe.','warn');
- currentUser.name=name;currentUser.phone=phone;currentUser.username=newUser;currentUser.usernameCustomized=true;delete currentUser.password;
- if(pass){if(pass.length<6)return toast('La contraseña debe tener al menos 6 caracteres.','warn');if(firebase.auth().currentUser){try{await firebase.auth().currentUser.updatePassword(pass);document.getElementById('profile-pass').value=''}catch(e){return toast('No se pudo cambiar la contraseña. Vuelva a iniciar sesión y pruebe de nuevo.','error')}}}
- state.users[currentUser.id]=currentUser;await persist();renderAll();toast('Perfil actualizado. El ID no cambia.')
+ const name=document.getElementById('profile-name').value.trim(),pass=document.getElementById('profile-pass').value;
+ if(!name)return toast('El nombre y apellido son obligatorios.','warn');
+ const newUser=normalizeUsername(name);
+ if(!newUser)return toast('El nombre no genera un usuario válido.','warn');
+ if(newUser!==currentUser.username&&Object.values(state.users||{}).some(u=>u.id!==currentUser.id&&u.username===newUser))return toast('Ese usuario ya existe. Elija otro nombre.','warn');
+ currentUser.name=name;currentUser.username=newUser;currentUser.usernameCustomized=false;delete currentUser.password;
+ if(pass){
+   if(pass.length<6)return toast('La contraseña debe tener al menos 6 caracteres.','warn');
+   if(firebase.auth().currentUser){try{await firebase.auth().currentUser.updatePassword(pass);document.getElementById('profile-pass').value=''}catch(e){return toast('No se pudo cambiar la contraseña. Vuelva a iniciar sesión y pruebe de nuevo.','error')}}
+ }
+ state.users[currentUser.id]=currentUser;await persist();renderAll();toast('Perfil actualizado. El ID permanece sin cambios.')
 }
 function setProfileAvatar(input){const file=input?.files?.[0];if(!file||!currentUser)return;const reader=new FileReader();reader.onload=async()=>{currentUser.avatar=reader.result;state.users[currentUser.id]=currentUser;document.getElementById('profile-preview').src=currentUser.avatar;document.getElementById('header-avatar').src=currentUser.avatar;await persist();toast('Foto de perfil actualizada.')};reader.readAsDataURL(file)}
 
@@ -909,7 +908,6 @@ function guardarRetiroCuenta(){
  addNotification('Administrador','Solicitud de retiro de cuenta de '+currentUser.name+' por '+money(amount),'accountWithdrawals',id);addAudit('Solicitar retiro de cuenta',id);persist();closeModal('retiroCuentaModal');renderAll();toast('Solicitud de retiro enviada al Administrador.')
 }
 function renderContact(){let c=state.settings?.contact||{phone:'8920051255',email:'sendwayoexpress@gmail.com'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
-function renderSuggested(){let rows=Object.values(state.users).filter(u=>u.role==='Remitente');document.querySelector('#suggestedTable tbody').innerHTML=rows.map((u,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.referredBy||'—')}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${personActions(u)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No hay remitentes sugeridos.</td></tr>'}
 async function reviewAccountWithdrawal(id,status){
  if(!isAdmin())return;let r=state.accountWithdrawals?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
@@ -924,7 +922,7 @@ async function reviewAccountWithdrawal(id,status){
  await addNotification(u.id,'Su retiro de cuenta fue '+status.toUpperCase()+'. '+reviewReason,'accountWithdrawals',id);await persist();renderAll();toast('Retiro '+status+'.')
 }
 
-function renderAll(){if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderProfile();renderMiCuenta();renderSuggested();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
+function renderAll(){if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
 function renderDashboardNotifications(){
  const box=document.getElementById('dashboard-notifications');if(!box||!currentUser)return;
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -937,20 +935,33 @@ function renderEnvios(){
  let rows=Object.values(state.envios).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>statusFilter==='Todos'||r.status===statusFilter);
  document.querySelector('#enviosTable tbody').innerHTML=rows.map((r,i)=>{let u=userById(r.remitenteId),b=state.beneficiaries[r.beneficiarioId];return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td>${escapeHtml(u.name||r.username)}</td><td>${money(r.amount)}</td><td>${escapeHtml(b?.name||r.beneficiario||'')}</td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(isAdmin()?r.status:'Pendiente')}">${escapeHtml(isAdmin()?r.status:'EN REVISIÓN')}</span></td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)} ${r.receipt?`<button class="btn btn-primary btn-sm" onclick="showReceipt('envios','${r.id}')">Recibo</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No hay registros.</td></tr>';
 }
-function renderPeople(){let rms=Object.values(state.users).filter(x=>x.role==='Remitente'&&(isAdmin()||x.id===currentUser.id)),ags=Object.values(state.users).filter(x=>x.role==='Agente'&&(isAdmin()||x.id===currentUser.id));document.querySelector('#remTable tbody').innerHTML=rms.map((u,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${personActions(u)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay remitentes.</td></tr>';document.querySelector('#agTable tbody').innerHTML=ags.map((u,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${personActions(u)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay agentes.</td></tr>'}
+function renderPeople(){
+ let rms=Object.values(state.users).filter(x=>x.role==='Remitente'&&(isAdmin()||x.id===currentUser.id));
+ const table=document.querySelector('#remTable tbody');
+ if(table)table.innerHTML=rms.map((u,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${personActions(u)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay remitentes.</td></tr>';
+}
 
 function personActions(u){let a=`<button class="btn btn-light btn-sm" onclick="viewUser('${u.id}')">Ver</button>`;if(isAdmin()||u.id===currentUser.id)a+=`<button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">Editar</button>`;if(isAdmin())a+=`<button class="btn btn-primary btn-sm" onclick="adminChangePassword('${u.id}')">Cambiar contraseña</button><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button>`;return `<div class="actions">${a}</div>`}
 function viewUser(id){const u=state.users[id];document.getElementById('detail-content').innerHTML=`<div class="receipt-shell"><h3>${escapeHtml(u.name)}</h3><p><b>ID</b> ${escapeHtml(u.staffId||'')}</p><p><b>Rol:</b> ${escapeHtml(u.role)}</p><p><b>WhatsApp:</b> ${escapeHtml(u.phone)}</p><p><b>Usuario:</b> ${escapeHtml(u.username)}</p><p><b>Correo Auth:</b> ${escapeHtml(u.authEmail||authEmailFor(u))}</p><p><b>Contraseña:</b> Se cambia desde Mi Perfil o mediante restablecimiento de Firebase.</p><p><b>Estado:</b> ${u.active?'Activo':'Inactivo'}</p><p><b>Balance:</b> ${money(u.balance)}</p><p><b>Comisión:</b> ${money(u.commission)}</p></div>`;openModal('detailModal')}
 
 async function editUser(id){
  const u=state.users[id];if(!u||(!isAdmin()&&u.id!==currentUser.id))return;
- const oldUser=u.username;
  const permanentId=u.staffId;
- const name=prompt('Nombre y apellido (se puede cambiar):',u.name);if(name!==null){const clean=name.trim();if(!clean)return toast('El nombre no puede quedar vacío.','warn');u.name=clean;}
- const newUser=prompt('Usuario (se puede cambiar):',u.username);if(newUser!==null){const norm=normalizeUsername(newUser);if(!norm)return toast('El usuario no puede quedar vacío.','warn');if(norm!==u.username&&Object.values(state.users).some(x=>x.id!==u.id&&x.username===norm))return toast('Ese usuario ya existe.','warn');u.username=norm;u.usernameCustomized=true;}
- const phone=prompt('WhatsApp / celular (se puede cambiar):',u.phone||'');if(phone!==null){const cleanPhone=phone.trim();if(!cleanPhone)return toast('El WhatsApp/celular no puede quedar vacío.','warn');u.phone=cleanPhone;}
- if(isAdmin())u.active=confirm('¿Desea mantener este usuario ACTIVO?\nAceptar = Activo\nCancelar = Inactivo');
- u.staffId=permanentId;delete u.password;state.users[id]=u;await persist();renderAll();toast('Usuario actualizado. El ID permanente '+permanentId+' no cambia.'+(oldUser!==u.username?' El acceso Auth continúa ligado al ID.':''));
+ const name=prompt('Nombre y apellido:',u.name);
+ if(name!==null){
+   const clean=name.trim();if(!clean)return toast('El nombre no puede quedar vacío.','warn');
+   const newUser=normalizeUsername(clean);
+   if(!newUser)return toast('El nombre no genera un usuario válido.','warn');
+   if(newUser!==u.username&&Object.values(state.users||{}).some(x=>x.id!==u.id&&x.username===newUser))return toast('Ese usuario ya existe.','warn');
+   u.name=clean;u.username=newUser;u.usernameCustomized=false;
+ }
+ if(isAdmin()){
+   const phone=prompt('WhatsApp / celular:',u.phone||'');
+   if(phone!==null)u.phone=phone.trim();
+   u.active=confirm('¿Desea mantener este usuario ACTIVO?\nAceptar = Activo\nCancelar = Inactivo');
+ }
+ u.staffId=permanentId;u.authEmail=authEmailFor(u);delete u.password;state.users[id]=u;
+ await persist();renderAll();toast('Usuario actualizado. El ID permanente '+permanentId+' no cambia.');
 }
 
 function deleteUser(id){if(id==='admin')return;if(!confirm('¿Eliminar usuario?'))return;delete state.users[id];persist();renderAll();toast('Usuario eliminado.')}
@@ -976,7 +987,12 @@ function renderSimple(collection,table,fields){
  let rows=Object.values(state[collection]).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#'+table+' tbody').innerHTML=rows.map((r,i)=>{let vals=fields.map(f=>f==='amount'||f==='cost'?money(r[f]):escapeHtml(r[f]??'')).join('</td><td>');return `<tr><td>${i+1}</td><td>${vals}</td><td><span class="status ${statusClass(isAdmin()?(r.status||'Pendiente'):'Pendiente')}">${escapeHtml(displayStatus(r.status||'Pendiente'))}</span></td><td data-record-id="${r.id}">${actionButtons(collection,r.id,r.status||'Pendiente')} ${r.receipt?`<button class="btn btn-primary btn-sm" onclick="showReceipt('${collection}','${r.id}')">Recibo</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="'+(fields.length+3)+'" class="muted">No hay registros.</td></tr>'}
 function renderCommissions(){let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${money(r.availableBefore)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('commissions','${r.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editRecord('commissions','${r.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('commissions','${r.id}')">Eliminar</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No hay pagos de comisión.</td></tr>'}
 function renderRequests(){let rows=Object.values(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id).filter(r=>requestFilter==='Todos'||r.status===requestFilter);document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(isAdmin()?r.status:'Pendiente')}">${escapeHtml(isAdmin()?r.status:'EN REVISIÓN')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('requests','${r.id}')">Ver</button>${isAdmin()?`<button class="btn btn-warning btn-sm" onclick="editRecord('requests','${r.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('requests','${r.id}')">Eliminar</button>`:''}${isAdmin()&&r.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="approveRequest('${r.id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest('${r.id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest('${r.id}','No coincide')">NO COINCIDE</button>`:''}${r.whatsappLink?`<a class="btn btn-success btn-sm" target="_blank" href="${r.whatsappLink}">WhatsApp</a>`:''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'}
-function renderSecrets(){if(!isAdmin())return;const rows=Object.values(state.users).filter(u=>u.role!=='Administrador');document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>`<tr><td>${i+1}</td><td>${u.role}</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${u.accountStatus==='Pendiente de activación'?'<span class="status st-Pendiente">Pendiente de activación</span>':'Firebase Auth'}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewUser('${u.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset('${u.id}')">Restablecer acceso</button></div></td></tr>`).join('')}
+function renderSecrets(){
+ if(!isAdmin())return;
+ const rows=Object.values(state.users).filter(u=>u.role==='Remitente');
+ document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>`<tr><td>${i+1}</td><td>Remitente</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${u.accountStatus==='Pendiente de activación'?'<span class="status st-Pendiente">Pendiente de activación</span>':'Firebase Auth'}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewUser('${u.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset('${u.id}')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users['${u.id}'],INITIAL_PASSWORD)">Enviar WhatsApp</button></div></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No hay remitentes registrados.</td></tr>';
+}
+
 async function sendPasswordReset(id){
  const u=state.users[id];if(!u||!isAdmin())return;
  const email=u.authEmail||authEmailFor(u);
@@ -1011,7 +1027,7 @@ function exportData(format,tableId){
  toast('Exportación '+format+' disponible cuando la biblioteca esté cargada.','warn')
 }
 function updateSelectors(){
- let rms=Object.values(state.users).filter(u=>['Remitente','Agente'].includes(u.role)&&u.active&&(isAdmin()||u.id===currentUser?.id));
+ let rms=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active&&(isAdmin()||u.id===currentUser?.id));
  let bens=Object.values(state.beneficiaries).filter(b=>b.active);
  const rl=document.getElementById('env-remitentes-list'),bl=document.getElementById('env-beneficiarios-list');
  if(rl)rl.innerHTML=rms.map(u=>`<option value="${escapeHtml(u.name)}">${escapeHtml(u.name)} — ${escapeHtml(u.phone)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option><option value="${escapeHtml(u.phone)}">${escapeHtml(u.name)} — ${escapeHtml(u.phone)}</option><option value="${escapeHtml(u.username)}">${escapeHtml(u.name)} — ${escapeHtml(u.username)}</option>`).join('');
