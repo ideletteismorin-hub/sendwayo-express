@@ -671,7 +671,7 @@ async function guardarCredencial(){
  const user=normalizeUsername(name),pass=INITIAL_PASSWORD;
  if(!name||!phone||!user)return toast('Complete rol, nombre y WhatsApp.','warn');
  if(Object.values(state.users).some(x=>x.username===user))return toast('Usuario existente.','warn');
- const id=uid(role==='Agente'?'ag':'rm'),staffId=makePermanentId();
+ const id=uid('rm'),staffId=makePermanentId();
  const u={id,staffId,role,name,phone,username:user,authEmail:authEmailFor({id,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
  state.users[id]=u;const cr=await createFirebaseAccountForUser(u);u.accountStatus=cr.status==='error'?'Error de activación':'Activo';
  await persist();closeModal('secretaModal');renderAll();toast('Usuario creado. '+staffId+'. Contraseña inicial: '+pass+'.')
@@ -789,13 +789,13 @@ async function setTransactionStatus(collection,id,status){
  const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
  const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?.085:.05));
  if(status==='Aprobado'){
-   const userShare=commission*(u.role==='Agente'?.60:.50),adminShare=commission-userShare;
-   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo aplicar la comisión al usuario.','error');
-   const adminUpdated=await updateUserFinancials('admin',adminShare,adminShare);
+   const userShare=commission*.50,adminShare=commission-userShare;
+   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo aplicar la comisión al remitente.','error');
+   const adminUpdated=await updateUserFinancials('admin',adminShare,0);
    if(!adminUpdated)return toast('No se pudo aplicar la comisión administrativa.','error');
    r=state[collection][id];r.commissionUser=userShare;r.commissionAdmin=adminShare;r.commissionRate=(collection==='envios'?.085:.05);r.balanceDebited=!!r.balanceDebited;generateReceipt(collection,id);state[collection][id]=r;
  }
- const msg=status==='Aprobado'?('Transacción '+id+' APROBADA. Comisión aplicada y recibo disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
+ const msg=status==='Aprobado'?('Transacción '+id+' APROBADA. Comisión del remitente registrada sin aumentar su balance; participación del Administrador acreditada en su balance y recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
  await addNotification(u.id,msg,collection,id);if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);await persist();renderAll();toast('Estado actualizado: '+status)
 }
 
@@ -827,8 +827,8 @@ async function approveRequest(id,status){
    if(!reviewReason)return toast('Debe escribir un motivo.','warn');
  }
  r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.reviewReason=reviewReason;r.manualReview=true;
- if(status==='Aprobado'&&(r.type==='Agente'||r.type==='Remitente')){
-   const role=r.type,staffId=makePermanentId(),username=normalizeUsername(r.name)||role.toLowerCase(),idu=uid(role==='Agente'?'ag':'rm');
+ if(status==='Aprobado'&&r.type==='Remitente'){
+   const role='Remitente',staffId=makePermanentId(),username=normalizeUsername(r.name)||'remitente',idu=uid('rm');
    const user={id:idu,staffId,role,name:r.name,phone:r.phone,doc:r.doc,username,authEmail:authEmailFor({id:idu,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
    r.createdUserId=idu;r.username=username;r.staffId=staffId;r.authEmail=user.authEmail;r.accessLink=generateLink(username);r.accountStatus='Pendiente de activación';state.users[idu]=user;
    const cr=await createFirebaseAccountForUser(user);r.accountStatus=cr.status==='error'?'Error de activación':'Activo';
@@ -850,7 +850,7 @@ function transactionConcept(collection,r){
 function generateReceipt(collection,id){
  let r=state[collection]?.[id];if(!r||r.status!=='Aprobado')return;
  let u=state.users[r.userId]||state.users.admin;
- const role=(u.role==='Agente'||u.role==='Remitente')?u.role:'Administrador';
+ const role=u.role==='Remitente'?'Remitente':'Administrador';
  const receiptId=r.receipt?.id||('REC-'+Date.now().toString().slice(-8));
  r.receipt={id:receiptId,date:new Date().toLocaleDateString('es-DO'),time:new Date().toLocaleTimeString('es-DO'),business:'SENDWAYO EXPRESS',sloganTop:'SERVICIO DE CALIDAD QUE CONECTA CONTIGO CON CONFIANZA Y SEGURIDAD',thanks:'Gracias por preferirnos.',sloganBottom:'¡Hazlo todo sin moverte de casa! Quédate cómodo y nosotros nos encargamos.',user:u.name,username:u.username,staffId:u.staffId,role,concept:transactionConcept(collection,r),amount:r.amount,commission:r.commission,beneficiarioPhone:r.beneficiarioPhone||'',collection,status:'Aprobado',original:true};
  state[collection][id]=r;
