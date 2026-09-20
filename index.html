@@ -73,6 +73,9 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 @media(max-width:800px){.mobile-fab{display:flex;align-items:center;justify-content:center}header{padding-left:66px}.sidebar-brand{padding-left:60px}.session-pill{display:none}.header-right{gap:8px}.header-datetime{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 .receipt-shell{background:linear-gradient(135deg,#fbfdff 0%,#ffffff 48%,#fffaf0 100%);border:2px solid #e7b52f;border-radius:22px;padding:20px;box-shadow:0 18px 48px rgba(15,44,89,.18);position:relative;overflow:hidden;max-width:1080px;margin:0 auto}.receipt-shell:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 10% 20%,rgba(55,215,255,.13),transparent 30%),radial-gradient(circle at 90% 80%,rgba(243,181,27,.14),transparent 32%);pointer-events:none}.receipt-head{text-align:center;position:relative}.receipt-logo{width:min(360px,72%);height:auto;display:block;margin:0 auto 6px}.receipt-details{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:14px;margin:10px 0}.receipt-side{border:1px solid #dce7f2;border-radius:15px;background:rgba(255,255,255,.86);padding:11px 14px}.receipt-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:9px 0;border:0;font-size:.93rem}.receipt-row:last-child{border-bottom:0}.receipt-row b{color:#31445d;min-width:42%;text-align:left}.receipt-row span{color:#0f2c59;font-weight:700;text-align:right;overflow-wrap:anywhere}.receipt-total{font-size:1.08rem;font-weight:900;color:#0f2c59;background:#fff6cf;border:1px solid #efd36b;border-radius:12px;padding:10px}.receipt-original{display:inline-block;margin:9px auto 3px;padding:7px 16px;border:2px solid #0f2c59;border-radius:999px;font-size:.96rem;font-weight:900;letter-spacing:.08em;color:#0f2c59;background:#fff;box-shadow:0 4px 12px rgba(15,44,89,.08)}.receipt-concept{background:linear-gradient(135deg,#eef7ff,#fffdf4);border:1px solid #d9e6f2;border-radius:14px;padding:11px 15px;margin:12px 0 10px;text-align:left}.receipt-status{display:inline-block;padding:6px 14px;border-radius:999px;background:#dff7e7;color:#106b35;font-weight:900;font-size:.88rem}.notif-item.unread{background:#eff8ff;border-left:4px solid #1f9d55}.notif-item{cursor:pointer}.contact-card{background:linear-gradient(135deg,#0f2c59,#1763b6);color:#fff;border-radius:14px;padding:16px;margin-top:16px;box-shadow:0 10px 24px rgba(15,44,89,.16)}.contact-card strong{color:#ffd43b}.admin-only{display:none}@media(max-width:800px){.brand-logo{width:260px;height:120px}.sidebar-brand img{width:170px;height:58px}.receipt-details{grid-template-columns:1fr}.receipt-shell{padding:15px}}
 @media(max-width:800px){.receipt-logo{width:min(300px,84%)}.receipt-details{grid-template-columns:1fr}.receipt-shell{padding:14px}.receipt-row{font-size:.91rem}}
+
+/* Recibo digital compacto */
+.receipt-compact{max-width:620px!important;padding:12px!important;border-radius:16px!important}.receipt-compact .receipt-logo{width:145px!important;max-height:62px;object-fit:contain;margin:0 auto 2px}.receipt-compact .receipt-head h2{font-size:1.12rem;margin:0!important}.receipt-slogan{font-size:.66rem;font-weight:900;color:#123b78;line-height:1.15;margin:3px auto!important;max-width:520px}.receipt-compact .receipt-original{font-size:.72rem;padding:4px 10px;margin:4px auto!important}.receipt-compact .receipt-concept{margin:6px 0!important;padding:7px 10px!important;font-size:.8rem;text-align:center}.receipt-grid-compact{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;border:1px solid #dce7f2;border-radius:10px;padding:7px;background:rgba(255,255,255,.9)}.receipt-grid-compact>div{display:flex;justify-content:space-between;gap:7px;font-size:.69rem;padding:3px 0}.receipt-grid-compact b{color:#52606d}.receipt-grid-compact span{text-align:right;font-weight:800;color:#0f2c59;overflow-wrap:anywhere}.receipt-amount-row,.receipt-row.compact{display:flex;justify-content:space-between;align-items:center;padding:6px 9px;margin-top:5px;border-radius:9px;background:#fff6cf;border:1px solid #efd36b;font-size:.78rem}.receipt-amount-row strong,.receipt-row.compact span{color:#0f2c59}.receipt-compact .receipt-status{display:block;text-align:center;margin:6px 0;padding:6px 8px;font-size:.74rem}.receipt-sign{text-align:center;font-size:14px;font-family:cursive;font-weight:700;color:#0f2c59;margin-top:5px}.receipt-sign small{display:block;font-family:Inter,Arial,sans-serif;font-size:.62rem;font-weight:600;border-top:1px solid #334155;width:170px;margin:2px auto 0;padding-top:2px}.receipt-thanks,.receipt-bottom-line{text-align:center;font-size:.69rem;font-weight:800;line-height:1.15;margin:4px auto!important;max-width:540px}.receipt-bottom-line{color:#123b78}.receipt-capture{text-align:center;margin-top:6px}@media(max-width:800px){.receipt-compact{padding:9px!important}.receipt-grid-compact{grid-template-columns:1fr}.receipt-compact .receipt-logo{width:120px}.receipt-capture{margin-top:4px}}@media print{body{background:#fff!important}.receipt-compact{box-shadow:none!important;border:1px solid #e7b52f!important;max-width:620px!important}.receipt-capture{display:none!important}}
 </style>
 </head>
 <body>
@@ -348,8 +351,8 @@ function normalizeUsername(name){return String(name||'').toLowerCase().normalize
 function authEmailFor(user){
   if(!user)return '';
   if(user.id==='admin')return 'sendwayoexpress@gmail.com';
-  if(/^ID\d{8}$/.test(String(user.staffId||'')))return String(user.staffId).toLowerCase()+'@sendwayoexpress.com';
-  return String(user.authEmail||((user.username||'').toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@sendwayoexpress.com'));
+  const base=String(user.name||user.username||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  return (base||String(user.staffId||'').toLowerCase())+'@gmail.com';
 }
 function ensureStaffDirectory(){
  Object.values(state.users||{}).filter(u=>u.role==='Agente').forEach(u=>delete state.users[u.id]);
@@ -620,7 +623,7 @@ function openPerson(role){document.getElementById('persona-title').textContent='
 const ip=document.getElementById('pers-initial-pass');if(ip)ip.value=INITIAL_PASSWORD;document.getElementById('pers-active').value='true';openModal('personaModal')}
 document.querySelectorAll('[data-role]').forEach(x=>x.addEventListener('click',e=>openPerson(e.currentTarget.dataset.role)));document.getElementById('pers-nombre')?.addEventListener('input',e=>{const v=normalizeUsername(e.target.value);const user=document.getElementById('pers-user'),el=document.getElementById('pers-auth-email');if(user)user.value=v;if(el)el.value=v?'Se asigna automáticamente al guardar el ID':''})
 function generateLink(username){return location.href.split('?')[0]+'?access='+encodeURIComponent(username)}
-async function guardarPersona(){const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=document.getElementById('pers-wsp').value.trim(),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid('rm'),staffId=makePermanentId();const u={id,staffId,role,name,phone,doc,username:user,authEmail:authEmailFor({id,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
+async function guardarPersona(){const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=document.getElementById('pers-wsp').value.trim(),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid('rm'),staffId=makePermanentId();const u={id,staffId,role:'Remitente',name,phone,doc,username:user,authEmail:authEmailFor({id,name,username:user,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
 async function guardarDeposito(){
  let amount=Number(document.getElementById('dep-monto').value),accountId=document.getElementById('dep-cuenta').value;
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
@@ -696,13 +699,14 @@ function setStatusFilter(view,s,btn){statusFilter=s;document.querySelectorAll('#
 function filterRequests(s){requestFilter=s;renderRequests()}
 function actionButtons(collection,id,status){
  let admin=isAdmin(),rec=state[collection]?.[id],ownerId=rec?.userId;
- let arr=[`<button class="btn btn-light btn-sm" onclick="viewRecord('${collection}','${id}')">Ver</button>`];
+ let arr=[`<button class="btn btn-light btn-sm" title="Ver" aria-label="Ver" onclick="viewRecord('${collection}','${id}')"><i class="fa-solid fa-eye"></i></button>`];
+ if(rec?.receipt&&status==='Aprobado')arr.push(`<button class="btn btn-primary btn-sm" title="Descargar recibo" aria-label="Descargar recibo" onclick="downloadReceipt('${collection}','${id}')"><i class="fa-solid fa-download"></i></button>`);
  if(admin){
-   arr.push(`<button class="btn btn-warning btn-sm" onclick="editRecord('${collection}','${id}')">Editar</button>`);
-   arr.push(`<button class="btn btn-danger btn-sm" onclick="deleteRecord('${collection}','${id}')">Eliminar</button>`);
+   arr.push(`<button class="btn btn-warning btn-sm" title="Editar" aria-label="Editar" onclick="editRecord('${collection}','${id}')"><i class="fa-solid fa-pen"></i></button>`);
+   arr.push(`<button class="btn btn-danger btn-sm" title="Eliminar" aria-label="Eliminar" onclick="deleteRecord('${collection}','${id}')"><i class="fa-solid fa-trash"></i></button>`);
  }else if(ownerId===currentUser?.id){
-   if(status==='No coincide')arr.push(`<button class="btn btn-warning btn-sm" onclick="editRecord('${collection}','${id}')">Editar</button><button class="btn btn-primary btn-sm" onclick="resubmitTransaction('${collection}','${id}')">REENVIAR</button>`);
-   if(status==='Rechazado')arr.push(`<button class="btn btn-danger btn-sm" onclick="deleteRecord('${collection}','${id}')">Eliminar y devolver saldo</button>`);
+   if(status==='No coincide')arr.push(`<button class="btn btn-warning btn-sm" title="Editar" aria-label="Editar" onclick="editRecord('${collection}','${id}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-primary btn-sm" title="Reenviar" aria-label="Reenviar" onclick="resubmitTransaction('${collection}','${id}')"><i class="fa-solid fa-rotate-right"></i></button>`);
+   if(status==='Rechazado')arr.push(`<button class="btn btn-danger btn-sm" title="Eliminar y devolver saldo" aria-label="Eliminar" onclick="deleteRecord('${collection}','${id}')"><i class="fa-solid fa-trash"></i></button>`);
  }
  if(admin&&status==='Pendiente'&&collection==='accountWithdrawals')arr.push(`<button class="btn btn-success btn-sm" onclick="reviewAccountWithdrawal('${id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="reviewAccountWithdrawal('${id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="reviewAccountWithdrawal('${id}','No coincide')">NO COINCIDE</button>`);
  else if(admin&&status==='Pendiente')arr.push(`<button class="btn btn-success btn-sm" onclick="setTransactionStatus('${collection}','${id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus('${collection}','${id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus('${collection}','${id}','No coincide')">NO COINCIDE</button>`);
@@ -856,45 +860,38 @@ function generateReceipt(collection,id){
  state[collection][id]=r;
 }
 
+function downloadReceipt(collection,id){
+ const r=state[collection]?.[id];
+ if(!r?.receipt||r.status!=='Aprobado')return toast('El recibo solo está disponible después de la aprobación.','warn');
+ showReceipt(collection,id);
+ setTimeout(()=>window.print(),250);
+}
 function showReceipt(collection,id){
- let r=state[collection]?.[id],rec=r?.receipt;if(!rec||r.status!=='Aprobado')return toast('El recibo solo aparece después de la aprobación del Administrador.','warn');
+ let r=state[collection]?.[id],rec=r?.receipt;
+ if(!rec||r.status!=='Aprobado')return toast('El recibo solo aparece después de la aprobación del Administrador.','warn');
  let u=state.users[r.userId]||state.users.admin;
  let benName=r.beneficiario||r.beneficiary||'Según operación';
  let benPhone=r.beneficiarioPhone||r.beneficiaryPhone||'';
- let conversion=collection==='envios'?`<div class="receipt-row"><b>Tasa de cambio</b><span>RD$ 1 = 2.10 HTG</span></div><div class="receipt-row"><b>Monto a convertir</b><span>${money(r.net)}</span></div><div class="receipt-row receipt-total"><b>Total a recibir</b><span>${Number(r.destination||0).toFixed(2)} HTG</span></div>`:`<div class="receipt-row receipt-total"><b>Monto total</b><span>${money(rec.amount)}</span></div>`;
- document.getElementById('detail-content').innerHTML=`<div class="receipt-shell">
-  <div class="receipt-head">
-   <img class="receipt-logo" src="${LOGO_DATA}" alt="SENDWAYO EXPRESS">
-   <h2 style="color:#0f2c59;margin:2px 0">SENDWAYO EXPRESS</h2>
-   <p style="font-weight:900;color:#123b78;max-width:760px;margin:7px auto 0;text-align:center;line-height:1.25">SERVICIO DE CALIDAD QUE CONECTA CONTIGO CON CONFIANZA Y SEGURIDAD</p>
-   <div class="receipt-original">RECIBO ORIGINAL</div>
+ let conversion=collection==='envios'?'<div class="receipt-row compact"><b>Recibe</b><span>'+Number(r.destination||0).toFixed(2)+' HTG</span></div>':'<div class="receipt-row compact"><b>Monto</b><span>'+money(rec.amount)+'</span></div>';
+ document.getElementById('detail-content').innerHTML=`<div class="receipt-shell receipt-compact">
+  <div class="receipt-head"><img class="receipt-logo" src="${LOGO_DATA}" alt="SENDWAYO EXPRESS"><h2>SENDWAYO EXPRESS</h2><p class="receipt-slogan">SERVICIO DE CALIDAD QUE CONECTA CONTIGO CON CONFIANZA Y SEGURIDAD</p><div class="receipt-original">RECIBO ORIGINAL</div></div>
+  <div class="receipt-concept"><b>${escapeHtml(rec.concept||transactionConcept(collection,r))}</b></div>
+  <div class="receipt-grid-compact">
+   <div><b>Remitente</b><span>${escapeHtml(u.name||rec.user||'')}</span></div>
+   <div><b>ID del remitente</b><span>${escapeHtml(rec.staffId||u.staffId||'')}</span></div>
+   <div><b>Celular</b><span>${escapeHtml(u.phone||'')}</span></div>
+   <div><b>Beneficiario</b><span>${escapeHtml(benName)}</span></div>
+   <div><b>Celular beneficiario</b><span>${escapeHtml(benPhone)}</span></div>
+   <div><b>Fecha / hora</b><span>${escapeHtml(rec.date)} · ${escapeHtml(rec.time)}</span></div>
   </div>
-  <div class="receipt-concept"><div style="font-size:.78rem;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em">Concepto</div><div style="font-size:1.05rem;font-weight:900;color:#0f2c59;margin-top:4px">${escapeHtml(rec.concept||transactionConcept(collection,r))}</div></div>
-  <div class="receipt-details">
-   <div class="receipt-side">
-    <div class="receipt-row"><b>Tipo</b><span>${escapeHtml(rec.role||u.role||'')}</span></div>
-    <div class="receipt-row"><b>ID</b><span>${escapeHtml(rec.staffId||u.staffId||'')}</span></div>
-    <div class="receipt-row"><b>Nombre</b><span>${escapeHtml(u.name||rec.user||'')}</span></div>
-    <div class="receipt-row"><b>Usuario</b><span>${escapeHtml(u.username||rec.username||'')}</span></div>
-    <div class="receipt-row"><b>Celular</b><span>${escapeHtml(u.phone||'')}</span></div>
-   </div>
-   <div class="receipt-side">
-    <div class="receipt-row"><b>Fecha</b><span>${escapeHtml(rec.date)}</span></div>
-    <div class="receipt-row"><b>Hora</b><span>${escapeHtml(rec.time)}</span></div>
-    <div class="receipt-row"><b>Número de recibo</b><span>${escapeHtml(rec.id)}</span></div>
-    <div class="receipt-row"><b>Beneficiario</b><span>${escapeHtml(benName)}</span></div>
-    <div class="receipt-row"><b>Celular del beneficiario</b><span>${escapeHtml(benPhone)}</span></div>
-    <div class="receipt-row"><b>Monto</b><span>${money(rec.amount)}</span></div>
-    ${conversion}
-   </div>
-  </div>
-  <div style="text-align:center;margin:10px 0"><span class="receipt-status">APROBADO</span></div>
-  <div style="margin-top:10px;text-align:center"><div style="font-size:22px;font-family:cursive;font-weight:700;color:#0f2c59">Administración</div><div style="border-top:1px solid #334155;width:220px;margin:3px auto 0;padding-top:5px;font-size:.78rem">Firma de la Administración</div></div>
-  <div class="receipt-bottom">
-   <p style="font-weight:900;max-width:760px;margin:5px auto;text-align:center;line-height:1.25">¡Hazlo todo sin moverte de casa! Quédate cómodo y nosotros nos encargamos.</p>
-   <div style="text-align:center;margin-top:12px"><button class="btn btn-primary" onclick="window.print()">Capturar / Guardar PDF</button></div>
-  </div>
- </div>`;openModal('detailModal')
+  <div class="receipt-amount-row"><span>Monto</span><strong>${money(rec.amount)}</strong></div>${conversion}
+  <div class="receipt-status">✓ APROBADO POR LA ADMINISTRACIÓN</div>
+  <div class="receipt-sign">Administración<small>Firma de la Administración</small></div>
+  <p class="receipt-thanks">Gracias por preferirnos.</p>
+  <p class="receipt-bottom-line">¡Hazlo todo sin moverte de casa! Quédate cómodo y nosotros nos encargamos.</p>
+  <div class="receipt-capture"><button class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-download"></i> Descargar / guardar</button></div>
+ </div>`;
+ openModal('detailModal')
 }
 
 function renderMiCuenta(){if(!currentUser)return;document.getElementById('my-account-balance').textContent=money(currentUser.balance);let adminNote=document.getElementById('admin-fund-note');if(adminNote)adminNote.style.display=isAdmin()?'block':'none';let moves=[];Object.values(state.deposits||{}).filter(r=>r.userId===currentUser.id).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Depósito',amount:r.amount,date:r.createdAt,status:r.status}));Object.values(state.accountWithdrawals||{}).filter(r=>r.userId===currentUser.id).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Retiro de cuenta',amount:r.amount,date:r.createdAt,status:r.status}));if(isAdmin()){moves=[];Object.values(state.deposits||{}).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Depósito',amount:r.amount,date:r.createdAt,status:r.status}));Object.values(state.accountWithdrawals||{}).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Retiro de cuenta',amount:r.amount,date:r.createdAt,status:r.status}))}document.querySelector('#accountMoveTable tbody').innerHTML=moves.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${escapeHtml(r.type)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><span class="status ${statusClass(r.status)}">${escapeHtml(r.status)}</span></td><td>${actionButtons(r.type==='Depósito'?'deposits':'accountWithdrawals',r.id,r.status)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay movimientos.</td></tr>'}
@@ -933,7 +930,7 @@ function renderDashboard(){
 }
 function renderEnvios(){
  let rows=Object.values(state.envios).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>statusFilter==='Todos'||r.status===statusFilter);
- document.querySelector('#enviosTable tbody').innerHTML=rows.map((r,i)=>{let u=userById(r.remitenteId),b=state.beneficiaries[r.beneficiarioId];return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td>${escapeHtml(u.name||r.username)}</td><td>${money(r.amount)}</td><td>${escapeHtml(b?.name||r.beneficiario||'')}</td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(isAdmin()?r.status:'Pendiente')}">${escapeHtml(isAdmin()?r.status:'EN REVISIÓN')}</span></td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)} ${r.receipt?`<button class="btn btn-primary btn-sm" onclick="showReceipt('envios','${r.id}')">Recibo</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No hay registros.</td></tr>';
+ document.querySelector('#enviosTable tbody').innerHTML=rows.map((r,i)=>{let u=userById(r.remitenteId),b=state.beneficiaries[r.beneficiarioId];return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td>${escapeHtml(u.name||r.username)}</td><td>${money(r.amount)}</td><td>${escapeHtml(b?.name||r.beneficiario||'')}</td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)}</td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No hay registros.</td></tr>';
 }
 function renderPeople(){
  let rms=Object.values(state.users).filter(x=>x.role==='Remitente'&&(isAdmin()||x.id===currentUser.id));
@@ -984,9 +981,14 @@ function editAccount(id){
 }
 function renderDeposits(){let rows=Object.values(state.deposits).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#depTable tbody').innerHTML=rows.map((r,i)=>{let a=state.accounts[r.accountId];return `<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${escapeHtml(a?.bank||'')} - ${escapeHtml(a?.number||'')}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.voucher)}</td><td><span class="status ${statusClass(isAdmin()?r.status:'Pendiente')}">${escapeHtml(isAdmin()?r.status:'EN REVISIÓN')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('deposits','${r.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editRecord('deposits','${r.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('deposits','${r.id}')">Eliminar</button>${isAdmin()&&r.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="approveDeposit('${r.id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveDeposit('${r.id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveDeposit('${r.id}','No coincide')">NO COINCIDE</button>`:''}</div></td></tr>`}).join('')||'<tr><td colspan="7" class="muted">No hay depósitos.</td></tr>'}
 function renderSimple(collection,table,fields){
- let rows=Object.values(state[collection]).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#'+table+' tbody').innerHTML=rows.map((r,i)=>{let vals=fields.map(f=>f==='amount'||f==='cost'?money(r[f]):escapeHtml(r[f]??'')).join('</td><td>');return `<tr><td>${i+1}</td><td>${vals}</td><td><span class="status ${statusClass(isAdmin()?(r.status||'Pendiente'):'Pendiente')}">${escapeHtml(displayStatus(r.status||'Pendiente'))}</span></td><td data-record-id="${r.id}">${actionButtons(collection,r.id,r.status||'Pendiente')} ${r.receipt?`<button class="btn btn-primary btn-sm" onclick="showReceipt('${collection}','${r.id}')">Recibo</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="'+(fields.length+3)+'" class="muted">No hay registros.</td></tr>'}
+ let rows=Object.values(state[collection]).filter(r=>isAdmin()||r.userId===currentUser.id);
+ document.querySelector('#'+table+' tbody').innerHTML=rows.map((r,i)=>{let vals=fields.map(f=>f==='amount'||f==='cost'?money(r[f]):escapeHtml(r[f]??'')).join('</td><td>');return `<tr><td>${i+1}</td><td>${vals}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}">${actionButtons(collection,r.id,r.status||'Pendiente')}</td></tr>`}).join('')||'<tr><td colspan="'+(fields.length+3)+'" class="muted">No hay registros.</td></tr>'
+}
 function renderCommissions(){let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${money(r.availableBefore)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('commissions','${r.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editRecord('commissions','${r.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('commissions','${r.id}')">Eliminar</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No hay pagos de comisión.</td></tr>'}
-function renderRequests(){let rows=Object.values(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id).filter(r=>requestFilter==='Todos'||r.status===requestFilter);document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(isAdmin()?r.status:'Pendiente')}">${escapeHtml(isAdmin()?r.status:'EN REVISIÓN')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('requests','${r.id}')">Ver</button>${isAdmin()?`<button class="btn btn-warning btn-sm" onclick="editRecord('requests','${r.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('requests','${r.id}')">Eliminar</button>`:''}${isAdmin()&&r.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="approveRequest('${r.id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest('${r.id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest('${r.id}','No coincide')">NO COINCIDE</button>`:''}${r.whatsappLink?`<a class="btn btn-success btn-sm" target="_blank" href="${r.whatsappLink}">WhatsApp</a>`:''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'}
+function renderRequests(){
+ let rows=Object.values(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
+ document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${isAdmin()?'<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'requests\',\''+r.id+'\')"><i class="fa-solid fa-trash"></i></button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\''+r.id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\''+r.id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\''+r.id+'\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
+}
 function renderSecrets(){
  if(!isAdmin())return;
  const rows=Object.values(state.users).filter(u=>u.role==='Remitente');
