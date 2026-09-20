@@ -76,6 +76,9 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
 /* Recibo digital compacto */
 .receipt-compact{max-width:620px!important;padding:12px!important;border-radius:16px!important}.receipt-compact .receipt-logo{width:145px!important;max-height:62px;object-fit:contain;margin:0 auto 2px}.receipt-compact .receipt-head h2{font-size:1.12rem;margin:0!important}.receipt-slogan{font-size:.66rem;font-weight:900;color:#123b78;line-height:1.15;margin:3px auto!important;max-width:520px}.receipt-compact .receipt-original{font-size:.72rem;padding:4px 10px;margin:4px auto!important}.receipt-compact .receipt-concept{margin:6px 0!important;padding:7px 10px!important;font-size:.8rem;text-align:center}.receipt-grid-compact{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;border:1px solid #dce7f2;border-radius:10px;padding:7px;background:rgba(255,255,255,.9)}.receipt-grid-compact>div{display:flex;justify-content:space-between;gap:7px;font-size:.69rem;padding:3px 0}.receipt-grid-compact b{color:#52606d}.receipt-grid-compact span{text-align:right;font-weight:800;color:#0f2c59;overflow-wrap:anywhere}.receipt-amount-row,.receipt-row.compact{display:flex;justify-content:space-between;align-items:center;padding:6px 9px;margin-top:5px;border-radius:9px;background:#fff6cf;border:1px solid #efd36b;font-size:.78rem}.receipt-amount-row strong,.receipt-row.compact span{color:#0f2c59}.receipt-compact .receipt-status{display:block;text-align:center;margin:6px 0;padding:6px 8px;font-size:.74rem}.receipt-sign{text-align:center;font-size:14px;font-family:cursive;font-weight:700;color:#0f2c59;margin-top:5px}.receipt-sign small{display:block;font-family:Inter,Arial,sans-serif;font-size:.62rem;font-weight:600;border-top:1px solid #334155;width:170px;margin:2px auto 0;padding-top:2px}.receipt-thanks,.receipt-bottom-line{text-align:center;font-size:.69rem;font-weight:800;line-height:1.15;margin:4px auto!important;max-width:540px}.receipt-bottom-line{color:#123b78}.receipt-capture{text-align:center;margin-top:6px}@media(max-width:800px){.receipt-compact{padding:9px!important}.receipt-grid-compact{grid-template-columns:1fr}.receipt-compact .receipt-logo{width:120px}.receipt-capture{margin-top:4px}}@media print{body{background:#fff!important}.receipt-compact{box-shadow:none!important;border:1px solid #e7b52f!important;max-width:620px!important}.receipt-capture{display:none!important}}
+<style>
+.env-suggestions{position:absolute;left:0;right:0;top:100%;z-index:12050;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 24px rgba(0,0,0,.16);overflow:hidden;margin-top:3px}.search-select-wrap{position:relative}.env-suggestion{display:block;width:100%;border:0;background:#fff;text-align:left;padding:9px 11px;cursor:pointer;font-size:.8rem;border-bottom:1px solid #edf1f5}.env-suggestion:last-child{border-bottom:0}.env-suggestion:hover{background:#f1f5f9}.env-suggestion b{color:#0f2c59}.env-suggestion span{color:#52606d}
+.receipt-compact{max-width:350px!important;padding:8px!important;border-radius:11px!important;box-shadow:0 6px 18px rgba(15,44,89,.12)!important}.receipt-compact .receipt-logo{width:82px!important;max-height:38px;margin:0 auto 1px}.receipt-compact .receipt-head h2{font-size:.84rem!important}.receipt-compact .receipt-slogan{font-size:.48rem!important;max-width:310px!important}.receipt-compact .receipt-original{font-size:.54rem!important;padding:3px 7px!important;margin:3px auto!important}.receipt-compact .receipt-concept{font-size:.58rem!important;padding:4px 6px!important;margin:4px 0!important}.receipt-compact .receipt-grid-compact{grid-template-columns:1fr!important;padding:4px!important;gap:1px 5px}.receipt-compact .receipt-grid-compact>div{font-size:.56rem!important;padding:2px 0!important}.receipt-compact .receipt-amount-row,.receipt-compact .receipt-row.compact{font-size:.62rem!important;padding:4px 6px!important;margin-top:3px}.receipt-compact .receipt-status{font-size:.58rem!important;padding:4px 5px!important;margin:3px 0!important}.receipt-compact .receipt-sign{font-size:10px!important;margin-top:3px!important}.receipt-compact .receipt-sign small{font-size:.5rem!important;width:120px!important}.receipt-compact .receipt-thanks,.receipt-compact .receipt-bottom-line{font-size:.52rem!important;margin:2px auto!important;max-width:315px!important}.receipt-compact .receipt-capture{margin-top:3px!important}.receipt-compact .receipt-capture .btn{font-size:.62rem!important;padding:5px 7px!important}
 </style>
 </head>
 <body>
@@ -274,9 +277,9 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
 <div class="modal" id="envioModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('envioModal')">×</button><h3>Registrar Envío / Transacción</h3><div class="form-grid">
 <div class="form-group"><label>Tipo de Transacción</label><select id="env-tipo-trans" class="form-control"><option>RD a HTI MonCash</option><option>RD a HTI NatCash</option><option>HTI a HTI</option><option>RD a USA</option><option>USA a RD</option><option>USA a HTI</option><option>RD a Canadá</option><option>RD a Francia</option><option>RD a Chile</option><option>RD a España</option></select></div>
-<div class="form-group"><label>Remitente</label><div class="search-select-wrap"><input id="env-remitente-input" class="form-control" list="env-remitentes-list" placeholder="Escriba nombre, usuario o número de WhatsApp..." autocomplete="off" oninput="resolveEnvioPerson('remitente')"><button type="button" class="plus-btn" onclick="openPerson('Remitente')" title="Agregar remitente">+</button></div><datalist id="env-remitentes-list"></datalist><input id="env-remitente-select" type="hidden"><div class="field-hint">Escriba para buscar. El botón + permite agregar un remitente nuevo.</div></div>
+<div class="form-group"><label>Remitente</label><div class="search-select-wrap"><input id="env-remitente-input" class="form-control" placeholder="Escriba nombre o número..." autocomplete="off" oninput="document.getElementById('env-remitente-select').value='';updateEnvioSuggestions('remitente')" onfocus="updateEnvioSuggestions('remitente')"><button type="button" class="plus-btn" onclick="openPerson('Remitente')" title="Agregar remitente">+</button></div><div id="env-remitente-suggestions" class="env-suggestions"></div><input id="env-remitente-select" type="hidden"><div class="field-hint">Seleccione: número (nombre del remitente).</div></div>
 <div class="form-group"><label>Monto en RD$</label><input id="env-monto" type="number" min="0" step="0.01" class="form-control" oninput="calcularEnvioModal()"></div>
-<div class="form-group"><label>Beneficiario</label><div class="search-select-wrap"><input id="env-beneficiario-input" class="form-control" list="env-beneficiarios-list" placeholder="Escriba nombre o número de WhatsApp..." autocomplete="off" oninput="resolveEnvioPerson('beneficiario')"><button type="button" class="plus-btn" onclick="openModal('beneficiarioModal')" title="Agregar beneficiario">+</button></div><datalist id="env-beneficiarios-list"></datalist><input id="env-beneficiario-select" type="hidden"><div class="field-hint">Puede escribir nombre o número. Use + para registrar un nuevo beneficiario.</div></div></div>
+<div class="form-group"><label>Beneficiario</label><div class="search-select-wrap"><input id="env-beneficiario-input" class="form-control" placeholder="Escriba nombre o número..." autocomplete="off" oninput="document.getElementById('env-beneficiario-select').value='';updateEnvioSuggestions('beneficiario')" onfocus="updateEnvioSuggestions('beneficiario')"><button type="button" class="plus-btn" onclick="openModal('beneficiarioModal')" title="Agregar beneficiario">+</button></div><div id="env-beneficiario-suggestions" class="env-suggestions"></div><input id="env-beneficiario-select" type="hidden"><div class="field-hint">Seleccione: número (nombre del beneficiario).</div></div></div>
 <div class="account-card" style="padding:10px;margin:8px 0"><b>Identificación del remitente</b><div class="form-grid" style="margin-top:8px"><div><label style="font-size:.75rem">WhatsApp</label><input id="env-remitente-phone" class="form-control" readonly></div><div><label style="font-size:.75rem">Cédula / Pasaporte</label><input id="env-remitente-doc" class="form-control" readonly></div></div></div>
 <div class="info-box">La comisión de los envíos es 8.5%. Las recargas, paqueticos y pagos de facturas/servicios mantienen 5%. RD→HTI usa tasa de referencia 2.10. HTI→HTI queda registrado sin convertir a HTG. Para otras rutas se conserva el flujo de conversión configurado.</div>
 <div style="background:#f1f5f9;padding:12px;border-radius:7px;margin:12px 0"><p>MONTO NETO: <b id="calc-neto">0.00 RD$</b></p><p>COMISIÓN: <b id="calc-comision">0.00 RD$</b></p><p>MONTO DESTINO: <b id="calc-total">0.00 HTG</b></p></div>
@@ -429,7 +432,7 @@ function localSave(){localStorage.setItem(DB_PATH,JSON.stringify(state))}
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
 function markSynced(pathParts,value){if(!lastSyncedState)return;let cur=lastSyncedState;for(let i=0;i<pathParts.length-1;i++){const k=pathParts[i];if(!cur[k]||typeof cur[k]!=='object')cur[k]={};cur=cur[k]}if(pathParts.length)cur[pathParts.length-1]=cloneState(value)}
 function buildFirebaseUpdates(){const updates={};if(!lastSyncedState){Object.keys(state||{}).forEach(k=>updates[k]=state[k]);return updates}const keys=new Set([...Object.keys(state||{}),...Object.keys(lastSyncedState||{})]);keys.forEach(k=>{const cur=state[k],prev=lastSyncedState[k];const both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);if(both){const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);ids.forEach(id=>{if(JSON.stringify(cur[id]??null)!==JSON.stringify(prev[id]??null))updates[k+'/'+id]=(id in cur)?cur[id]:null})}else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null))updates[k]=cur??null});return updates}
-function persist(){localSave();if(!firebaseReady)return Promise.resolve(true);const updates=buildFirebaseUpdates();if(!Object.keys(updates).length)return Promise.resolve(true);persistQueue=persistQueue.then(async()=>{try{await firebase.database().ref(DB_PATH).update(updates);for(const p of Object.keys(updates)){let v=state;for(const part of p.split('/')){if(v==null)break;v=v[part]}markSynced(p.split('/'),v===undefined?null:v)}return true}catch(e){console.warn('Firebase persist:',e);toast('No se pudo sincronizar el cambio con Firebase.','error');return false}});return persistQueue}
+function persist(){localSave();if(!firebaseReady)return Promise.resolve(true);const updates=buildFirebaseUpdates();if(!Object.keys(updates).length)return Promise.resolve(true);persistQueue=persistQueue.then(async()=>{try{await firebase.database().ref(DB_PATH).update(updates);for(const p of Object.keys(updates)){let v=state;for(const part of p.split('/')){if(v==null)break;v=v[part]}markSynced(p.split('/'),v===undefined?null:v)}return true}catch(e){console.warn('Firebase persist:',e);let code=e?.code||'';let msg=code==='PERMISSION_DENIED'?'Firebase rechazó el guardado por permisos. El Administrador debe revisar las reglas de la base de datos.':(code==='NETWORK_ERROR'||/network|offline/i.test(String(e?.message||''))?'No hay conexión estable con Firebase. Revise Internet e inténtelo nuevamente.':'No se pudo sincronizar con Firebase'+(code?' ('+code+')':'')+'.');toast(msg,'error');return false}});return persistQueue}
 async function firebasePatch(patch){
  localSave();
  if(!firebaseReady)return false;
@@ -592,36 +595,35 @@ async function createTransaction(collection,fields,amount){
  const id=uid(collection),rate=collection==='envios'?.085:.05;
  const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false};
  if(!isAdmin())record.balanceDebited=true;
- state[collection][id]=record;
- addAudit('Crear '+collection,id);
- const ok=await persist();
- if(!ok){
-   if(record.balanceDebited)await updateUserFinancials(currentUser.id,Number(record.amount||0),0);
-   delete state[collection][id];
-   return null;
- }
- await addNotification('Administrador','Nueva '+collection+' de '+currentUser.name,collection,id);
- const notificationSaved=await persist();
- if(!notificationSaved){
-   toast('La operación sí fue guardada, pero no se pudo enviar la notificación al Administrador. Revise el panel de notificaciones.','warn');
- }
- renderAll();return id;
+ state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
+ let ok=true;
+ if(firebaseReady){try{await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).set(record);markSynced([collection,id],record)}catch(e){ok=false;console.warn('Guardar '+collection+':',e);let code=e?.code||'';let msg=code==='PERMISSION_DENIED'?'Firebase rechazó el envío por permisos. El Administrador debe revisar las reglas de la base de datos.':(code==='NETWORK_ERROR'||/network|offline/i.test(String(e?.message||''))?'No hay conexión estable con Firebase. Revise Internet e inténtelo nuevamente.':'No se pudo guardar el envío en Firebase'+(code?' ('+code+')':'')+'.');toast(msg,'error')}}else localSave();
+ if(!ok){if(record.balanceDebited)await updateUserFinancials(currentUser.id,Number(record.amount||0),0);delete state[collection][id];localSave();return null}
+ await addNotification('Administrador','Nueva '+collection+' de '+currentUser.name,collection,id);renderAll();return id;
 }
-async function guardBalance(amount){if(isAdmin())return true;const needed=Number(amount||0);if(needed<=0)return true;if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+currentUser.id+'/balance');const tx=await ref.transaction(v=>{const b=Number(v||0);return b>=needed?b-needed:undefined});if(!tx.committed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(tx.snapshot.val()||0);if(state.users?.[currentUser.id])state.users[currentUser.id].balance=currentUser.balance;if(lastSyncedState?.users?.[currentUser.id])lastSyncedState.users[currentUser.id].balance=currentUser.balance;localSave();return true}catch(e){console.warn('Balance transaction:',e);toast('No se pudo actualizar el balance.','error');return false}}if(Number(currentUser.balance||0)<needed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(currentUser.balance)-needed;state.users[currentUser.id]=currentUser;return true}
+function guardBalance(amount){if(isAdmin())return true;const needed=Number(amount||0);if(needed<=0)return true;if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+currentUser.id+'/balance');const tx=await ref.transaction(v=>{const b=Number(v||0);return b>=needed?b-needed:undefined});if(!tx.committed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(tx.snapshot.val()||0);if(state.users?.[currentUser.id])state.users[currentUser.id].balance=currentUser.balance;if(lastSyncedState?.users?.[currentUser.id])lastSyncedState.users[currentUser.id].balance=currentUser.balance;localSave();return true}catch(e){console.warn('Balance transaction:',e);toast('No se pudo actualizar el balance.','error');return false}}if(Number(currentUser.balance||0)<needed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(currentUser.balance)-needed;state.users[currentUser.id]=currentUser;return true}
 function resolveByText(value,collection,fields){let v=String(value||'').trim().toLowerCase();if(!v)return null;return Object.values(collection).find(x=>fields.some(f=>String(x[f]||'').trim().toLowerCase()===v||String(x[f]||'').trim().toLowerCase().includes(v)))?.id||null}
+function updateEnvioSuggestions(kind){
+ const input=document.getElementById('env-'+kind+'-input'),box=document.getElementById('env-'+kind+'-suggestions');if(!input||!box)return;
+ const q=String(input.value||'').trim().toLowerCase(),col=kind==='remitente'?state.users:state.beneficiaries;
+ const list=Object.values(col).filter(x=>x.active!==false&&(kind==='remitente'?x.role==='Remitente':true)).filter(x=>isAdmin()||kind!=='remitente'||x.id===currentUser?.id).filter(x=>!q||[x.name,x.phone,x.username].filter(Boolean).some(v=>String(v).toLowerCase().includes(q))).slice(0,8);
+ box.innerHTML=list.map(x=>'<button type="button" class="env-suggestion" onclick="chooseEnvioPerson(\''+kind+'\',\''+escapeHtml(x.id)+'\')"><b>'+escapeHtml(x.phone||'Sin número')+'</b> <span>('+escapeHtml(x.name||'')+')</span></button>').join('');
+ box.style.display=list.length?'block':'none';
+}
+function chooseEnvioPerson(kind,id){
+ const x=(kind==='remitente'?state.users:state.beneficiaries)[id];if(!x)return;
+ const input=document.getElementById('env-'+kind+'-input'),hidden=document.getElementById('env-'+kind+'-select');if(!input||!hidden)return;
+ input.value=(x.phone||'Sin número')+' ('+(x.name||'')+')';hidden.value=id;
+ const box=document.getElementById('env-'+kind+'-suggestions');if(box)box.style.display='none';
+ if(kind==='remitente'){document.getElementById('env-remitente-phone').value=x.phone||'';document.getElementById('env-remitente-doc').value=x.doc||''}else{const ph=document.getElementById('env-beneficiario-phone');if(ph)ph.value=x.phone||''}
+}
 function resolveEnvioPerson(kind){
- let input=document.getElementById('env-'+kind+'-input'),hidden=document.getElementById('env-'+kind+'-select');
- if(!input||!hidden)return;
- let col=kind==='remitente'?state.users:state.beneficiaries;
- let fields=kind==='remitente'?['name','phone','username']:['name','phone'];
- let id=resolveByText(input.value,col,fields);
- if(kind==='remitente'&&!id&&!isAdmin()&&currentUser){
-   const self=[currentUser.name,currentUser.username,currentUser.phone].filter(Boolean).some(v=>String(input.value).trim().toLowerCase()===String(v).trim().toLowerCase());
-   if(self)id=currentUser.id;
- }
- hidden.value=id||'';
- if(kind==='remitente'&&id){let u=state.users[id];document.getElementById('env-remitente-phone').value=u?.phone||'';document.getElementById('env-remitente-doc').value=u?.doc||'';}
- if(kind==='beneficiario'&&id){let b=state.beneficiaries[id];const ph=document.getElementById('env-beneficiario-phone');if(ph)ph.value=b?.phone||'';}
+ let input=document.getElementById('env-'+kind+'-input'),hidden=document.getElementById('env-'+kind+'-select');if(!input||!hidden)return;
+ if(hidden.value&&(input.value.includes('(')||input.value.trim()===''))return;
+ let col=kind==='remitente'?state.users:state.beneficiaries,fields=kind==='remitente'?['name','phone','username']:['name','phone'];
+ let id=resolveByText(input.value.replace(/\s*\([^)]*\)\s*$/,''),col,fields);if(kind==='remitente'&&!id&&!isAdmin()&&currentUser)id=currentUser.id;hidden.value=id||'';
+ if(kind==='remitente'&&id){let u=state.users[id];document.getElementById('env-remitente-phone').value=u?.phone||'';document.getElementById('env-remitente-doc').value=u?.doc||''}
+ if(kind==='beneficiario'&&id){let b=state.beneficiaries[id],ph=document.getElementById('env-beneficiario-phone');if(ph)ph.value=b?.phone||''}
 }
 async function guardarEnvio(){
  if(!canTransact())return;
@@ -1056,18 +1058,10 @@ function exportData(format,tableId){
  toast('Exportación '+format+' disponible cuando la biblioteca esté cargada.','warn')
 }
 function updateSelectors(){
- let rms=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active&&(isAdmin()||u.id===currentUser?.id));
- let bens=Object.values(state.beneficiaries).filter(b=>b.active);
- const rl=document.getElementById('env-remitentes-list'),bl=document.getElementById('env-beneficiarios-list');
- if(rl)rl.innerHTML=rms.map(u=>`<option value="${escapeHtml(u.name)}">${escapeHtml(u.name)} — ${escapeHtml(u.phone)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option><option value="${escapeHtml(u.phone)}">${escapeHtml(u.name)} — ${escapeHtml(u.phone)}</option><option value="${escapeHtml(u.username)}">${escapeHtml(u.name)} — ${escapeHtml(u.username)}</option>`).join('');
- if(bl)bl.innerHTML=bens.map(b=>`<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)} — ${escapeHtml(b.phone)}</option><option value="${escapeHtml(b.phone)}">${escapeHtml(b.name)} — ${escapeHtml(b.phone)}</option>`).join('');
- if(currentUser&&!isAdmin()){
-   let inp=document.getElementById('env-remitente-input'),hidden=document.getElementById('env-remitente-select');
-   if(inp){inp.value=currentUser.name||'';inp.disabled=false;inp.placeholder='Su nombre aparece automáticamente; escriba para cambiarlo';}
-   if(hidden)hidden.value=currentUser.id;
-   const ph=document.getElementById('env-remitente-phone'),doc=document.getElementById('env-remitente-doc');
-   if(ph)ph.value=currentUser.phone||''; if(doc)doc.value=currentUser.doc||'';
- }
+ let rms=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active&&(isAdmin()||u.id===currentUser?.id));let bens=Object.values(state.beneficiaries).filter(b=>b.active);
+ const rl=document.getElementById('env-remitentes-list'),bl=document.getElementById('env-beneficiarios-list');if(rl)rl.innerHTML='';if(bl)bl.innerHTML='';
+ if(currentUser&&!isAdmin()){let inp=document.getElementById('env-remitente-input'),hidden=document.getElementById('env-remitente-select');if(inp){inp.value=(currentUser.phone||'Sin número')+' ('+(currentUser.name||'')+')';inp.disabled=false;inp.placeholder='Escriba nombre o número para buscar'}if(hidden)hidden.value=currentUser.id;const ph=document.getElementById('env-remitente-phone'),doc=document.getElementById('env-remitente-doc');if(ph)ph.value=currentUser.phone||'';if(doc)doc.value=currentUser.doc||''}
+ updateEnvioSuggestions('remitente');updateEnvioSuggestions('beneficiario');
 }
 const _renderAll=renderAll;renderAll=function(){updateSelectors();_renderAll()}
 setInterval(()=>{document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');updateSessionUI();if(currentUser&&Date.now()-lastActivity>=SESSION_TTL)cerrarSesion()},1000);
