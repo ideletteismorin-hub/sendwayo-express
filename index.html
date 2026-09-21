@@ -604,28 +604,7 @@ async function realizarLogin(){
    if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'Ingresar al Sistema'}
  }
 }
-async function repairApprovedDeposits(){
- if(!firebaseReady)return;
- const deposits=Object.values(state.deposits||{}).filter(r=>r&&r.status==='Aprobado');
- for(const r of deposits){
-   const amount=Number(r.amount||0);if(!Number.isFinite(amount)||amount<=0)continue;
-   const u=state.users?.[r.userId];if(!u)continue;
-   if(r.balanceCredited===true)continue;
-   const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
-   const tx=await ref.transaction(v=>{
-     if(!v)return undefined;
-     const credits={...(v.depositCredits||{})};
-     if(credits[r.id]!==undefined)return v;
-     return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}};
-   });
-   if(tx.committed){
-     state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];
-     r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;
-     state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);
-   }
- }
- if(currentUser)renderAll();
-}
+async function repairApprovedDeposits(){if(!firebaseReady)return;const deposits=Object.values(state.deposits||{}).filter(r=>r&&r.status==='Aprobado');for(const r of deposits){const amount=Number(r.amount||0);if(!Number.isFinite(amount)||amount<=0)continue;const u=state.users?.[r.userId];if(!u)continue;if(r.balanceCredited===true)continue;const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);const tx=await ref.transaction(v=>{if(!v)return undefined;const credits={...(v.depositCredits||{})};if(credits[r.id]!==undefined)return v;return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}}});if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r)}}if(currentUser)renderAll()}
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
@@ -808,6 +787,48 @@ function filterTable(input,id){let q=input.value.toLowerCase();document.querySel
 function setStatusFilter(view,s,btn){statusFilter=s;document.querySelectorAll('#envio-statusbar button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderEnvios()}
 function filterRequests(s){requestFilter=s;renderRequests()}
 function actionButtons(collection,id,status){let admin=isAdmin(),rec=state[collection]?.[id],ownerId=rec?.userId,arr=[];if(admin||status!=="Pendiente")arr.push(`<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('${collection}','${id}')"><i class="fa-solid fa-eye"></i></button>`);if(rec?.receipt&&status==="Aprobado")arr.push(`<button class="btn btn-primary btn-sm" title="Descargar recibo" onclick="downloadReceipt('${collection}','${id}')"><i class="fa-solid fa-download"></i></button>`);if(admin){arr.push(`<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord('${collection}','${id}')"><i class="fa-solid fa-pen"></i></button>`);arr.push(`<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord('${collection}','${id}')"><i class="fa-solid fa-trash"></i></button>`)}else if(ownerId===currentUser?.id&&status!=="Pendiente"){if(status==="No coincide")arr.push(`<button class="btn btn-warning btn-sm" onclick="editRecord('${collection}','${id}')">Editar</button><button class="btn btn-primary btn-sm" onclick="resubmitTransaction('${collection}','${id}')">Reenviar</button>`);if(status==="Rechazado")arr.push(`<button class="btn btn-danger btn-sm" onclick="deleteRecord('${collection}','${id}')">Eliminar</button>`)}if(admin&&status==="Pendiente"&&collection==="accountWithdrawals")arr.push(`<button class="btn btn-success btn-sm" onclick="reviewAccountWithdrawal('${id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="reviewAccountWithdrawal('${id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="reviewAccountWithdrawal('${id}','No coincide')">NO COINCIDE</button>`);else if(admin&&status==="Pendiente")arr.push(`<button class="btn btn-success btn-sm" onclick="setTransactionStatus('${collection}','${id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus('${collection}','${id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus('${collection}','${id}','No coincide')">NO COINCIDE</button>`);return '<div class="actions">'+arr.join('')+'</div>'}
+async function adjustReservedBalance(userId,delta){
+ if(!delta)return true;
+ if(firebaseReady){
+   const ref=firebase.database().ref(DB_PATH+'/users/'+userId+'/balance');
+   const tx=await ref.transaction(v=>{const b=Number(v||0);if(delta>0){return b>=delta?b-delta:undefined}return b+Math.abs(delta)});
+   if(!tx.committed)return false;
+   if(state.users?.[userId])state.users[userId].balance=Number(tx.snapshot.val()||0);
+   if(currentUser?.id===userId)currentUser.balance=Number(tx.snapshot.val()||0);
+   return true;
+ }
+ const u=state.users?.[userId];if(!u)return false;
+ if(delta>0&&Number(u.balance||0)<delta)return false;
+ u.balance=Number(u.balance||0)-delta;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return true;
+}
+async function editRecord(collection,id){
+ let r=state[collection]?.[id];if(!r)return;
+ const admin=isAdmin(),owner=r.userId===currentUser?.id;
+ if(!admin && !(owner&&r.status==='No coincide'))return toast('Esta operación está en espera de la Administración.','warn');
+ const protectedFields=['id','userId','createdByAuthUid','createdAt','reviewedAt','reviewedBy','status','receipt','commissionRate','commissionUser','commissionAdmin','balanceDebited','balanceRefunded'];
+ const allowed=Object.keys(r).filter(k=>!protectedFields.includes(k)&&k!=='username');
+ const key=prompt('Campo a editar: '+allowed.join(', '),allowed[0]||'');
+ if(!key||!allowed.includes(key))return toast('Ese campo no se puede editar aquí.','warn');
+ let old=Number(r.amount||0);
+ let val=prompt('Nuevo valor:',String(r[key]??''));if(val===null)return;
+ if(key==='amount'){
+   const newAmount=Number(val);if(!Number.isFinite(newAmount)||newAmount<=0)return toast('Ingrese un monto válido.','warn');
+   const delta=newAmount-old;
+   if(r.balanceDebited&&r.status!=='Aprobado'&&delta!==0){if(!await adjustReservedBalance(r.userId,delta))return toast('Balance insuficiente para aumentar ese monto.','warn');}
+   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate||(collection==='envios'?.085:.05));
+   if(collection==='envios'){r.net=newAmount-r.commission;r.destination=r.net*2.10;}
+ }else if(['cost','weight'].includes(key)){
+   const n=Number(val);if(!Number.isFinite(n)||n<0)return toast('Ingrese un valor válido.','warn');r[key]=n;
+ }else r[key]=val;
+ state[collection][id]=r;await persist();renderAll();toast('Registro actualizado.');
+}
+async function resubmitTransaction(collection,id){
+ const r=state[collection]?.[id];if(!r||r.userId!==currentUser?.id||r.status!=='No coincide')return toast('Esta operación no puede reenviarse.','warn');
+ r.status='Pendiente';r.reviewReason='';r.reviewedAt='';r.reviewedBy='';r.manualReview=false;
+ state[collection][id]=r;await addNotification('Administrador','Operación reenviada para revisión: '+id,collection,id);await persist();renderAll();toast('Operación reenviada al Administrador.');
+}
+
+async function updateUserFinancials(userId,deltaBalance,deltaCommission){if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+Number(deltaBalance||0),commission:Number(u.commission||0)+Number(deltaCommission||0)}):u);if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;u.balance=Number(u.balance||0)+Number(deltaBalance||0);u.commission=Number(u.commission||0)+Number(deltaCommission||0);state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
  if(!isAdmin())return;
  let r=state[collection]?.[id];if(!r||r.status!=='Pendiente')return;
