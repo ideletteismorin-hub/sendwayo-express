@@ -1919,14 +1919,37 @@ function owner(){return currentUser}
 function userById(id){return state.users[id]||{}}
 function isAdmin(){return currentUser?.role==='Administrador'}
 async function createTransaction(collection,fields,amount){
+ if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
+ if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
  const id=uid(collection),rate=collection==='envios'?.085:.05;
- const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50'};
+ const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50'};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
- let ok=true;
- if(firebaseReady){try{await Promise.race([firebase.database().ref(DB_PATH+'/'+collection+'/'+id).set(record),new Promise((_,reject)=>setTimeout(()=>reject(new Error('SAVE_TIMEOUT')),12000))]);markSynced([collection,id],record)}catch(e){ok=false;console.warn('Guardar '+collection+':',e);let code=e?.code||'';let msg=code==='PERMISSION_DENIED'?'Firebase rechazó el envío por permisos. El Administrador debe revisar las reglas de la base de datos.':e.message==='SAVE_TIMEOUT'?'Firebase tardó demasiado en guardar el envío. No se creará una operación duplicada; inténtelo nuevamente cuando la conexión esté estable.':(code==='NETWORK_ERROR'||/network|offline/i.test(String(e?.message||''))?'No hay conexión estable con Firebase. Revise Internet e inténtelo nuevamente.':'No se pudo guardar el envío en Firebase'+(code?' ('+code+')':'')+'.');toast(msg,'error')}}else localSave();
- if(!ok){if(record.balanceDebited)await updateUserFinancials(currentUser.id,Number(record.amount||0),0);delete state[collection][id];localSave();return null}
- await addNotification('Administrador','Nueva '+collection+' de '+currentUser.name,collection,id);renderAll();return id;
+ try{
+   // Guardamos la operación en su nodo propio para que un Remitente pueda
+   // crearla sin necesitar permiso de escritura sobre toda la base.
+   await Promise.race([
+     firebase.database().ref(DB_PATH+'/'+collection+'/'+id).set(record),
+     new Promise((_,reject)=>setTimeout(()=>reject(Object.assign(new Error('SAVE_TIMEOUT'),{code:'SAVE_TIMEOUT'})),12000))
+   ]);
+   markSynced([collection,id],record);
+ }catch(e){
+   console.warn('Guardar '+collection+':',e);
+   const code=e?.code||'';
+   const msg=code==='PERMISSION_DENIED'?'Firebase rechazó esta operación por permisos. Hay que actualizar las reglas de Firebase.':code==='SAVE_TIMEOUT'?'Firebase tardó demasiado en guardar. La operación no fue confirmada y no se cerrará el formulario.':'No se pudo guardar la operación en Firebase'+(code?' ('+code+')':'')+'.';
+   toast(msg,'error');
+   if(record.balanceDebited){
+     await updateUserFinancials(currentUser.id,Number(record.amount||0),0);
+   }
+   delete state[collection][id];localSave();return null;
+ }
+ try{
+   await addNotification('Administrador','Nueva '+collection+' de '+currentUser.name,collection,id);
+ }catch(e){
+   console.warn('Notificación de operación:',e);
+   toast('La operación fue guardada, pero la notificación al Administrador no pudo enviarse.','warn');
+ }
+ renderAll();return id;
 }
 async function guardBalance(amount){if(isAdmin())return true;const needed=Number(amount||0);if(needed<=0)return true;if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+currentUser.id+'/balance');const tx=await ref.transaction(v=>{const b=Number(v||0);return b>=needed?b-needed:undefined});if(!tx.committed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(tx.snapshot.val()||0);if(state.users?.[currentUser.id])state.users[currentUser.id].balance=currentUser.balance;if(lastSyncedState?.users?.[currentUser.id])lastSyncedState.users[currentUser.id].balance=currentUser.balance;localSave();return true}catch(e){console.warn('Balance transaction:',e);toast('No se pudo actualizar el balance.','error');return false}}if(Number(currentUser.balance||0)<needed){toast('Balance insuficiente para realizar esta operación.','warn');return false}currentUser.balance=Number(currentUser.balance)-needed;state.users[currentUser.id]=currentUser;return true}
 function resolveByText(value,collection,fields){let v=String(value||'').trim().toLowerCase();if(!v)return null;return Object.values(collection).find(x=>fields.some(f=>String(x[f]||'').trim().toLowerCase()===v||String(x[f]||'').trim().toLowerCase().includes(v)))?.id||null}
@@ -2011,20 +2034,24 @@ async function guardarDeposito(){
  toast(directAdmin?'Depósito acreditado directamente al balance del remitente. Comisión: RD$0.00.':'Depósito enviado al Administrador para aprobación.','success');
 }
 async function guardarRecarga(){
+ if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  let amount=Number(document.getElementById('rec-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
- await createTransaction('recargas',{company:document.getElementById('rec-comp').value,phone:document.getElementById('rec-num').value},amount);closeModal('recargaModal');toast('Recarga guardada y notificada.')
+ const id=await createTransaction('recargas',{company:document.getElementById('rec-comp').value,phone:document.getElementById('rec-num').value},amount);if(!id)return;closeModal('recargaModal');toast('Recarga guardada y notificada.')
 }
 async function guardarPaquetico(){
+ if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  let amount=Number(document.getElementById('pkt-monto').value||0);if(amount&&!(await guardBalance(amount)))return;
- await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);closeModal('paquetikoModal');toast('Paquetico guardado y notificado.')
+ const id=await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);if(!id)return;closeModal('paquetikoModal');toast('Paquetico guardado y notificado.')
 }
 async function guardarPago(){
+ if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  let amount=Number(document.getElementById('pag-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
- await createTransaction('pagos',{company:document.getElementById('pag-empresa').value,contract:document.getElementById('pag-contrato').value},amount);closeModal('pagoModal');toast('Pago guardado y notificado.')
+ const id=await createTransaction('pagos',{company:document.getElementById('pag-empresa').value,contract:document.getElementById('pag-contrato').value},amount);if(!id)return;closeModal('pagoModal');toast('Pago guardado y notificado.')
 }
 async function guardarPaquete(){
+ if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  let amount=Number(document.getElementById('paq-costo').value||0);if(amount&&!(await guardBalance(amount)))return;
- await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);closeModal('paqueteModal');toast('Paquete guardado y notificado.')
+ const id=await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);if(!id)return;closeModal('paqueteModal');toast('Paquete guardado y notificado.')
 }
 function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
 async function guardarComision(){
