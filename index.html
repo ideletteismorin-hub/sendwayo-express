@@ -1992,7 +1992,7 @@ async function guardarBeneficiario(){
  let name=document.getElementById('ben-nombre').value.trim(),phone=fullPhone('ben-country',document.getElementById('ben-cel').value.trim());
  if(!name||!phone)return toast('Nombre y celular son obligatorios.','warn');
  let id=uid('bn');
- state.beneficiaries[id]={id,name,phone,address:document.getElementById('ben-dir').value.trim(),active:document.getElementById('ben-active').value==='true',userId:currentUser?.id||'admin',createdAt:now()};
+ state.beneficiaries[id]={id,name,phone,address:document.getElementById('ben-dir').value.trim(),active:document.getElementById('ben-active').value==='true',userId:currentUser?.id||'admin',ownerAuthUid:firebase.auth().currentUser?.uid||null,createdAt:now()};
  addAudit('Crear beneficiario',id);
  const ok=await persist();
  if(!ok)return toast('No se pudo guardar el beneficiario en Firebase.','error');
