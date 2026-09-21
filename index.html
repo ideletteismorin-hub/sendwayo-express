@@ -937,30 +937,62 @@ async function approveDeposit(id,status){
    reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';
    if(!reviewReason)return toast('Debe escribir un motivo.','warn');
  }
- if(firebaseReady){const ref=firebase.database().ref(DB_PATH+'/deposits/'+id);const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason});if(!tx.committed)return toast('El depósito ya fue procesado o cambió en otro dispositivo.','warn');r=tx.snapshot.val();state.deposits[id]=r}
- else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state.deposits[id]=r}
- const u=state.users?.[r.userId];if(!u)return;
- if(status==='Aprobado'){
-   const depositAmount=Number(r.amount||0);
-   if(!Number.isFinite(depositAmount)||depositAmount<=0)return toast('El monto del depósito no es válido.','error');
-   // DEPÓSITO = CAPITAL DEL REMITENTE. Nunca genera ni modifica comisión.
-   // Se acredita únicamente una vez, al aprobar, mediante transacción atómica de Firebase.
-   if(r.balanceCredited===true)return toast('Este depósito ya fue acreditado al balance.','warn');
-   if(firebaseReady){
-     const userRef=firebase.database().ref(DB_PATH+'/users/'+u.id);
-     const tx=await userRef.transaction(v=>v?({...v,balance:Number(v.balance||0)+depositAmount}):undefined);
-     if(!tx.committed)return toast('No se pudo acreditar el depósito en Firebase.','error');
-     state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];
-     if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);
-   }else{
-     const updated=await updateUserFinancials(u.id,depositAmount,0);if(!updated)return toast('No se pudo acreditar el depósito.','error');
-   }
-   r=state.deposits[id];r.balanceCredited=true;r.balanceCreditedAt=now();r.depositPrincipal=depositAmount;delete r.commission;delete r.commissionUser;delete r.commissionAdmin;generateReceipt('deposits',id);state.deposits[id]=r;
- }
- await addNotification(u.id,status==='Aprobado'?'Depósito de '+money(r.amount)+' APROBADO. Su balance fue actualizado y el recibo está disponible.':'Su depósito fue '+status.toUpperCase()+'. '+reviewReason,'deposits',id);
- await persist();renderAll();if(status==='Aprobado'&&state.deposits[id]?.receipt)setTimeout(()=>showReceipt('deposits',id),180);toast('Depósito '+status)
-}
+ const u=state.users?.[r.userId];if(!u)return toast('No se encontró el remitente del depósito.','error');
+ const depositAmount=Number(r.amount||0);
+ if(status==='Aprobado'&&(!Number.isFinite(depositAmount)||depositAmount<=0))return toast('El monto del depósito no es válido.','error');
 
+ // PRODUCCIÓN: primero reservamos/procesamos el depósito de forma idempotente.
+ // La acreditación queda registrada dentro del perfil del remitente bajo depositCredits[id].
+ // Si el mismo depósito se procesa dos veces, la transacción no vuelve a sumar el dinero.
+ if(status==='Aprobado'&&firebaseReady){
+   const userRef=firebase.database().ref(DB_PATH+'/users/'+u.id);
+   const userTx=await userRef.transaction(v=>{
+     if(!v)return undefined;
+     const credits={...(v.depositCredits||{})};
+     if(credits[id]!==undefined)return v;
+     return {...v,balance:Number(v.balance||0)+depositAmount,depositCredits:{...credits,[id]:depositAmount}};
+   });
+   if(!userTx.committed)return toast('No se pudo acreditar el depósito en Firebase.','error');
+   state.users[u.id]=userTx.snapshot.val();
+   if(currentUser?.id===u.id)currentUser=state.users[u.id];
+   if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);
+   r=state.deposits[id];
+   r.balanceCredited=true;
+   r.balanceCreditedAt=r.balanceCreditedAt||now();
+   r.depositPrincipal=depositAmount;
+   r.accountingType='DEPOSITO_CAPITAL';
+   r.commissionRate=0;
+   r.commission=0;
+   delete r.commissionUser;
+   delete r.commissionAdmin;
+   r.status='Aprobado';
+   r.reviewedAt=now();
+   r.reviewedBy=currentUser.username;
+   r.manualReview=true;
+   r.reviewReason='';
+   generateReceipt('deposits',id);
+   state.deposits[id]=r;
+   await addNotification(u.id,'Depósito de '+money(r.amount)+' APROBADO. El 100% fue acreditado a su balance/capital. Comisión generada por este depósito: RD$0.00.','deposits',id);
+   await persist();
+   renderAll();
+   if(state.deposits[id]?.receipt)setTimeout(()=>showReceipt('deposits',id),180);
+   return toast('Depósito aprobado: '+money(depositAmount)+' acreditado al balance. Comisión: RD$0.00.','success');
+ }
+
+ // Rechazo / no coincide: no se mueve dinero porque un depósito pendiente nunca descuenta balance.
+ if(firebaseReady){
+   const ref=firebase.database().ref(DB_PATH+'/deposits/'+id);
+   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason});
+   if(!tx.committed)return toast('El depósito ya fue procesado o cambió en otro dispositivo.','warn');
+   r=tx.snapshot.val();state.deposits[id]=r;
+ }else{
+   r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state.deposits[id]=r;
+ }
+ await addNotification(u.id,'Su depósito fue '+status.toUpperCase()+'. '+reviewReason,'deposits',id);
+ await persist();
+ renderAll();
+ toast('Depósito '+status);
+}
 async function approveRequest(id,status){
  if(!isAdmin())return;
  let r=state.requests?.[id];if(!r||r.status!=='Pendiente')return;
