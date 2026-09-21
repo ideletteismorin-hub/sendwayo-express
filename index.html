@@ -159,6 +159,19 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <div class="kpi admin-only" id="kpi-remitters-card"><b>Total de Remitentes</b><h2 id="kpi-remitters">0</h2></div>
       <div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
     </div>
+    <div class="card admin-only" id="admin-finance-card" style="margin-top:18px;border-top:4px solid #0f2c59">
+      <div class="card-header">
+        <div><h3 style="margin-bottom:4px">Administración</h3><div class="muted">Control financiero exclusivo del Administrador</div></div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="openAdminCreditModal()"><i class="fa-solid fa-circle-plus"></i> Acreditar Administración</button>
+          <button class="btn btn-warning" onclick="switchView('ajustes_balances')"><i class="fa-solid fa-sliders"></i> Ajustar balances</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+        <div><small class="muted">Balance de la Administración</small><h2 id="dashboard-admin-balance" style="margin:4px 0">RD$ 0.00</h2></div>
+        <div class="info-box" style="margin:0;flex:1;min-width:260px">Aquí el Administrador puede acreditar fondos directamente al balance administrativo. Esto es independiente del balance de cada Remitente.</div>
+      </div>
+    </div>
     <div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
   </section>
 
@@ -1387,7 +1400,9 @@ function renderDashboardNotifications(){
  box.innerHTML=arr.slice(0,5).map(x=>`<div class="notif-item unread" style="margin-bottom:6px" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small></div>`).join('')||'<div class="muted">No hay notificaciones nuevas.</div>';
 }
 function renderDashboard(){
- let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);document.getElementById('kpi-commission').textContent=money(u.commission);const remKpi=document.getElementById('kpi-remitters')?.closest('.kpi');if(remKpi)remKpi.style.display=isAdmin()?'':'none';document.getElementById('kpi-remitters').textContent=isAdmin()?Object.values(state.users).filter(x=>x.role==='Remitente').length:0;let count=newestFirst(state.envios).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.recargas).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paqueticos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.pagos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paquetes).filter(x=>isAdmin()||x.userId===currentUser.id).length;document.getElementById('kpi-transactions').textContent=count;renderDashboardNotifications();
+ let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);document.getElementById('kpi-commission').textContent=money(u.commission);
+ const ab=document.getElementById('dashboard-admin-balance');if(ab){const au=Object.values(state.users||{}).find(x=>x.role==='Administrador')||state.users?.admin;ab.textContent=money(au?.balance||0);}
+const remKpi=document.getElementById('kpi-remitters')?.closest('.kpi');if(remKpi)remKpi.style.display=isAdmin()?'':'none';document.getElementById('kpi-remitters').textContent=isAdmin()?Object.values(state.users).filter(x=>x.role==='Remitente').length:0;let count=newestFirst(state.envios).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.recargas).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paqueticos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.pagos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paquetes).filter(x=>isAdmin()||x.userId===currentUser.id).length;document.getElementById('kpi-transactions').textContent=count;renderDashboardNotifications();
 }
 function renderEnvios(){
  let rows=newestFirst(state.envios).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>statusFilter==='Todos'||r.status===statusFilter);
@@ -1612,6 +1627,11 @@ localSave();
 await addNotification(u.id,'El Administrador acreditó '+money(amount)+' directamente a su balance/capital. Este depósito no genera comisión.','deposits',id);
 closeModal('adminDepositModal');renderAll();
 toast('Depósito acreditado directamente al balance de '+u.name+'. Comisión: RD$0.00.','success')}
+</script>
+<div class="modal" id="adminCreditModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('adminCreditModal')">×</button><h3 style="color:#0f2c59;margin-bottom:12px">Acreditar Administración</h3><div class="info-box" style="margin-bottom:12px"><b>Solo el Administrador.</b> Este movimiento acredita fondos directamente al balance de la Administración y no modifica el balance de ningún Remitente.</div><div class="form-group"><label>Monto a acreditar RD$</label><input id="admin-credit-amount" type="number" min="0" step="0.01" class="form-control"></div><div class="form-group"><label>Nota / Referencia</label><input id="admin-credit-note" class="form-control" placeholder="Opcional"></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('adminCreditModal')">Cerrar</button><button class="btn btn-primary" onclick="saveAdminCredit()">Acreditar Administración</button></div></div></div>
+<script>
+window.openAdminCreditModal=function(){if(!isAdmin())return toast('Solo el Administrador puede acreditar la Administración.','warn');document.getElementById('admin-credit-amount').value='';document.getElementById('admin-credit-note').value='';openModal('adminCreditModal')};
+window.saveAdminCredit=async function(){if(!isAdmin())return;const amount=Number(document.getElementById('admin-credit-amount').value||0),note=document.getElementById('admin-credit-note').value.trim();if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');const au=Object.values(state.users||{}).find(x=>x.role==='Administrador')||state.users?.admin;if(!au)return toast('No se encontró la cuenta de Administración.','error');const updated=await updateUserFinancials(au.id,amount,0);if(!updated)return toast('No se pudo acreditar la Administración en Firebase.','error');const id=uid('admcred');state.accounting=state.accounting||{};state.accounting[id]={id,type:'ACREDITAR_ADMINISTRACION',userId:au.id,amount,note,createdAt:now(),createdBy:currentUser.username};try{await firebase.database().ref(DB_PATH+'/accounting/'+id).set(state.accounting[id])}catch(e){console.warn('Registro administrativo:',e)}addAudit('Acreditar Administración',id);closeModal('adminCreditModal');renderAll();toast('Administración acreditada por '+money(amount)+'.','success')};
 </script>
 <div class="modal" id="adminBalanceAdjustModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('adminBalanceAdjustModal')">×</button><h3 id="admin-balance-adjust-title" style="color:#0f2c59;margin-bottom:12px">Modificar balance del Remitente</h3><div class="info-box" style="margin-bottom:12px">Este ajuste administrativo modifica únicamente el balance del Remitente seleccionado. No genera comisión ni modifica el balance administrativo.</div><input type="hidden" id="admin-balance-adjust-user"><input type="hidden" id="admin-balance-adjust-mode"><div class="form-group"><label>Remitente</label><input id="admin-balance-adjust-name" class="form-control" readonly></div><div class="form-group"><label id="admin-balance-adjust-label">Cantidad RD$</label><input id="admin-balance-adjust-amount" type="number" min="0" step="0.01" class="form-control"></div><div class="form-group"><label>Nota administrativa</label><input id="admin-balance-adjust-note" class="form-control" placeholder="Opcional"></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('adminBalanceAdjustModal')">Cerrar</button><button class="btn btn-primary" onclick="saveAdminBalanceAdjustment()">Guardar ajuste</button></div></div></div>
 <script>
