@@ -1633,7 +1633,25 @@ async function crearAccesosIniciales(){
 }
 function attachRealtimeListeners(){
  if(!firebaseReady||!firebase.auth().currentUser)return;
- const db=firebase.database().ref(DB_PATH);db.off();db.on('value',snap=>{if(!snap.exists())return;const remote=snap.val()||{};state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};ensureSeedData();lastSyncedState=cloneState(state);if(currentUser){const fresh=state.users?.[currentUser.id];if(fresh&&fresh.active!==false)currentUser=fresh}renderAll()});
+ const db=firebase.database().ref(DB_PATH);
+ db.off();
+ db.on('value',snap=>{
+   if(!snap.exists())return;
+   const remote=snap.val()||{};
+   // RTDB es la fuente de verdad: sustituimos el estado visible completo,
+   // evitando que registros eliminados o antiguos sobrevivan en memoria.
+   state={...remote};
+   state.users=remote.users||{};
+   state.beneficiaries=remote.beneficiaries||{};
+   state.accounts=remote.accounts||{};
+   state.settings=remote.settings||{};
+   lastSyncedState=cloneState(state);
+   if(currentUser){
+     const fresh=state.users?.[currentUser.id];
+     if(fresh&&fresh.active!==false)currentUser=fresh;
+   }
+   renderAll();
+ });
  const connRef=firebase.database().ref('.info/connected');connRef.off();connRef.on('value',snap=>{const connected=snap.val()===true;const b=document.querySelector('.refresh-btn');if(b){b.title=connected?'Firebase conectado · Actualizar ahora':'Firebase sin conexión · Reintentando';b.style.opacity=connected?'1':'.55'}});startAutoFirebaseRefresh();
  const nref=firebase.database().ref(DB_PATH+'/notifications');nref.off();nref.on('child_added',snap=>{const n=snap.val();if(!n)return;state.notifications=state.notifications||{};const existed=!!state.notifications[n.id];state.notifications[n.id]=n;if(notificationHydrated&&!existed&&(n.targetUserId===currentUser?.id||(isAdmin()&&n.target==='Administrador'))){playBell();if(n.collection&&n.recordId&&state[n.collection]?.[n.recordId]?.status==='Aprobado'&&state[n.collection]?.[n.recordId]?.receipt){setTimeout(()=>showReceipt(n.collection,n.recordId),180)}}renderNotifications()});nref.on('child_changed',snap=>{const n=snap.val();if(n){state.notifications=state.notifications||{};state.notifications[n.id]=n;renderNotifications()}});nref.on('child_removed',snap=>{const id=snap.key;if(state.notifications)delete state.notifications[id];renderNotifications()});nref.once('value').then(()=>notificationHydrated=true).catch(()=>notificationHydrated=true);
 }
