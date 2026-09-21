@@ -702,9 +702,9 @@ async function realizarLogin(){
  const setStatus=(msg,kind='')=>{if(status){status.textContent=msg;status.className='login-status '+kind}};
  const identifier=document.getElementById('login-user').value.trim();
  const password=document.getElementById('login-pass').value;
- // Evitar que onAuthStateChanged compita con este inicio de sesión y cierre la sesión antes de terminar de cargar el perfil.
- window.__sendwayoLoginInProgress=true;
+ // Validar primero. El bloqueo de la sincronización solo se activa cuando realmente comienza el inicio de sesión.
  if(!identifier||!password){setStatus('Escriba su usuario o correo y su contraseña.','warn');return toast('Escriba su usuario o correo y su contraseña.','warn')}
+ window.__sendwayoLoginInProgress=true;
  const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
  if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='Conectando…'}
  try{
