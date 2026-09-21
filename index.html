@@ -805,7 +805,7 @@ async function loadAuthorizedState(authUser){
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
  if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-3'){delete state.settings.productionResetVersion;productionResetState()}
  if(authUser?.email===state.users?.admin?.authEmail || authUser?.email==='sendwayoexpress@gmail.com'){
- const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-4';
+ const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-5';
  if(state.settings?.productionFinancialResetVersion!==resetMarker){
   const users={...state.users};
   Object.values(users).forEach(u=>{if(u){u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits;}});
@@ -826,7 +826,7 @@ const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(b
 
 async function resetProductionFinancialsIfNeeded(){
  if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-4';
+ const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-5';
  if(state.settings?.productionFinancialResetVersion===marker)return false;
  const users={...state.users};
  Object.values(users).forEach(u=>{
