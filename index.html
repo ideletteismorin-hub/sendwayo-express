@@ -579,10 +579,21 @@ async function realizarLogin(){
      ]);
    }
    const authUser=cred.user;
+   // IMPORTANTE: después de autenticarse hay que cargar Firebase y conectar los
+   // listeners antes de mostrar el panel. Sin esto, el usuario podía entrar con
+   // datos locales y no recibir operaciones/notificaciones creadas desde otro dispositivo.
+   setStatus('Sincronizando operaciones y notificaciones…');
+   await Promise.race([
+     loadAuthorizedState(authUser),
+     new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))
+   ]);
    found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email===state.users.admin.authEmail)||(u.authUid===authUser.uid)||(u.authEmail===authUser.email)||String(u.username||'').toLowerCase()===identifier.toLowerCase());
    if(!found)throw new Error('PROFILE_NOT_FOUND');
    if(found.active===false)throw new Error('INACTIVE');
    found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
+   // Reforzar la suscripción después de establecer currentUser para que las
+   // notificaciones y operaciones nuevas se filtren correctamente por usuario.
+   attachRealtimeListeners();
    setStatus('Acceso autorizado. Cargando su espacio…','ok');
    showAppForUser(found);applyRoleVisibility();renderAll();toast('Bienvenido, '+found.name+'.','success');
  }catch(e){
@@ -698,7 +709,22 @@ function closeModal(id){
  if(id==='requestModal'){document.body.style.overflow='';showWelcome()}
 }
 function resolveNotificationTarget(target){if(target==='Administrador')return{target:'Administrador',targetUserId:'admin',targetUsername:'admin'};if(state.users?.[target]){const u=state.users[target];return{target:u.username||String(target),targetUserId:u.id,targetUsername:u.username||String(target)}}const u=Object.values(state.users||{}).find(x=>x.username===target);if(u)return{target:u.username,targetUserId:u.id,targetUsername:u.username};return{target:String(target),targetUserId:null,targetUsername:String(target)}}
-async function addNotification(target,msg,collection=null,recordId=null){const id=uid('n'),t=resolveNotificationTarget(target),n={id,...t,msg,collection,recordId,createdAt:now(),read:false};state.notifications=state.notifications||{};state.notifications[id]=n;knownNotificationIds.add(id);localSave();if(t.target==='Administrador'&&isAdmin())playBell();if(firebaseReady){try{await firebase.database().ref(DB_PATH+'/notifications/'+id).set(n)}catch(e){console.warn('Firebase notification:',e)}}renderNotifications();return id}
+async function addNotification(target,msg,collection=null,recordId=null){
+ const id=uid('n'),t=resolveNotificationTarget(target),n={id,...t,msg,collection,recordId,createdAt:now(),read:false};
+ state.notifications=state.notifications||{};state.notifications[id]=n;knownNotificationIds.add(id);localSave();
+ if(firebaseReady){
+   try{
+     await firebase.database().ref(DB_PATH+'/notifications/'+id).set(n);
+     markSynced(['notifications',id],n);
+   }catch(e){
+     console.warn('Firebase notification:',e);
+     delete state.notifications[id];knownNotificationIds.delete(id);localSave();
+     throw e;
+   }
+ }
+ if(t.target==='Administrador'&&isAdmin())playBell();
+ renderNotifications();return id
+}
 async function removeNotification(id){if(!id)return;if(state.notifications?.[id])delete state.notifications[id];knownNotificationIds.delete(id);localSave();if(firebaseReady){try{await firebase.database().ref(DB_PATH+'/notifications/'+id).remove()}catch(e){console.warn('Firebase remove notification:',e)}}renderNotifications()}
 
 async function removeNotificationByRecord(collection,id){
