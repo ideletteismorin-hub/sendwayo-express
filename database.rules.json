@@ -21,7 +21,7 @@
     "notifications": {
       "$id": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('targetUserId').val() === root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('authUid').val()))"
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && (newData.child('targetUserId').val() === root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('authUid').val() || newData.child('target').val() === 'Administrador')))"
       }
     },
     "settings": {
