@@ -2160,11 +2160,20 @@ async function setTransactionStatus(collection,id,status){
  const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
  const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?.085:.05));
  if(status==='Aprobado'){
-   const userShare=commission*.50,adminShare=commission-userShare;
-   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo aplicar la comisión al remitente.','error');
-   const adminUpdated=await updateUserFinancials('admin',adminShare,adminShare);
-   if(!adminUpdated)return toast('No se pudo actualizar el balance administrativo.','error');
-   r=state[collection][id];r.commissionUser=userShare;r.commissionAdmin=adminShare;r.commissionRate=(collection==='envios'?.085:.05);r.balanceDebited=!!r.balanceDebited;r.balanceSettledAt=now();generateReceipt(collection,id);state[collection][id]=r;
+   // REGLA CONTABLE SENDWAYO: la comisión de una operación pertenece al Remitente.
+   // Nunca se acredita al balance administrativo.
+   const userShare=commission,adminShare=0;
+   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar la comisión al balance del remitente.','error');
+   r=state[collection][id];
+   r.commissionUser=userShare;
+   r.commissionAdmin=0;
+   r.commissionRate=(collection==='envios'?.085:.05);
+   r.commissionAccount='REMITENTE';
+   r.balanceDebited=!!r.balanceDebited;
+   r.balanceSettledAt=now();
+   r.net=Number(r.amount||0)-Number(r.commission||0);
+   generateReceipt(collection,id);
+   state[collection][id]=r;
  }else if((status==='Rechazado'||status==='No coincide')&&r.balanceDebited&&!r.balanceRefunded){
    if(!await adjustReservedBalance(u.id,Number(r.amount||0)*-1))return toast('No se pudo devolver el balance reservado al remitente.','error');
    r=state[collection][id];r.balanceRefunded=true;r.balanceRefundedAt=now();state[collection][id]=r;
