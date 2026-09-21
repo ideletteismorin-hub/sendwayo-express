@@ -372,7 +372,7 @@ function setLanguage(lang){
  document.documentElement.lang=lang==='ht'?'ht':lang; translateInterface(); try{if(typeof renderAll==='function')renderAll()}catch(e){} setTimeout(()=>translateInterface(),0);
 }
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
-function productionResetState(){const marker='2026-09-21-PRODUCTION-RESET-4';state.settings=state.settings||{};if(state.settings.productionResetVersion===marker)return false;['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]={});state.beneficiaries={};state.accounts=state.accounts||{}; BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});Object.values(state.users||{}).filter(u=>u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;u.active=true;u.phone=u.phone||'';u.doc=u.doc||''});if(state.users?.admin){state.users.admin.balance=0;state.users.admin.commission=0;state.users.admin.referrals=0}state.settings.productionResetVersion=marker;return true}
+function productionResetState(){const marker='2026-09-21-PRODUCTION-RESET-5';state.settings=state.settings||{};if(state.settings.productionResetVersion===marker)return false;['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]={});state.beneficiaries={};state.accounts=state.accounts||{}; BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});Object.values(state.users||{}).filter(u=>u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;u.active=true;u.phone=u.phone||'';u.doc=u.doc||''});if(state.users?.admin){state.users.admin.balance=0;state.users.admin.commission=0;state.users.admin.referrals=0}state.settings.productionResetVersion=marker;return true}
 const DEMO_ACCOUNTS=[
       {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:0},
  {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
@@ -648,7 +648,7 @@ async function boot(){
           await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
           const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
           if(found&&found.active!==false){
-            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
+            found.authUid=authUser.uid;found.authEmail=authUser.email;await resetProductionFinancialsIfNeeded();currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
           }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
@@ -807,6 +807,29 @@ async function loadAuthorizedState(authUser){
  const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
+async function resetProductionFinancialsIfNeeded(){
+ if(!firebaseReady||!currentUser||!isAdmin())return false;
+ const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-1';
+ if(state.settings?.productionFinancialResetVersion===marker)return false;
+ const users={...state.users};
+ Object.values(users).forEach(u=>{
+   if(!u)return;
+   u.balance=0;u.commission=0;u.referrals=0;
+   delete u.depositCredits;
+ });
+ const updates={};
+ ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>updates[k]=null);
+ Object.entries(users).forEach(([id,u])=>{updates['users/'+id]=u});
+ updates['settings/productionFinancialResetVersion']=marker;
+ try{
+   await firebase.database().ref(DB_PATH).update(updates);
+   state.users=users;
+   state.envios={};state.recargas={};state.paqueticos={};state.pagos={};state.paquetes={};state.deposits={};state.accountWithdrawals={};state.commissions={};state.requests={};state.notifications={};state.audit={};state.beneficiaries={};
+   state.settings=state.settings||{};state.settings.productionFinancialResetVersion=marker;
+   lastSyncedState=cloneState(state);localSave();knownNotificationIds.clear();
+   return true;
+ }catch(e){console.warn('Production financial reset:',e);toast('No se pudo completar el reinicio a cero en Firebase.','error');return false}
+}
 function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
 function applyRoleVisibility(){
  let admin=isAdmin();
@@ -1190,80 +1213,55 @@ async function approveDeposit(id,status){
    if(!reviewReason)return toast('Debe escribir un motivo.','warn');
  }
  const u=state.users?.[r.userId];if(!u)return toast('No se encontró el remitente del depósito.','error');
- r=enforceDepositCapital(r); state.deposits[id]=r;
  const depositAmount=Number(r.amount||0);
- if(status==='Aprobado'&&(!Number.isFinite(depositAmount)||depositAmount<=0))return toast('El monto del depósito no es válido.','error');
+ if(!Number.isFinite(depositAmount)||depositAmount<=0)return toast('El monto del depósito no es válido.','error');
 
- // PRODUCCIÓN: primero reservamos/procesamos el depósito de forma idempotente.
- // La acreditación queda registrada dentro del perfil del remitente bajo depositCredits[id].
- // Si el mismo depósito se procesa dos veces, la transacción no vuelve a sumar el dinero.
- if(status==='Aprobado'&&firebaseReady){
-   const userRef=firebase.database().ref(DB_PATH+'/users/'+u.id);
-   const userTx=await userRef.transaction(v=>{
-     if(!v)return undefined;
-     const credits={...(v.depositCredits||{})};
-     if(credits[id]!==undefined)return v;
-     return {...v,balance:Number(v.balance||0)+depositAmount,depositCredits:{...credits,[id]:depositAmount}};
-   });
-   if(!userTx.committed)return toast('No se pudo acreditar el depósito en Firebase.','error');
-   state.users[u.id]=userTx.snapshot.val();
-   if(currentUser?.id===u.id)currentUser=state.users[u.id];
-   if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);
-   r=state.deposits[id];
-   r.balanceCredited=true;
-   r.balanceCreditedAt=r.balanceCreditedAt||now();
-   r.depositPrincipal=depositAmount;
-   r.accountingType='DEPOSITO_CAPITAL';
-   r.commissionRate=0;
-   r.commission=0;
-   delete r.commissionUser;
-   delete r.commissionAdmin;
-   r.status='Aprobado';
-   r.reviewedAt=now();
-   r.reviewedBy=currentUser.username;
-   r.manualReview=true;
-   r.reviewReason='';
-   generateReceipt('deposits',id);
-   state.deposits[id]=r;
-   await addNotification(u.id,'Depósito de '+money(r.amount)+' APROBADO. El 100% fue acreditado a su balance/capital. Comisión generada por este depósito: RD$0.00.','deposits',id);
-   await persist();
-   renderAll();
-   if(state.deposits[id]?.receipt)setTimeout(()=>showReceipt('deposits',id),180);
-   return toast('Depósito aprobado: '+money(depositAmount)+' acreditado al balance. Comisión: RD$0.00.','success');
- }
-
- // Rechazo / no coincide: como el depósito ya fue acreditado al entrar, se devuelve una sola vez.
- if((status==='Rechazado'||status==='No coincide')&&r.balanceCredited&&!r.balanceRefunded){
+ // REGLA ÚNICA DE DEPÓSITOS:
+ // 1) El depósito del Remitente permanece pendiente y NO modifica ningún balance.
+ // 2) Solo al aprobarlo el Administrador se acredita el 100% al balance/capital del Remitente.
+ // 3) El depósito nunca genera comisión y nunca modifica el balance/comisión del Administrador.
+ // 4) La acreditación es idempotente: un depósito aprobado no puede sumarse dos veces.
+ if(status==='Aprobado'){
    if(firebaseReady){
      const userRef=firebase.database().ref(DB_PATH+'/users/'+u.id);
-     const txRefund=await userRef.transaction(v=>{
+     const userTx=await userRef.transaction(v=>{
        if(!v)return undefined;
        const credits={...(v.depositCredits||{})};
-       if(credits[id]===undefined)return v;
-       const next={...v,balance:Math.max(0,Number(v.balance||0)-depositAmount),depositCredits:{...credits}};
-       delete next.depositCredits[id];
-       return next;
+       if(credits[id]!==undefined)return v;
+       return {...v,balance:Number(v.balance||0)+depositAmount,commission:Number(v.commission||0),depositCredits:{...credits,[id]:depositAmount}};
      });
-     if(!txRefund.committed)return toast('No se pudo devolver el depósito al balance del remitente.','error');
-     state.users[u.id]=txRefund.snapshot.val();
+     if(!userTx.committed)return toast('No se pudo acreditar el depósito al balance del remitente.','error');
+     state.users[u.id]=userTx.snapshot.val();
      if(currentUser?.id===u.id)currentUser=state.users[u.id];
+     if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);
    }else{
-     state.users[u.id].balance=Math.max(0,Number(state.users[u.id].balance||0)-depositAmount);
+     const credits={...(u.depositCredits||{})};
+     if(credits[id]===undefined){u.balance=Number(u.balance||0)+depositAmount;credits[id]=depositAmount;u.depositCredits=credits}
+     u.commission=Number(u.commission||0);
+     state.users[u.id]=u;
    }
-   r=state.deposits[id];r.balanceRefunded=true;r.balanceRefundedAt=now();state.deposits[id]=r;
+   r=enforceDepositCapital(r);
+   r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=depositAmount;
+   r.status='Aprobado';r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason='';
+   generateReceipt('deposits',id);state.deposits[id]=r;
+   if(firebaseReady)await firebase.database().ref(DB_PATH+'/deposits/'+id).set(r);
+   try{await addNotification(u.id,'Depósito de '+money(depositAmount)+' APROBADO. El 100% fue acreditado directamente a su balance/capital. Comisión: RD$0.00. No afecta el balance ni la comisión del Administrador.','deposits',id)}catch(e){console.warn('Notificación de depósito:',e)}
+   await persist();renderAll();
+   if(r.receipt)setTimeout(()=>showReceipt('deposits',id),180);
+   return toast('Depósito aprobado: '+money(depositAmount)+' acreditado directamente al balance del remitente. Comisión: RD$0.00.','success');
  }
+
+ // Rechazado / No coincide: como nunca se acreditó mientras estaba pendiente, no se toca ningún balance.
  if(firebaseReady){
    const ref=firebase.database().ref(DB_PATH+'/deposits/'+id);
-   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason});
+   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason,accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0});
    if(!tx.committed)return toast('El depósito ya fue procesado o cambió en otro dispositivo.','warn');
    r=tx.snapshot.val();state.deposits[id]=r;
  }else{
-   r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state.deposits[id]=r;
+   r=enforceDepositCapital(r);r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state.deposits[id]=r;
  }
- await addNotification(u.id,'Su depósito fue '+status.toUpperCase()+'. '+reviewReason,'deposits',id);
- await persist();
- renderAll();
- toast('Depósito '+status);
+ try{await addNotification(u.id,'Su depósito fue '+status.toUpperCase()+'. '+reviewReason+' No se generó comisión.','deposits',id)}catch(e){console.warn('Notificación de depósito:',e)}
+ await persist();renderAll();toast('Depósito '+status);
 }
 async function approveRequest(id,status){
  if(!isAdmin())return;
