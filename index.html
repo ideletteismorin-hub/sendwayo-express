@@ -455,7 +455,7 @@ function ensureSeedData(){
   state.settings=state.settings||{contact:{phone:'8920051255',email:'sendwayoexpress@gmail.com'}};state.settings.contact=state.settings.contact||{phone:'8920051255',email:'sendwayoexpress@gmail.com'};
   productionResetState();
   state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};
-  DEMO_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]=x; state.users[x.id].authEmail=authEmailFor(state.users[x.id])}); state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; BENEFICIARIES.forEach(x=>{if(!state.beneficiaries[x.id])state.beneficiaries[x.id]=x}); state.accounts=state.accounts||{}; BANKS.forEach(x=>{if(!state.accounts[x.id])state.accounts[x.id]=x});
+  DEMO_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]=x;if(!state.users[x.id].authEmail)state.users[x.id].authEmail=authEmailFor(state.users[x.id])}); state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{};
   ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]=state[k]||{});
   ensureStaffDirectory();
 }
