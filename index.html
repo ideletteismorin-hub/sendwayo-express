@@ -604,12 +604,62 @@ async function realizarLogin(){
    if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'Ingresar al Sistema'}
  }
 }
-async function repairApprovedDeposits(){if(!firebaseReady)return;const deposits=newestFirst(state.deposits||{}).filter(r=>r&&r.status==='Aprobado');for(const r of deposits){const amount=Number(r.amount||0);if(!Number.isFinite(amount)||amount<=0)continue;const u=state.users?.[r.userId];if(!u)continue;if(r.balanceCredited===true)continue;const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);const tx=await ref.transaction(v=>{if(!v)return undefined;const credits={...(v.depositCredits||{})};if(credits[r.id]!==undefined)return v;return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}}});if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r)}}if(currentUser)renderAll()}
+async function repairApprovedDeposits(){
+ if(!firebaseReady)return;
+ const deposits=newestFirst(state.deposits||{}).filter(r=>r&&r.status==='Aprobado');
+ for(const r of deposits){
+   const amount=Number(r.amount||0);if(!Number.isFinite(amount)||amount<=0)continue;
+   const u=state.users?.[r.userId];if(!u)continue;
+   // REGLA CONTABLE INVIOLABLE: un depósito es CAPITAL/BALANCE, nunca comisión.
+   r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;
+   if(r.balanceCredited!==true){
+     const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
+     const tx=await ref.transaction(v=>{
+       if(!v)return undefined;
+       const credits={...(v.depositCredits||{})};
+       if(credits[r.id]!==undefined)return v;
+       return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}};
+     });
+     if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;}
+   }
+   state.deposits[r.id]=r;
+   await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);
+ }
+ if(currentUser)renderAll();
+}
+
+async function repairLegacyDepositCommissions(){
+ if(!firebaseReady||state.settings?.depositAccountingRepairV1==='DONE')return;
+ let changed=false;
+ for(const r of Object.values(state.deposits||{})){
+   if(!r||r.accountingType!=='DEPOSITO_CAPITAL')continue;
+   const u=state.users?.[r.userId];if(!u)continue;
+   const related=Object.values(state.commissions||{}).filter(c=>c&&(
+     c.depositId===r.id || c.recordId===r.id || (c.collection==='deposits'&&c.userId===r.userId)
+   ));
+   for(const cm of related){
+     const cmAmount=Number(cm.amount||0);
+     if(cmAmount>0){
+       const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
+       const tx=await ref.transaction(v=>v?({...v,commission:Math.max(0,Number(v.commission||0)-cmAmount),balance:Number(v.balance||0)+(r.balanceCredited===true?0:cmAmount)}):v);
+       if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];}
+     }
+     delete state.commissions[cm.id];
+     await firebase.database().ref(DB_PATH+'/commissions/'+cm.id).remove();
+     changed=true;
+   }
+   if(r.status==='Aprobado'){r.commission=0;r.commissionRate=0;delete r.commissionUser;delete r.commissionAdmin;state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);changed=true;}
+ }
+ state.settings=state.settings||{};state.settings.depositAccountingRepairV1='DONE';
+ if(changed)await persist();else await firebase.database().ref(DB_PATH+'/settings/depositAccountingRepairV1').set('DONE');
+ if(currentUser)renderAll();
+}
+
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
  if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-2'){delete state.settings.productionResetVersion;productionResetState()}
- const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();lastSyncedState=cloneState(state);attachRealtimeListeners();
+ const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
 function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
