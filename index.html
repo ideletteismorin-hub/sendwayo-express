@@ -320,7 +320,7 @@ const firebaseConfig={
  appId:"1:191723694148:web:ca19828cb8fb566a67b411",
  measurementId:"G-9RL875KYH9"
 };
-function fullPhone(countryId,number){const c=document.getElementById(countryId)?.value||'';const n=String(number||'').replace(/\D/g,'');return c?n?c.replace(/-.*$/,'')+n:n}
+function fullPhone(countryId,number){const c=String(document.getElementById(countryId)?.value||'').replace(/[^0-9+]/g,'');const n=String(number||'').replace(/\D/g,'');return c?n?c+n:n}
 const LANG={es:{approved:'APROBADO',download:'Descargar / guardar',thanks:'¡Gracias por preferirnos!'},fr:{approved:'APPROUVÉ',download:'Télécharger / enregistrer',thanks:'Merci de nous avoir choisis !'},en:{approved:'APPROVED',download:'Download / save',thanks:'Thank you for choosing us!'},ht:{approved:'APWOUVE',download:'Telechaje / sove',thanks:'Mèsi paske ou chwazi nou!'}};
 function setLanguage(lang){if(!LANG[lang])lang='es';localStorage.setItem('sendwayo_language',lang);const s=document.getElementById('language-selector');if(s)s.value=lang;const ws=document.getElementById('welcome-language-selector');if(ws)ws.value=lang;document.documentElement.lang=lang==='ht'?'ht':lang;const t=LANG[lang];document.querySelectorAll('[data-lang-key]').forEach(el=>{const k=el.dataset.langKey;if(t[k])el.textContent=t[k]})}
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
