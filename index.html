@@ -824,7 +824,7 @@ async function loadAuthorizedState(authUser){
 const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
-async async function resetProductionFinancialsIfNeeded(){
+async function resetProductionFinancialsIfNeeded(){
  if(!firebaseReady||!currentUser||!isAdmin())return false;
  const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-4';
  if(state.settings?.productionFinancialResetVersion===marker)return false;
