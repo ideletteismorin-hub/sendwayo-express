@@ -155,10 +155,12 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <section id="view-dashboard" class="view-section active">
     <div class="kpis">
       <div class="kpi"><b>Balance Disponible</b><h2 id="kpi-balance">RD$ 0.00</h2><small class="muted">Disponible para operaciones autorizadas</small></div>
-      <div class="kpi" style="border-top-color:#f3b51b"><b>Comisiones Acumuladas</b><h2 id="kpi-commission">RD$ 0.00</h2></div>
+      <div class="kpi" style="border-top-color:#f3b51b"><b>Total de Comisión</b><h2 id="kpi-commission">RD$ 0.00</h2><small class="muted">Acumulada histórica</small></div>
+      <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión de hoy</b><h2 id="kpi-commission-today">RD$ 0.00</h2><small class="muted">Generada y aprobada hoy</small></div>
       <div class="kpi admin-only" id="kpi-remitters-card"><b>Total de Remitentes</b><h2 id="kpi-remitters">0</h2></div>
       <div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
     </div>
+    <div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Ajustes financieros de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Permite acreditar un saldo exacto a la Administración o agregar/quitar dinero del balance administrativo. Los cambios se guardan directamente en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div></div>
     <div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
   </section>
 
@@ -242,10 +244,11 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
   </section>
 
   <section id="view-secretas" class="view-section">
+    <div class="card admin-only" style="margin-bottom:12px"><div class="card-header"><h3>Acreditar Administración</h3><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button></div><p class="muted">Acredita la administración para ir ajustando los precios según lo conveniente. El monto indicado establece exactamente el balance de la Administración.</p><div style="margin-top:8px"><b>Balance actual:</b> <span id="secret-admin-balance">RD$ 0.00</span></div></div>
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
     <div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
-    <div class="table-wrap"><table id="secTable"><thead><tr><th>N°</th><th>Rol</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Correo Auth</th><th>Estado</th><th>Acceso</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="table-wrap"><table id="secTable"><thead><tr><th>N°</th><th>Rol</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Correo Auth</th><th>Estado</th><th>Acceso</th><th>Balance</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
   <section id="view-perfil" class="view-section">
@@ -273,6 +276,8 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 <div class="modal" id="beneficiarioModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('beneficiarioModal')">×</button><h3>Registrar Beneficiario</h3><div class="form-grid"><div class="form-group"><label>Nombre y Apellido</label><input id="ben-nombre" class="form-control"></div><div class="form-group"><label>Número Celular / WhatsApp</label><div class="phone-wrap"><select id="ben-country" class="form-control"><option value="+509">🇭🇹 Haití (+509)</option><option value="+1-829">🇩🇴 República Dominicana (+1 829)</option><option value="+1-849">🇩🇴 República Dominicana (+1 849)</option><option value="+1">🇺🇸 Estados Unidos (+1)</option><option value="+33">🇫🇷 Francia (+33)</option><option value="+39">🇮🇹 Italia (+39)</option><option value="+34">🇪🇸 España (+34)</option><option value="+1-514">🇨🇦 Canadá (+1 514)</option><option value="+44">🇬🇧 Reino Unido (+44)</option><option value="+49">🇩🇪 Alemania (+49)</option><option value="+27">🇿🇦 Sudáfrica (+27)</option><option value="+55">🇧🇷 Brasil (+55)</option><option value="+57">🇨🇴 Colombia (+57)</option><option value="+58">🇻🇪 Venezuela (+58)</option></select><input id="ben-cel" class="form-control" inputmode="tel" placeholder="Número sin código"></div><div class="country-hint">Ejemplo Haití: +509.</div></div><div class="form-group"><label>Dirección</label><input id="ben-dir" class="form-control"></div><div class="form-group"><label>Estado</label><select id="ben-active" class="form-control"><option value="true">Activo</option><option value="false">Inactivo</option></select></div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('beneficiarioModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarBeneficiario()">Guardar</button></div></div></div>
 
 <div class="modal" id="cuentaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('cuentaModal')">×</button><h3>Agregar Cuenta Bancaria</h3><div class="form-grid"><div class="form-group"><label>Banco</label><input id="cta-banco" class="form-control"></div><div class="form-group"><label>Titular</label><input id="cta-titular" class="form-control" value="Herace Fleuranvil"></div><div class="form-group"><label>Número de Cuenta</label><input id="cta-numero" class="form-control"></div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('cuentaModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarCuenta()">Guardar</button></div></div></div>
+
+<div class="modal" id="adminBalanceModal" onclick="handleModalBackdropClick(event)"><div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal('adminBalanceModal')">×</button><h3 id="admin-balance-title">Ajustar balance</h3><div class="info-box">Esta herramienta es exclusiva del Administrador y actualiza directamente Firebase.</div><div class="form-group" style="margin-top:12px"><label>Cuenta</label><select id="admin-balance-target" class="form-control" onchange="refreshAdminBalanceModal()"></select></div><div class="form-group"><label>Operación</label><select id="admin-balance-mode" class="form-control" onchange="refreshAdminBalanceModal()"><option value="set">Acreditar: establecer saldo exacto</option><option value="add">Agregar dinero al balance</option><option value="subtract">Quitar dinero del balance</option></select></div><div class="form-group"><label id="admin-balance-amount-label">Nuevo saldo exacto (RD$)</label><input id="admin-balance-amount" type="number" min="0" step="0.01" class="form-control"></div><div class="muted">Balance actual: <b id="admin-balance-current">RD$ 0.00</b></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('adminBalanceModal')">Cerrar</button><button class="btn btn-primary" onclick="saveAdminBalanceAdjustment()">Guardar en Firebase</button></div></div></div>
 
 <div class="modal" id="depositoModal" onclick="handleModalBackdropClick(event)"><div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal('depositoModal')">×</button><h3>Agregar Depósito</h3><div id="dep-remitente-wrap" class="form-group admin-only"><label>Remitente al que se acreditará el depósito</label><select id="dep-remitente" class="form-control"></select><small class="muted">Solo el Administrador puede acreditar capital directamente.</small></div><div class="form-grid"><div class="form-group"><label>Cuenta Bancaria de Destino</label><select id="dep-cuenta" class="form-control"></select></div><div class="form-group"><label>Cantidad RD$</label><input id="dep-monto" type="number" min="0" class="form-control"></div></div><div class="form-group"><label>Voucher / Comprobante</label><input id="dep-voucher" type="file" class="form-control" accept="image/*,.pdf"></div><div class="muted">Depósito del remitente: PENDIENTE hasta revisión. Depósito asignado por el Administrador: se acredita directamente al balance del remitente y no genera comisión.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('depositoModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarDeposito()">Guardar</button></div></div></div>
 
@@ -648,7 +653,7 @@ async function boot(){
           await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
           const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
           if(found&&found.active!==false){
-            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;await resetProductionFinancialsIfNeeded();lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
+            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;await resetProductionFinancialsIfNeeded();await ensureAllRemittersStartAtZero();lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
           }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
@@ -715,7 +720,7 @@ async function realizarLogin(){
    found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email===state.users.admin.authEmail)||(u.authUid===authUser.uid)||(u.authEmail===authUser.email)||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
    if(!found)throw new Error('PROFILE_NOT_FOUND');
    if(found.active===false)throw new Error('INACTIVE');
-   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
+   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;await ensureAllRemittersStartAtZero();lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
    setStatus('Acceso autorizado. Sincronizando…','ok');
    showAppForUser(found);applyRoleVisibility();renderAll();
    // Ya dentro del sistema, sincronizamos Firebase sin bloquear ni cerrar la sesión.
@@ -1357,7 +1362,7 @@ function showReceipt(collection,id){
  const r=state[collection]?.[id],rec=r?.receipt;if(!rec||r.status!=='Aprobado')return toast('El recibo solo aparece después de la aprobación del Administrador.','warn');
  const u=state.users?.[r.userId]||state.users?.admin||{},benName=rec.beneficiario||r.beneficiario||'Según operación',benPhone=rec.beneficiarioPhone||r.beneficiarioPhone||'',tipo=rec.type||r.type||transactionConcept(collection,r),ruta=rec.route||r.route||r.type||'Según operación',idRem=rec.staffId||u.staffId||'XXX-[ID-REMITENTE]';
  const net=Number(rec.net??r.net??r.amount??0),commission=Number(rec.commission??r.commission??0),amount=Number(rec.amount??r.amount??0);
- document.getElementById('detail-content').innerHTML=`<div class="receipt-shell receipt-compact"><div class="receipt-head"><img class="receipt-logo" src="${LOGO_DATA}" alt="SENDWAYO EXPRESS"><h2>SENDWAYO EXPRESS</h2><p class="receipt-slogan">Más que distancias conectamos confianza con la calidad y seguridad que llegan a donde estás</p><p style="margin:5px 0;font-size:.78rem">📧 sendwayoexpress@gmail.com</p><div class="receipt-original">FACTURA / COMPROBANTE # ${escapeHtml(rec.id)}</div><div style="font-size:.75rem;margin-top:5px"><b>FECHA Y HORA</b> ${escapeHtml(rec.date)} ${escapeHtml(rec.time)}</div></div><div class="receipt-concept"><b>DETALLES DE LA TRANSACCIÓN</b></div><div class="receipt-grid-compact"><div><b>Tipo</b><span>${escapeHtml(tipo)}</span></div><div><b>Ruta</b><span>${escapeHtml(ruta)}</span></div><div><b>ID Remitente</b><span>${escapeHtml(idRem)}</span></div><div><b>Estado</b><span style="color:#166534">✓ APROBADO</span></div></div><div class="receipt-concept"><b>INFORMACIÓN DEL BENEFICIARIO</b></div><div class="receipt-grid-compact"><div><b>Beneficiario</b><span>${escapeHtml(benName)}</span></div><div><b>Celular</b><span>${escapeHtml(benPhone)}</span></div></div><div class="receipt-grid-compact" style="margin-top:7px"><div><b>Monto de la operación</b><span>${money(amount)}</span></div><div><b>Comisión total</b><span>${money(commission)}</span></div><div><b>50% Remitente</b><span>${money(rec.commissionUser||0)}</span></div><div><b>50% Administración</b><span>${money(rec.commissionAdmin||0)}</span></div></div><div class="receipt-amount-row"><span>MONTO NETO A RECIBIR (Sin deducciones)</span><strong>${money(net)}</strong></div><div style="text-align:center;border-top:1px solid #d8e0e8;margin-top:10px;padding-top:8px"><b>FACTURA ORIGINAL</b></div><p class="receipt-thanks">¡Gracias por preferirnos!</p><p class="receipt-bottom-line">¡Hazlo todo sin moverte de casa! Quédate cómodo y nosotros nos encargamos.</p><div class="receipt-sign">Administración<small>Firma de la Administración</small></div><div class="receipt-capture"><button class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-download"></i> Descargar / guardar</button></div><div style="text-align:center;font-size:.62rem;margin-top:7px;color:#52606d">SENDWAYO EXPRESS · Comprobante Oficial</div></div>`;
+ document.getElementById('detail-content').innerHTML=`<div class="receipt-shell receipt-compact"><div class="receipt-head"><img class="receipt-logo" src="${LOGO_DATA}" alt="SENDWAYO EXPRESS"><h2>SENDWAYO EXPRESS</h2><p class="receipt-slogan">Conectando distancias, entregando confianza</p><p style="margin:5px 0;font-size:.78rem">📧 sendwayoexpress@gmail.com</p><div class="receipt-original">FACTURA / COMPROBANTE # ${escapeHtml(rec.id)}</div><div style="font-size:.75rem;margin-top:5px"><b>FECHA Y HORA</b> ${escapeHtml(rec.date)} ${escapeHtml(rec.time)}</div></div><div class="receipt-concept"><b>DETALLES DE LA TRANSACCIÓN</b></div><div class="receipt-grid-compact"><div><b>Tipo</b><span>${escapeHtml(tipo)}</span></div><div><b>Ruta</b><span>${escapeHtml(ruta)}</span></div><div><b>ID Remitente</b><span>${escapeHtml(idRem)}</span></div><div><b>Estado</b><span style="color:#166534">✓ APROBADO</span></div></div><div class="receipt-concept"><b>INFORMACIÓN DEL BENEFICIARIO</b></div><div class="receipt-grid-compact"><div><b>Nombre</b><span>${escapeHtml((benName||"").trim().split(/\s+/)[0]||"—")}</span></div><div><b>Apellido</b><span>${escapeHtml((benName||"").trim().split(/\s+/).slice(1).join(" ")||"—")}</span></div><div><b>Número de Celular</b><span>${escapeHtml(benPhone||"—")}</span></div></div><div class="receipt-grid-compact" style="margin-top:7px"><div><b>Monto de la operación</b><span>${money(amount)}</span></div><div><b>Comisión total</b><span>${money(commission)}</span></div><div><b>50% Remitente</b><span>${money(rec.commissionUser||0)}</span></div><div><b>50% Administración</b><span>${money(rec.commissionAdmin||0)}</span></div></div><div class="receipt-amount-row"><span>MONTO TOTAL TRANSACCIONADO</span><strong>${money(amount)}</strong></div><div style="text-align:center;border-top:1px solid #d8e0e8;margin-top:10px;padding-top:8px"><b>FACTURA ORIGINAL</b></div><p class="receipt-thanks">¡Gracias por preferirnos!</p><p class="receipt-bottom-line">¡Hazlo todo sin moverte de casa! Quédate cómodo y nosotros nos encargamos.</p><div class="receipt-sign">Administración<small>Firma de la Administración</small></div><div class="receipt-capture"><button class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-download"></i> Descargar / guardar</button></div><div style="text-align:center;font-size:.62rem;margin-top:7px;color:#52606d">SENDWAYO EXPRESS · Comprobante Oficial</div></div>`;
  openModal('detailModal');
 }
 function renderMiCuenta(){if(!currentUser)return;document.getElementById('my-account-balance').textContent=money(currentUser.balance);let adminNote=document.getElementById('admin-fund-note');if(adminNote)adminNote.style.display=isAdmin()?'block':'none';let moves=[];newestFirst(state.deposits||{}).filter(r=>r.userId===currentUser.id).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Depósito',amount:r.amount,date:r.createdAt,status:r.status}));newestFirst(state.accountWithdrawals||{}).filter(r=>r.userId===currentUser.id).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Retiro de cuenta',amount:r.amount,date:r.createdAt,status:r.status}));if(isAdmin()){moves=[];newestFirst(state.deposits||{}).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Depósito',amount:r.amount,date:r.createdAt,status:r.status}));newestFirst(state.accountWithdrawals||{}).forEach(r=>moves.push({id:r.id,userId:r.userId,username:r.username,type:'Retiro de cuenta',amount:r.amount,date:r.createdAt,status:r.status}))}document.querySelector('#accountMoveTable tbody').innerHTML=moves.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${escapeHtml(r.type)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><span class="status ${statusClass(r.status)}">${escapeHtml(r.status)}</span></td><td>${actionButtons(r.type==='Depósito'?'deposits':'accountWithdrawals',r.id,r.status)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay movimientos.</td></tr>'}
@@ -1392,8 +1397,101 @@ function renderDashboardNotifications(){
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
  box.innerHTML=arr.slice(0,5).map(x=>`<div class="notif-item unread" style="margin-bottom:6px" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small></div>`).join('')||'<div class="muted">No hay notificaciones nuevas.</div>';
 }
+function commissionDateKey(v){const t=parseSendwayoDate(v);if(!t)return '';const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function todayDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function commissionTodayFor(userId){
+ const today=todayDateKey();let total=0;
+ ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>{
+   Object.values(state[col]||{}).forEach(r=>{
+     if(!r||r.status!=='Aprobado'||r.userId!==userId)return;
+     const settled=r.balanceSettledAt||r.reviewedAt||r.createdAt||r.date;
+     if(commissionDateKey(settled)!==today)return;
+     total+=Number(r.commissionUser??(Number(r.commission||0)*0.5))||0;
+   });
+ });
+ if(userId==='admin'){
+   total=0;
+   ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>{
+     Object.values(state[col]||{}).forEach(r=>{
+       if(!r||r.status!=='Aprobado')return;
+       const settled=r.balanceSettledAt||r.reviewedAt||r.createdAt||r.date;
+       if(commissionDateKey(settled)!==today)return;
+       total+=Number(r.commissionAdmin??(Number(r.commission||0)*0.5))||0;
+     });
+   });
+ }
+ return total;
+}
+async function ensureAllRemittersStartAtZero(){
+ if(!firebaseReady||!currentUser||!isAdmin())return false;
+ const marker='2026-09-21-ALL-REMITTERS-START-ZERO-1';
+ if(state.settings?.allRemittersStartZeroVersion===marker)return false;
+ const updates={};
+ Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente').forEach(u=>{
+   updates['users/'+u.id+'/balance']=0;
+   updates['users/'+u.id+'/commission']=0;
+   updates['users/'+u.id+'/referrals']=0;
+   updates['users/'+u.id+'/depositCredits']=null;
+ });
+ updates['settings/allRemittersStartZeroVersion']=marker;
+ try{
+   await firebase.database().ref(DB_PATH).update(updates);
+   Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits});
+   state.settings=state.settings||{};state.settings.allRemittersStartZeroVersion=marker;
+   lastSyncedState=cloneState(state);localSave();return true;
+ }catch(e){console.warn('Inicio a cero de remitentes:',e);return false}
+}
+function openAdminBalanceModal(targetId='admin',mode='set'){
+ if(!isAdmin())return toast('Solo el Administrador puede ajustar balances.','warn');
+ const sel=document.getElementById('admin-balance-target');if(!sel)return;
+ const users=[state.users?.admin,...Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente')].filter(Boolean);
+ sel.innerHTML=users.map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.id==='admin'?'Administración':(u.name||u.username||u.id))+' — '+escapeHtml(u.username||'admin')+'</option>').join('');
+ sel.value=state.users?.[targetId]?targetId:'admin';
+ document.getElementById('admin-balance-mode').value=mode==='adjust'?'add':'set';
+ document.getElementById('admin-balance-amount').value='';
+ document.getElementById('adminBalanceModal').style.display='flex';
+ refreshAdminBalanceModal();
+}
+function refreshAdminBalanceModal(){
+ const id=document.getElementById('admin-balance-target')?.value,mode=document.getElementById('admin-balance-mode')?.value,u=state.users?.[id]||state.users?.admin;
+ if(!u)return;
+ document.getElementById('admin-balance-current').textContent=money(u.balance);
+ document.getElementById('admin-balance-amount-label').textContent=mode==='set'?'Nuevo saldo exacto (RD$)':mode==='add'?'Monto a agregar (RD$)':'Monto a quitar (RD$)';
+}
+async function saveAdminBalanceAdjustment(){
+ if(!isAdmin())return;
+ const id=document.getElementById('admin-balance-target')?.value,mode=document.getElementById('admin-balance-mode')?.value,amount=Number(document.getElementById('admin-balance-amount')?.value);
+ if(!id||!['set','add','subtract'].includes(mode)||!Number.isFinite(amount)||amount<0)return toast('Indique un monto válido.','warn');
+ if(!firebaseReady)return toast('Firebase no está conectado.','error');
+ const ref=firebase.database().ref(DB_PATH+'/users/'+id);
+ try{
+   const tx=await ref.transaction(u=>{
+     if(!u)return undefined;
+     const current=Number(u.balance||0);
+     let next=mode==='set'?amount:mode==='add'?current+amount:current-amount;
+     if(next<0)return undefined;
+     return {...u,balance:next};
+   });
+   if(!tx.committed)return toast('No se pudo actualizar el balance. El valor cambió o no está disponible.','warn');
+   const updated=tx.snapshot.val();state.users[id]=updated;if(currentUser?.id===id)currentUser=updated;
+   lastSyncedState=cloneState(state);localSave();
+   addAudit('Ajuste administrativo de balance',id);
+   try{await firebase.database().ref(DB_PATH+'/audit/'+uid('bal')).set({id:uid('bal'),action:'Ajuste administrativo de balance',targetUserId:id,mode,amount,processedBy:currentUser.username,createdAt:now()})}catch(_){}
+   closeModal('adminBalanceModal');renderAll();toast('Balance actualizado directamente en Firebase.','success');
+ }catch(e){console.warn('Ajuste administrativo:',e);toast('No se pudo actualizar el balance en Firebase.','error')}
+}
+
 function renderDashboard(){
- let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);document.getElementById('kpi-commission').textContent=money(u.commission);const remKpi=document.getElementById('kpi-remitters')?.closest('.kpi');if(remKpi)remKpi.style.display=isAdmin()?'':'none';document.getElementById('kpi-remitters').textContent=isAdmin()?Object.values(state.users).filter(x=>x.role==='Remitente').length:0;let count=newestFirst(state.envios).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.recargas).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paqueticos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.pagos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paquetes).filter(x=>isAdmin()||x.userId===currentUser.id).length;document.getElementById('kpi-transactions').textContent=count;renderDashboardNotifications();
+ let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
+ const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
+ document.getElementById('kpi-commission').textContent=money(u.commission);
+ const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id));
+ const af=document.getElementById('admin-finance-balance');if(af)af.textContent=money(state.users?.admin?.balance||0);
+ const sa=document.getElementById('secret-admin-balance');if(sa)sa.textContent=money(state.users?.admin?.balance||0);
+ const remKpi=document.getElementById('kpi-remitters')?.closest('.kpi');if(remKpi)remKpi.style.display=isAdmin()?'':'none';
+ document.getElementById('kpi-remitters').textContent=isAdmin()?Object.values(state.users).filter(x=>x.role==='Remitente').length:0;
+ let count=newestFirst(state.envios).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.recargas).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paqueticos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.pagos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paquetes).filter(x=>isAdmin()||x.userId===currentUser.id).length;
+ document.getElementById('kpi-transactions').textContent=count;renderDashboardNotifications();
 }
 function renderEnvios(){
  let rows=newestFirst(state.envios).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>statusFilter==='Todos'||r.status===statusFilter);
@@ -1459,7 +1557,7 @@ function renderRequests(){
 function renderSecrets(){
  if(!isAdmin())return;
  const rows=Object.values(state.users).filter(u=>u.role==='Remitente');
- document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>`<tr><td>${i+1}</td><td>Remitente</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${u.accountStatus==='Pendiente de activación'?'<span class="status st-Pendiente">Pendiente de activación</span>':'Firebase Auth'}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewUser('${u.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset('${u.id}')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users['${u.id}'],INITIAL_PASSWORD)">Enviar WhatsApp</button></div></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No hay remitentes registrados.</td></tr>';
+ document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>`<tr><td>${i+1}</td><td>Remitente</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${u.accountStatus==='Pendiente de activación'?'<span class="status st-Pendiente">Pendiente de activación</span>':'Firebase Auth'}</td><td><b>${money(u.balance)}</b></td><td><div class="actions"><button class="btn btn-success btn-sm" onclick="openAdminBalanceModal('${u.id}','set')">Acreditar</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('${u.id}','adjust')">Ajustar balance</button><button class="btn btn-light btn-sm" onclick="viewUser('${u.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset('${u.id}')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users['${u.id}'],INITIAL_PASSWORD)">Enviar WhatsApp</button></div></td></tr>`).join('')||'<tr><td colspan="11" class="muted">No hay remitentes registrados.</td></tr>';
 }
 
 async function sendPasswordReset(id){
