@@ -648,7 +648,7 @@ async function boot(){
           await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
           const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
           if(found&&found.active!==false){
-            found.authUid=authUser.uid;found.authEmail=authUser.email;await resetProductionFinancialsIfNeeded();currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
+            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;await resetProductionFinancialsIfNeeded();lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
           }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
@@ -805,11 +805,13 @@ async function loadAuthorizedState(authUser){
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
  if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-3'){delete state.settings.productionResetVersion;productionResetState()}
  if(authUser?.email===state.users?.admin?.authEmail || authUser?.email==='sendwayoexpress@gmail.com'){
- const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-3';
+ const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-4';
  if(state.settings?.productionFinancialResetVersion!==resetMarker){
   const users={...state.users};
   Object.values(users).forEach(u=>{if(u){u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits;}});
   const resetUpdates={};
+  // REINICIO OFICIAL: se eliminan todas las operaciones y movimientos previos.
+  // Se conservan únicamente los usuarios, sus accesos y las cuentas bancarias oficiales.
   ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>resetUpdates[k]=null);
   Object.entries(users).forEach(([id,u])=>resetUpdates['users/'+id]=u);
   resetUpdates['settings/productionFinancialResetVersion']=resetMarker;
@@ -822,9 +824,9 @@ async function loadAuthorizedState(authUser){
 const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
-async function resetProductionFinancialsIfNeeded(){
+async async function resetProductionFinancialsIfNeeded(){
  if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-3';
+ const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-4';
  if(state.settings?.productionFinancialResetVersion===marker)return false;
  const users={...state.users};
  Object.values(users).forEach(u=>{
@@ -1024,7 +1026,7 @@ async function guardarDeposito(){
  if(!firebaseReady||!firebase.auth().currentUser)return toast('La sesión de Firebase no está activa.','error');
  const file=document.getElementById('dep-voucher')?.files?.[0],voucher=file?file.name:'Sin archivo';
  const id=uid('dep'),directAdmin=isAdmin(),createdAt=now();
- const record={id,userId:target.id,username:target.username,createdByAuthUid:firebase.auth().currentUser.uid,accountId,amount,voucher,status:directAdmin?'Aprobado':'Pendiente',createdAt,accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0,createdByAdmin:directAdmin,balanceCredited:false,balanceRefunded:false};
+ const record={id,userId:target.id,username:target.username,createdByAuthUid:firebase.auth().currentUser.uid,accountId,amount,voucher,status:directAdmin?'Aprobado':'Pendiente',createdAt,accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0,createdByAdmin:directAdmin,balanceCredited:false,balanceRefunded:false,targetType:'REMITENTE'};
  try{
    // Remitente: guarda el depósito como PENDIENTE y NO toca el balance.
    // Administrador: guarda y acredita inmediatamente al balance del Remitente.
