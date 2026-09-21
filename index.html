@@ -629,31 +629,35 @@ async function repairApprovedDeposits(){
 }
 
 async function repairLegacyDepositCommissions(){
- if(!firebaseReady||state.settings?.depositAccountingRepairV1==='DONE')return;
- let changed=false;
+ if(!firebaseReady||state.settings?.depositAccountingRepairV2==='DONE')return;
  for(const r of Object.values(state.deposits||{})){
-   if(!r||r.accountingType!=='DEPOSITO_CAPITAL')continue;
-   const u=state.users?.[r.userId];if(!u)continue;
-   const related=Object.values(state.commissions||{}).filter(c=>c&&(
-     c.depositId===r.id || c.recordId===r.id || (c.collection==='deposits'&&c.userId===r.userId)
-   ));
-   for(const cm of related){
-     const cmAmount=Number(cm.amount||0);
-     if(cmAmount>0){
+   if(!r)continue;
+   const u=state.users?.[r.userId];
+   r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;delete r.commissionSplit;
+   if(r.status==='Aprobado'&&u&&!r.balanceCredited){
+     const amount=Number(r.amount||0);
+     if(amount>0){
        const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
-       const tx=await ref.transaction(v=>v?({...v,commission:Math.max(0,Number(v.commission||0)-cmAmount),balance:Number(v.balance||0)+(r.balanceCredited===true?0:cmAmount)}):v);
-       if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];}
+       const tx=await ref.transaction(v=>{
+         if(!v)return undefined;const credits={...(v.depositCredits||{})};
+         if(credits[r.id]!==undefined)return v;
+         return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}};
+       });
+       if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;}
      }
-     delete state.commissions[cm.id];
-     await firebase.database().ref(DB_PATH+'/commissions/'+cm.id).remove();
-     changed=true;
    }
-   if(r.status==='Aprobado'){r.commission=0;r.commissionRate=0;delete r.commissionUser;delete r.commissionAdmin;state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);changed=true;}
+   // Cualquier comisión explícitamente vinculada a un depósito se elimina; el depósito jamás genera comisión.
+   const linked=Object.values(state.commissions||{}).filter(c=>c&&(c.depositId===r.id||c.recordId===r.id));
+   for(const cm of linked){delete state.commissions[cm.id];await firebase.database().ref(DB_PATH+'/commissions/'+cm.id).remove();}
+   if(u)await firebase.database().ref(DB_PATH+'/users/'+u.id).update({commission:Number(u.commission||0)});
+   await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);
+   state.deposits[r.id]=r;
  }
- state.settings=state.settings||{};state.settings.depositAccountingRepairV1='DONE';
- if(changed)await persist();else await firebase.database().ref(DB_PATH+'/settings/depositAccountingRepairV1').set('DONE');
+ state.settings=state.settings||{};state.settings.depositAccountingRepairV2='DONE';
+ await firebase.database().ref(DB_PATH+'/settings/depositAccountingRepairV2').set('DONE');
  if(currentUser)renderAll();
 }
+
 
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
