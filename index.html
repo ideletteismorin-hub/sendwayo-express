@@ -462,6 +462,7 @@ async function initFirebase(){try{
   await Promise.race([firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL),new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_PERSISTENCE_TIMEOUT')),5000))]);
   firebaseReady=true;return true
 }catch(e){firebaseReady=false;console.warn('Firebase no disponible.',e);return false}}
+async function loadExportLibraries(){try{const base='https://cdnjs.cloudflare.com/ajax/libs/';await Promise.all([loadScript(base+'xlsx/0.18.5/xlsx.full.min.js',8000),loadScript(base+'jspdf/2.5.1/jspdf.umd.min.js',8000)]);return true}catch(e){console.warn('Librerías de exportación:',e);return false}}
 async function createFirebaseAccountForUser(user){
   if(!user||user.id==='admin')return {status:'skip'};
   try{
@@ -509,6 +510,7 @@ function boot(){
   }catch(e){console.warn('SENDWAYO local state:',e)}
   try{ensureSeedData()}catch(e){console.warn('SENDWAYO seed:',e)}
   try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}
+  loadExportLibraries().catch(()=>{});
   Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_BOOT_TIMEOUT')),10000))])
     .then(ok=>{if(!ok){console.warn('Firebase no disponible al iniciar.');return}
       firebase.auth().onAuthStateChanged(async authUser=>{
@@ -604,7 +606,7 @@ async function realizarLogin(){
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
- if(remoteResetVersion!=='2026-09-21-FINAL-PRODUCTION-RESET-1'){delete state.settings.productionResetVersion;productionResetState()}
+ if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-2'){delete state.settings.productionResetVersion;productionResetState()}
  const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
@@ -713,7 +715,7 @@ async function guardarEnvio(){
 function guardarBeneficiario(){
  let name=document.getElementById('ben-nombre').value.trim(),phone=fullPhone('ben-country',document.getElementById('ben-cel').value.trim());
  if(!name||!phone)return toast('Nombre y celular son obligatorios.','warn');
- let id=uid('bn');state.beneficiaries[id]={id,name,phone,address:document.getElementById('ben-dir').value.trim(),active:document.getElementById('ben-active').value==='true'};addAudit('Crear beneficiario',id);persist();closeModal('beneficiarioModal');renderAll();toast('Beneficiario guardado.')
+ let id=uid('bn');state.beneficiaries[id]={id,name,phone,address:document.getElementById('ben-dir').value.trim(),active:document.getElementById('ben-active').value==='true',userId:currentUser?.id||'admin',createdAt:now()};addAudit('Crear beneficiario',id);persist();closeModal('beneficiarioModal');renderAll();toast('Beneficiario guardado.')
 }
 function openPerson(role){document.getElementById('persona-title').textContent='Registrar '+role;document.getElementById('personaModal').dataset.role=role;['pers-nombre','pers-wsp','pers-doc','pers-user','pers-auth-email'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''})
 const ip=document.getElementById('pers-initial-pass');if(ip)ip.value=INITIAL_PASSWORD;document.getElementById('pers-active').value='true';openModal('personaModal')}
@@ -1020,7 +1022,7 @@ async function editUser(id){
  u.staffId=permanentId;if(!u.authEmail)u.authEmail=authEmailFor(u);state.users[id]=u;await persist();renderAll();toast('Usuario actualizado. El ID permanente '+permanentId+' y el acceso de Firebase se conservaron.');
 }
 function deleteUser(id){if(id==='admin')return;if(!confirm('¿Eliminar usuario?'))return;delete state.users[id];persist();renderAll();toast('Usuario eliminado.')}
-function renderBeneficiaries(){let rows=Object.values(state.beneficiaries);document.querySelector('#benefTable tbody').innerHTML=rows.map((b,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(b.name)}</td><td>${escapeHtml(b.phone)}</td><td>${escapeHtml(b.address)}</td><td><span class="status ${b.active?'st-Activo':'st-Inactivo'}">${b.active?'Activo':'Inactivo'}</span></td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('beneficiaries','${b.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editBeneficiary('${b.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('beneficiaries','${b.id}')">Eliminar</button></div></td></tr>`).join('')}
+function renderBeneficiaries(){let rows=Object.values(state.beneficiaries).filter(b=>isAdmin()||b.userId===currentUser?.id);document.querySelector('#benefTable tbody').innerHTML=rows.map((b,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(b.name)}</td><td>${escapeHtml(b.phone)}</td><td>${escapeHtml(b.address)}</td><td><span class="status ${b.active?'st-Activo':'st-Inactivo'}">${b.active?'Activo':'Inactivo'}</span></td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('beneficiaries','${b.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editBeneficiary('${b.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('beneficiaries','${b.id}')">Eliminar</button></div></td></tr>`).join('')}
 function editBeneficiary(id){let b=state.beneficiaries[id];b.name=prompt('Nombre y apellido:',b.name)??b.name;b.phone=prompt('Celular:',b.phone)??b.phone;b.active=confirm('¿Beneficiario activo?');persist();renderAll()}
 function renderAccounts(){
  let rows=Object.values(state.accounts);
@@ -1098,6 +1100,42 @@ window.addEventListener('load',()=>{let access=new URLSearchParams(location.sear
 window.addEventListener('error',e=>{console.error('SENDWAYO JS ERROR',e.error||e.message);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error del sistema: '+(e.message||'Error JavaScript');el.className='login-status error'}});window.addEventListener('unhandledrejection',e=>{console.error('SENDWAYO PROMISE ERROR',e.reason);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error de conexión: '+(e.reason?.message||e.reason||'Error desconocido');el.className='login-status error'}});window.addEventListener('beforeunload',()=>{if(currentUser)saveSession()});
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(document.activeElement?.id==='login-user'||document.activeElement?.id==='login-pass'))realizarLogin()});
+
+/* POLITICA CRUD SENDWAYO EXPRESS: Administrador con control integral; Remitente solo sobre operaciones propias permitidas. */
+(function(){
+ const _renderDepositsOriginal=renderDeposits;
+ renderDeposits=function(){
+   let rows=Object.values(state.deposits).filter(r=>isAdmin()||r.userId===currentUser.id);
+   document.querySelector('#depTable tbody').innerHTML=rows.map((r,i)=>{
+     let a=state.accounts[r.accountId];
+     let actions=actionButtons('deposits',r.id,r.status||'Pendiente');
+     return '<tr><td>'+ (i+1) +'</td><td>'+escapeHtml(r.username)+'</td><td>'+escapeHtml(a?.bank||'')+' - '+escapeHtml(a?.number||'')+'</td><td>'+money(r.amount)+'</td><td>'+escapeHtml(r.voucher)+'</td><td><span class="status '+statusClass(isAdmin()?r.status:'Pendiente')+'">'+escapeHtml(isAdmin()?r.status:'EN REVISIÓN')+'</span></td><td data-record-id="'+r.id+'">'+actions+'</td></tr>';
+   }).join('')||'<tr><td colspan="7" class="muted">No hay depósitos.</td></tr>';
+ };
+ const _deleteRecordOriginal=deleteRecord;
+ deleteRecord=async function(collection,id){
+   const rec=state[collection]?.[id];
+   if(!isAdmin() && rec && rec.status==='Aprobado')return toast('Esta operación ya fue aprobada. El Remitente no puede modificarla ni eliminarla.','warn');
+   return _deleteRecordOriginal(collection,id);
+ };
+ const _editRecordOriginal=editRecord;
+ editRecord=async function(collection,id){
+   const rec=state[collection]?.[id];
+   if(!isAdmin() && rec && rec.status==='Aprobado')return toast('Esta operación ya fue aprobada. Solo el Administrador puede modificarla.','warn');
+   return _editRecordOriginal(collection,id);
+ };
+ const _renderCommissionsOriginal=renderCommissions;
+ renderCommissions=function(){
+   let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);
+   document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>{
+     let actions='<div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\'commissions\',\''+r.id+'\')"><i class="fa-solid fa-eye"></i></button>';
+     if(isAdmin())actions+='<button class="btn btn-warning btn-sm" title="Modificar" onclick="editRecord(\'commissions\',\''+r.id+'\')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'commissions\',\''+r.id+'\')"><i class="fa-solid fa-trash"></i></button>';
+     actions+='</div>';
+     return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.username)+'</td><td>'+money(r.availableBefore)+'</td><td>'+money(r.amount)+'</td><td>'+escapeHtml(r.date)+'</td><td>'+actions+'</td></tr>';
+   }).join('')||'<tr><td colspan="6" class="muted">No hay pagos de comisión.</td></tr>';
+ };
+})();
+
 </script>
 </body>
 </html>
