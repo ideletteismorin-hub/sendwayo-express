@@ -502,7 +502,7 @@ async function submitRequest(){
  await addNotification('Administrador','Nueva solicitud: '+type+' de '+name,'requests',id);
  await persist();closeModal('requestModal');toast('Solicitud enviada al Administrador.');showWelcome()
 }
-async function realizarLogin(){
+async async function realizarLogin(){
  const identifier=document.getElementById('login-user').value.trim();
  const password=document.getElementById('login-pass').value;
  if(!identifier||!password)return toast('Escriba su usuario o correo y su contraseña.','warn');
@@ -564,7 +564,7 @@ async function removeNotificationByRecord(collection,id){
  for(const nid of ids)await removeNotification(nid);
 }
 
-async function notificationClick(id){
+async async function notificationClick(id){
  const n=state.notifications?.[id];if(!n)return;
  const collection=n.collection,recordId=n.recordId;
  if(collection&&recordId&&firebaseReady&&(!state[collection]||!state[collection][recordId])){
