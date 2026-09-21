@@ -813,7 +813,7 @@ async function repairLegacyDepositCommissions(){
 }
 
 
-async function loadAuthorizedState(authUser){
+async async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');
  if(snap.exists()){
    const remote=snap.val()||{};
