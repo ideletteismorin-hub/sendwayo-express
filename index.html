@@ -1020,6 +1020,28 @@ const ip=document.getElementById('pers-initial-pass');if(ip)ip.value=INITIAL_PAS
 document.querySelectorAll('[data-role]').forEach(x=>x.addEventListener('click',e=>openPerson(e.currentTarget.dataset.role)));document.getElementById('pers-nombre')?.addEventListener('input',e=>{const v=normalizeUsername(e.target.value);const user=document.getElementById('pers-user'),el=document.getElementById('pers-auth-email');if(user)user.value=v;if(el)el.value=v?'Se asigna automáticamente al guardar el ID':''})
 function generateLink(username){return location.href.split('?')[0]+'?access='+encodeURIComponent(username)}
 async function guardarPersona(){const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=fullPhone('pers-country',document.getElementById('pers-wsp').value.trim()),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid('rm'),staffId=makePermanentId();const u={id,staffId,role:'Remitente',name,phone,doc,username:user,authEmail:authEmailFor({id,name,username:user,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
+async function creditDepositToRemitente(depositId,remitenteId,amount){
+  const n=Number(amount);
+  if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');
+  const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);
+  const tx=await ref.transaction(u=>{
+    if(!u||u.role!=='Remitente')return undefined;
+    const credits={...(u.depositCredits||{})};
+    if(credits[depositId]!==undefined)return u;
+    return {
+      ...u,
+      balance:Number(u.balance||0)+n,
+      commission:Number(u.commission||0),
+      depositCredits:{...credits,[depositId]:n}
+    };
+  });
+  if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');
+  state.users[remitenteId]=tx.snapshot.val();
+  if(currentUser?.id===remitenteId)currentUser=state.users[remitenteId];
+  if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(state.users[remitenteId]);
+  return tx.snapshot.val();
+}
+
 async function guardarDeposito(){
  const amount=Number(document.getElementById('dep-monto')?.value||0);
  const accountId=document.getElementById('dep-cuenta')?.value||'';
@@ -1048,15 +1070,7 @@ async function guardarDeposito(){
    }
 
    // Administrador: acreditar exactamente una vez mediante transacción atómica.
-   const userRef=firebase.database().ref(DB_PATH+'/users/'+target.id);
-   const tx=await userRef.transaction(v=>{
-     if(!v)return undefined;
-     const credits={...(v.depositCredits||{})};
-     if(credits[id]!==undefined)return v;
-     return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[id]:amount}};
-   });
-   if(!tx.committed)return toast('No se pudo acreditar el depósito al balance del remitente.','error');
-   state.users[target.id]=tx.snapshot.val();
+   await creditDepositToRemitente(id,target.id,amount);
    record.balanceCredited=true;record.balanceCreditedAt=now();record.depositPrincipal=amount;
    record.reviewedAt=now();record.reviewedBy=currentUser.username;record.manualReview=true;
    generateReceipt('deposits',id);
@@ -1246,17 +1260,8 @@ async function approveDeposit(id,status){
  // 4) La acreditación es idempotente: un depósito aprobado no puede sumarse dos veces.
  if(status==='Aprobado'){
    if(firebaseReady){
-     const userRef=firebase.database().ref(DB_PATH+'/users/'+u.id);
-     const userTx=await userRef.transaction(v=>{
-       if(!v)return undefined;
-       const credits={...(v.depositCredits||{})};
-       if(credits[id]!==undefined)return v;
-       return {...v,balance:Number(v.balance||0)+depositAmount,commission:Number(v.commission||0),depositCredits:{...credits,[id]:depositAmount}};
-     });
-     if(!userTx.committed)return toast('No se pudo acreditar el depósito al balance del remitente.','error');
-     state.users[u.id]=userTx.snapshot.val();
-     if(currentUser?.id===u.id)currentUser=state.users[u.id];
-     if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);
+     try{await creditDepositToRemitente(id,u.id,depositAmount)}
+     catch(e){return toast('No se pudo acreditar el 100% del depósito al balance del remitente.','error')}
    }else{
      const credits={...(u.depositCredits||{})};
      if(credits[id]===undefined){u.balance=Number(u.balance||0)+depositAmount;credits[id]=depositAmount;u.depositCredits=credits}
@@ -1590,7 +1595,7 @@ window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='
 <div class="modal" id="adminDepositModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('adminDepositModal')">×</button><h3 style="color:#0f2c59;margin-bottom:12px">Asignar depósito directo al Remitente</h3><div class="info-box" style="margin-bottom:12px">Este depósito se acredita directamente al balance/capital del Remitente. <b>No genera comisión</b> y no aumenta el balance administrativo.</div><div class="form-group"><label>Remitente</label><select id="admin-dep-remitente" class="form-control"></select></div><div class="form-grid"><div class="form-group"><label>Monto RD$</label><input id="admin-dep-monto" type="number" min="0" step="0.01" class="form-control"></div><div class="form-group"><label>Referencia / nota</label><input id="admin-dep-nota" class="form-control" placeholder="Opcional"></div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('adminDepositModal')">Cerrar</button><button class="btn btn-warning" onclick="guardarDepositoAdministrativo()">Acreditar al balance</button></div></div></div>
 <script>
 function openAdminDepositModal(){if(!isAdmin())return toast('Solo el Administrador puede asignar depósitos directos.','warn');const sel=document.getElementById('admin-dep-remitente');if(sel)sel.innerHTML=Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(u=>'<option value="'+u.id+'">'+escapeHtml(u.name)+' — '+escapeHtml(u.staffId||u.username)+'</option>').join('');document.getElementById('admin-dep-monto').value='';document.getElementById('admin-dep-nota').value='';openModal('adminDepositModal')}
-async function guardarDepositoAdministrativo(){if(!isAdmin())return;const targetId=document.getElementById('admin-dep-remitente')?.value,amount=Number(document.getElementById('admin-dep-monto')?.value||0),note=document.getElementById('admin-dep-nota')?.value?.trim()||'',u=state.users?.[targetId];if(!u||u.role!=='Remitente')return toast('Seleccione un Remitente válido.','warn');if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');const id=uid('dep'),deposit={id,userId:u.id,username:u.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountId:'ADMIN_DIRECT',amount,voucher:note||'Depósito asignado por Administración',status:'Aprobado',createdAt:now(),accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0,createdByAdmin:true,balanceCredited:false};if(firebaseReady){const tx=await firebase.database().ref(DB_PATH+'/users/'+u.id).transaction(v=>{if(!v)return undefined;const credits={...(v.depositCredits||{})};if(credits[id]!==undefined)return v;return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[id]:amount}}});if(!tx.committed)return toast('No se pudo acreditar el depósito en Firebase.','error');state.users[u.id]=tx.snapshot.val()}else{u.balance=Number(u.balance||0)+amount;state.users[u.id]=u}deposit.balanceCredited=true;deposit.balanceCreditedAt=now();deposit.depositPrincipal=amount;deposit.reviewedAt=now();deposit.reviewedBy=currentUser.username;
+async function guardarDepositoAdministrativo(){if(!isAdmin())return;const targetId=document.getElementById('admin-dep-remitente')?.value,amount=Number(document.getElementById('admin-dep-monto')?.value||0),note=document.getElementById('admin-dep-nota')?.value?.trim()||'',u=state.users?.[targetId];if(!u||u.role!=='Remitente')return toast('Seleccione un Remitente válido.','warn');if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');const id=uid('dep'),deposit={id,userId:u.id,username:u.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountId:'ADMIN_DIRECT',amount,voucher:note||'Depósito asignado por Administración',status:'Aprobado',createdAt:now(),accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0,createdByAdmin:true,balanceCredited:false};if(firebaseReady){try{await creditDepositToRemitente(id,u.id,amount)}catch(e){return toast('No se pudo acreditar el 100% del depósito en Firebase.','error')}}else{u.balance=Number(u.balance||0)+amount;state.users[u.id]=u}deposit.balanceCredited=true;deposit.balanceCreditedAt=now();deposit.depositPrincipal=amount;deposit.reviewedAt=now();deposit.reviewedBy=currentUser.username;
 deposit.accountingType='DEPOSITO_CAPITAL';deposit.commissionRate=0;deposit.commission=0;
 delete deposit.commissionUser;delete deposit.commissionAdmin;delete deposit.commissionSplit;
 state.deposits[id]=deposit;
