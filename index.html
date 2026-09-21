@@ -1689,7 +1689,8 @@ async function boot(){
       });
     }).catch(e=>console.warn('SENDWAYO Firebase boot:',e));
 }
-boot();
+// Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
 
 function showWelcome(){document.getElementById('welcome-screen').classList.remove('hidden');document.getElementById('login-screen').classList.add('hidden');document.body.style.overflow=''}
 function showLogin(){document.getElementById('welcome-screen').classList.add('hidden');document.getElementById('login-screen').classList.remove('hidden');setTimeout(()=>document.getElementById('login-user').focus(),100)}
