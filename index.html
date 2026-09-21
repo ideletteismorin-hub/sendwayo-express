@@ -608,25 +608,24 @@ async function repairApprovedDeposits(){
  if(!firebaseReady)return;
  const deposits=Object.values(state.deposits||{}).filter(r=>r&&r.status==='Aprobado');
  for(const r of deposits){
-   const amount=Number(r.amount||0); if(!Number.isFinite(amount)||amount<=0)continue;
-   const u=state.users?.[r.userId]; if(!u)continue;
-   let changed=false;
-   if(r.balanceCredited!==true){
-     const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
-     const tx=await ref.transaction(v=>v?({...v,balance:Number(v.balance||0)+amount}):undefined);
-     if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;changed=true}
+   const amount=Number(r.amount||0);if(!Number.isFinite(amount)||amount<=0)continue;
+   const u=state.users?.[r.userId];if(!u)continue;
+   if(r.balanceCredited===true)continue;
+   const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
+   const tx=await ref.transaction(v=>{
+     if(!v)return undefined;
+     const credits={...(v.depositCredits||{})};
+     if(credits[r.id]!==undefined)return v;
+     return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}};
+   });
+   if(tx.committed){
+     state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];
+     r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;
+     state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);
    }
-   if(r.commission!==undefined||r.commissionUser!==undefined||r.commissionAdmin!==undefined){
-     const userErr=Number(r.commissionUser||0), adminErr=Number(r.commissionAdmin||0);
-     if(userErr>0){const ref=firebase.database().ref(DB_PATH+'/users/'+u.id+'/commission');const tx=await ref.transaction(v=>Math.max(0,Number(v||0)-userErr));if(tx.committed){state.users[u.id].commission=Number(tx.snapshot.val()||0);if(currentUser?.id===u.id)currentUser=state.users[u.id]}}
-     if(adminErr>0){const ref=firebase.database().ref(DB_PATH+'/users/admin/commission');const tx=await ref.transaction(v=>Math.max(0,Number(v||0)-adminErr));if(tx.committed)state.users.admin.commission=Number(tx.snapshot.val()||0)}
-     delete r.commission;delete r.commissionUser;delete r.commissionAdmin;changed=true;
-   }
-   if(changed){state.deposits[r.id]=r;await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r)}
  }
  if(currentUser)renderAll();
 }
-
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
