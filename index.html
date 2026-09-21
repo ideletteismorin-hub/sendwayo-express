@@ -372,7 +372,6 @@ function setLanguage(lang){
  document.documentElement.lang=lang==='ht'?'ht':lang; translateInterface(); try{if(typeof renderAll==='function')renderAll()}catch(e){} setTimeout(()=>translateInterface(),0);
 }
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
-function productionResetState(){const marker='2026-09-21-PRODUCTION-RESET-5';state.settings=state.settings||{};if(state.settings.productionResetVersion===marker)return false;['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]={});state.beneficiaries={};state.accounts=state.accounts||{}; BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});Object.values(state.users||{}).filter(u=>u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;u.active=true;u.phone=u.phone||'';u.doc=u.doc||''});if(state.users?.admin){state.users.admin.balance=0;state.users.admin.commission=0;state.users.admin.referrals=0}state.settings.productionResetVersion=marker;return true}
 const DEMO_ACCOUNTS=[
       {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:0},
  {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
@@ -647,7 +646,7 @@ async function boot(){
           await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
           const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
           if(found&&found.active!==false){
-            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;await resetProductionFinancialsIfNeeded();lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
+            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
           }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
@@ -820,29 +819,6 @@ async function loadAuthorizedState(authUser){
  const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
-async function resetProductionFinancialsIfNeeded(){
- if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-5';
- if(state.settings?.productionFinancialResetVersion===marker)return false;
- const users={...state.users};
- Object.values(users).forEach(u=>{
-   if(!u)return;
-   u.balance=0;u.commission=0;u.referrals=0;
-   delete u.depositCredits;
- });
- const updates={};
- ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>updates[k]=null);
- Object.entries(users).forEach(([id,u])=>{updates['users/'+id]=u});
- updates['settings/productionFinancialResetVersion']=marker;
- try{
-   await firebase.database().ref(DB_PATH).update(updates);
-   state.users=users;
-   state.envios={};state.recargas={};state.paqueticos={};state.pagos={};state.paquetes={};state.deposits={};state.accountWithdrawals={};state.commissions={};state.requests={};state.notifications={};state.audit={};state.beneficiaries={};
-   state.settings=state.settings||{};state.settings.productionFinancialResetVersion=marker;
-   lastSyncedState=cloneState(state);localSave();knownNotificationIds.clear();
-   return true;
- }catch(e){console.warn('Production financial reset:',e);toast('No se pudo completar el reinicio a cero en Firebase.','error');return false}
-}
 function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auths:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
