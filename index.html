@@ -1297,7 +1297,7 @@ async function approveDeposit(id,status){
  // Rechazado / No coincide: como nunca se acreditó mientras estaba pendiente, no se toca ningún balance.
  if(firebaseReady){
    const ref=firebase.database().ref(DB_PATH+'/deposits/'+id);
-   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason,accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0});
+   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:(()=>{const x={...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason,accountingType:'DEPOSITO_CAPITAL'};delete x.commissionRate;delete x.commission;delete x.commissionUser;delete x.commissionAdmin;delete x.commissionSplit;return x})());
    if(!tx.committed)return toast('El depósito ya fue procesado o cambió en otro dispositivo.','warn');
    r=tx.snapshot.val();state.deposits[id]=r;
  }else{
