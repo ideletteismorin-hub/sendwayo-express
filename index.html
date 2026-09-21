@@ -1522,17 +1522,33 @@ async function manualRefresh(showMessage=true){
      if(showMessage)toast('Firebase no está conectado con esta sesión.','error');
      return false;
    }
+   // IMPORTANTE: esta función es una lectura completa de Firebase.
+   // No mezcla datos locales antiguos: el estado visible queda exactamente
+   // igual al estado que devuelve RTDB en este momento.
    const snap=await Promise.race([
      firebase.database().ref(DB_PATH).once('value'),
      new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))
    ]);
    if(!snap.exists())throw new Error('FIREBASE_EMPTY');
    const remote=snap.val()||{};
-   state={...state,...remote};
-   state.users={...state.users,...(remote.users||{})};
-   state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};
-   state.accounts={...state.accounts,...(remote.accounts||{})};
-   state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};
+   state={
+     users:remote.users||{},
+     beneficiaries:remote.beneficiaries||{},
+     accounts:remote.accounts||{},
+     envios:remote.envios||{},
+     recargas:remote.recargas||{},
+     paqueticos:remote.paqueticos||{},
+     pagos:remote.pagos||{},
+     paquetes:remote.paquetes||{},
+     deposits:remote.deposits||{},
+     accountWithdrawals:remote.accountWithdrawals||{},
+     commissions:remote.commissions||{},
+     requests:remote.requests||{},
+     notifications:remote.notifications||{},
+     audit:remote.audit||{},
+     settings:remote.settings||{},
+     ...remote
+   };
    const fresh=currentUser&&state.users?.[currentUser.id];
    if(fresh&&fresh.active!==false)currentUser=fresh;
    lastSyncedState=cloneState(state);
@@ -1543,7 +1559,7 @@ async function manualRefresh(showMessage=true){
    return true;
  }catch(e){
    console.warn('SENDWAYO manualRefresh:',e);
-   if(showMessage)toast(e.message==='REFRESH_TIMEOUT'?'Firebase tardó demasiado en responder.':'No se pudo actualizar desde Firebase.','error');
+   if(showMessage)toast(e.message==='REFRESH_TIMEOUT'?'Firebase tardó demasiado en responder.':'No se pudo actualizar directamente desde Firebase.','error');
    return false;
  }finally{
    if(btn){btn.disabled=false;btn.classList.remove('is-refreshing')}
