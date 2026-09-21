@@ -804,12 +804,27 @@ async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
  if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-3'){delete state.settings.productionResetVersion;productionResetState()}
- const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
+ if(authUser?.email===state.users?.admin?.authEmail || authUser?.email==='sendwayoexpress@gmail.com'){
+ const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-3';
+ if(state.settings?.productionFinancialResetVersion!==resetMarker){
+  const users={...state.users};
+  Object.values(users).forEach(u=>{if(u){u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits;}});
+  const resetUpdates={};
+  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>resetUpdates[k]=null);
+  Object.entries(users).forEach(([id,u])=>resetUpdates['users/'+id]=u);
+  resetUpdates['settings/productionFinancialResetVersion']=resetMarker;
+  resetUpdates['settings/depositAccountingRepairV2']=null;
+  await firebase.database().ref(DB_PATH).update(resetUpdates);
+  state.users=users;state.envios={};state.recargas={};state.paqueticos={};state.pagos={};state.paquetes={};state.deposits={};state.accountWithdrawals={};state.commissions={};state.requests={};state.notifications={};state.audit={};state.beneficiaries={};
+  state.settings=state.settings||{};state.settings.productionFinancialResetVersion=resetMarker;delete state.settings.depositAccountingRepairV2;localSave();
+ }
+}
+const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
 async function resetProductionFinancialsIfNeeded(){
  if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-2';
+ const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-3';
  if(state.settings?.productionFinancialResetVersion===marker)return false;
  const users={...state.users};
  Object.values(users).forEach(u=>{
