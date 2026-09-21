@@ -552,7 +552,6 @@ async function firebaseRemove(path){
 let notificationHydrated=false;let knownAdminNotifications=new Set();
 function ensureSeedData(){
   state.settings=state.settings||{contact:{phone:'8920051255',email:'sendwayoexpress@gmail.com'}};state.settings.contact=state.settings.contact||{phone:'8920051255',email:'sendwayoexpress@gmail.com'};
-  productionResetState();
   state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};
   DEMO_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]={...x,balance:0,commission:0,referrals:0};if(!state.users[x.id].authEmail)state.users[x.id].authEmail=authEmailFor(state.users[x.id])}); state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{};
   ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]=state[k]||{});
@@ -807,27 +806,18 @@ async function repairLegacyDepositCommissions(){
 
 
 async function loadAuthorizedState(authUser){
- const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
- if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
- if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-3'){delete state.settings.productionResetVersion;productionResetState()}
- if(authUser?.email===state.users?.admin?.authEmail || authUser?.email==='sendwayoexpress@gmail.com'){
- const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-5';
- if(state.settings?.productionFinancialResetVersion!==resetMarker){
-  const users={...state.users};
-  Object.values(users).forEach(u=>{if(u){u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits;}});
-  const resetUpdates={};
-  // REINICIO OFICIAL: se eliminan todas las operaciones y movimientos previos.
-  // Se conservan únicamente los usuarios, sus accesos y las cuentas bancarias oficiales.
-  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>resetUpdates[k]=null);
-  Object.entries(users).forEach(([id,u])=>resetUpdates['users/'+id]=u);
-  resetUpdates['settings/productionFinancialResetVersion']=resetMarker;
-  resetUpdates['settings/depositAccountingRepairV2']=null;
-  await firebase.database().ref(DB_PATH).update(resetUpdates);
-  state.users=users;state.envios={};state.recargas={};state.paqueticos={};state.pagos={};state.paquetes={};state.deposits={};state.accountWithdrawals={};state.commissions={};state.requests={};state.notifications={};state.audit={};state.beneficiaries={};
-  state.settings=state.settings||{};state.settings.productionFinancialResetVersion=resetMarker;delete state.settings.depositAccountingRepairV2;localSave();
+ const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');
+ if(snap.exists()){
+   const remote=snap.val()||{};
+   state={...state,...remote};
+   state.users={...state.users,...(remote.users||{})};
+   state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};
+   state.accounts={...state.accounts,...(remote.accounts||{})};
+   state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};
  }
-}
-const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
+ // PRODUCCIÓN: nunca reiniciar ni poner balances en cero al iniciar sesión.
+ // Firebase es la fuente de verdad. Los balances existentes se conservan.
+ const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
 async function resetProductionFinancialsIfNeeded(){
@@ -853,19 +843,7 @@ async function resetProductionFinancialsIfNeeded(){
    return true;
  }catch(e){console.warn('Production financial reset:',e);toast('No se pudo completar el reinicio a cero en Firebase.','error');return false}
 }
-function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
-function applyRoleVisibility(){
- let admin=isAdmin();
- document.querySelectorAll('#sidebar-menu li').forEach(li=>{let txt=li.innerText;li.style.display=(!admin && (txt.includes('Solicitudes')||txt.includes('Información Secreta'))) ? 'none':''});
- let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display=admin?'flex':'none';document.querySelectorAll('.admin-only').forEach(e=>e.style.display=admin?'':'none');
- if(!admin)document.getElementById('sidebar-role-label').textContent=currentUser.role.toUpperCase();
-}
-function toggleMobileMenu(){document.getElementById('app-sidebar').classList.toggle('active')}
-function switchView(id){
- document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
- let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
- document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auths:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
@@ -1231,7 +1209,7 @@ async function setTransactionStatus(collection,id,status){
    r=state[collection][id];r.balanceRefunded=true;r.balanceRefundedAt=now();state[collection][id]=r;
  }
  const msg=status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
- await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast('Estado actualizado: '+status)
+ await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast(collection==='deposits'&&status==='Aprobado'?'Depósito aprobado: este dinero ya va directamente al balance del remitente. Comisión: RD$0.00.':'Estado actualizado: '+status)
 }
 
 function enforceDepositCapital(r){
