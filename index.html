@@ -136,7 +136,6 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <li><a href="#" onclick="switchView('contacto')"><i class="fa-solid fa-address-card"></i> Contactarnos</a></li>
       <li><a href="#" onclick="switchView('comisiones')"><i class="fa-solid fa-hand-holding-dollar"></i> Retiro / Pago de Comisiones</a></li>
       <li><a href="#" onclick="switchView('solicitudes')"><i class="fa-solid fa-inbox"></i> Solicitudes y Aprobaciones</a></li>
-      <li><a href="#" onclick="switchView('informacion_sugerida')"><i class="fa-solid fa-circle-info"></i> Información Sugerida</a></li>
       <li><a href="#" onclick="switchView('secretas')"><i class="fa-solid fa-user-secret"></i> Información Secreta</a></li>
       <li><a href="#" onclick="switchView('perfil')"><i class="fa-solid fa-user"></i> Mi Perfil</a></li>
       <li><a href="#" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</a></li>
@@ -246,16 +245,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="table-wrap"><table id="reqTable"><thead><tr><th>N°</th><th>Nombre</th><th>WhatsApp</th><th>Documento</th><th>Solicitud</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
-  <section id="view-informacion_sugerida" class="view-section">
-<div class="card"><div class="card-header"><h3>Información Sugerida</h3></div>
-<div class="info-box"><strong>Acceso de remitentes:</strong> el usuario se forma automáticamente con el nombre y apellido, sin espacios. El ID permanente tiene el formato ID + 8 números y es único.</div>
-<div class="info-box" style="margin-top:10px"><strong>Perfil:</strong> el remitente puede cambiar su nombre, contraseña y foto de perfil. El ID nunca cambia.</div>
-<div class="info-box" style="margin-top:10px"><strong>Beneficiarios:</strong> pueden registrarse con nombre y celular/WhatsApp y utilizarse en las operaciones.</div>
-<div class="info-box" style="margin-top:10px"><strong>Administración:</strong> el Administrador puede crear, editar y eliminar remitentes y beneficiarios y revisar las operaciones sincronizadas.</div>
-<div class="info-box" style="margin-top:10px"><strong>Reportes:</strong> los listados disponen de Excel, PDF y CSV.</div>
-</div></section>
-
-<section id="view-secretas" class="view-section">
+  <section id="view-secretas" class="view-section">
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
     <div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
@@ -553,7 +543,7 @@ function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
  let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
  document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',agentes:'Agentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',informacion_sugerida:'Información Sugerida',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+ let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
