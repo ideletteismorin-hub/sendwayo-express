@@ -39,7 +39,7 @@ button,input,select,textarea{font:inherit}
 .btn-primary{background:var(--primary);color:#fff}.btn-success{background:var(--accent);color:#fff}.btn-warning{background:var(--secondary);color:#17202a}.btn-danger{background:var(--danger);color:#fff}.btn-light{background:#e9eef5;color:var(--primary)}
 .btn-sm{padding:5px 8px;font-size:.78rem}
 .muted{color:var(--gray);font-size:.82rem}
-.hidden{display:none!important}
+.hidden{display:none!important}.login-status{margin-top:10px;padding:9px 11px;border-radius:8px;background:#f8fafc;color:#52606d;font-size:.78rem;line-height:1.35;text-align:center;min-height:0}.login-status:empty{display:none}.login-status.ok{background:#ecfdf3;color:#166534}.login-status.error{background:#fef2f2;color:#991b1b}.login-status.warn{background:#fffbeb;color:#92400e}
 aside{width:280px;background:var(--primary);color:#fff;display:flex;flex-direction:column;justify-content:space-between;z-index:100}
 .sidebar-brand{padding:15px 18px;font-size:1rem;font-weight:800;background:#071a36;display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--secondary)}
 .sidebar-brand img{width:190px;height:68px;object-fit:contain}.sidebar-brand span{display:none}.sidebar-menu{list-style:none;padding:10px 0;overflow-y:auto;flex:1}
@@ -114,7 +114,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <p class="muted" style="text-align:center;margin:7px 0 20px">Ingrese sus credenciales de acceso</p>
     <div class="form-group"><label>Usuario o correo electrónico</label><input id="login-user" type="text" class="form-control" autocomplete="username" placeholder="nombre.apellido"></div>
     <div class="form-group"><label>Contraseña</label><input id="login-pass" type="password" class="form-control" autocomplete="current-password"></div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="realizarLogin()">Ingresar al Sistema</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="realizarLogin()">Ingresar al Sistema</button><div id="login-status" class="login-status" role="status" aria-live="polite"></div>
     <button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="showWelcome()">Volver a bienvenida</button>
   </div>
 </div>
@@ -481,7 +481,43 @@ function attachRealtimeListeners(){
 
 function applyBrandLogo(){document.querySelectorAll('img.brand-logo, .sidebar-brand img, #login-screen img, #header-avatar, #profile-preview').forEach(img=>{if(!img.dataset.userAvatar)img.src=LOGO_DATA});}
 function openBrandSite(){window.location.href='https://sendwayo-oficial.github.io/sendwayo-express/';}
-function boot(){initLanguage();let saved=localStorage.getItem(DB_PATH);if(saved){try{const local=JSON.parse(saved);state={...state,...local};state.users={...state.users,...(local.users||{})};state.beneficiaries={...state.beneficiaries,...(local.beneficiaries||{})};state.accounts={...state.accounts,...(local.accounts||{})}}catch(e){}}ensureSeedData();applyBrandLogo();initFirebase().then(()=>{if(firebaseReady)firebase.auth().onAuthStateChanged(async authUser=>{if(authUser){try{await loadAuthorizedState(authUser);const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email==='sendwayoexpress@gmail.com'));if(found&&found.active!==false){found.authUid=authUser.uid;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll()}else{await firebase.auth().signOut();showWelcome()}}catch(e){console.warn(e);await firebase.auth().signOut().catch(()=>{});showWelcome()}}else{currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');showWelcome()}});else showWelcome()})}
+function boot(){
+ initLanguage();
+ try{
+   let saved=localStorage.getItem(DB_PATH);
+   if(saved){
+     const local=JSON.parse(saved);
+     state={...state,...local};
+     state.users={...state.users,...(local.users||{})};
+     state.beneficiaries={...state.beneficiaries,...(local.beneficiaries||{})};
+     state.accounts={...state.accounts,...(local.accounts||{})};
+   }
+ }catch(e){console.warn('SENDWAYO local state:',e)}
+ ensureSeedData();
+ applyBrandLogo();
+ const firebaseBoot=Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_BOOT_TIMEOUT')),10000))]);
+ firebaseBoot.then(ok=>{
+   if(!ok){console.warn('Firebase no disponible al iniciar.');showWelcome();return}
+   firebase.auth().onAuthStateChanged(async authUser=>{
+     if(!authUser){if(!currentUser)showWelcome();return}
+     if(window.__sendwayoLoginInProgress)return;
+     try{
+       await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
+       const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
+       if(found&&found.active!==false){
+         found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
+       }else{
+         await firebase.auth().signOut().catch(()=>{});
+         currentUser=null;showWelcome();
+       }
+     }catch(e){
+       console.warn('SENDWAYO session restore:',e);
+       await firebase.auth().signOut().catch(()=>{});
+       currentUser=null;showWelcome();
+     }
+   });
+ }).catch(e=>{console.warn('SENDWAYO Firebase boot:',e);showWelcome()});
+}
 boot();
 
 function showWelcome(){document.getElementById('welcome-screen').classList.remove('hidden');document.getElementById('login-screen').classList.add('hidden');document.body.style.overflow=''}
@@ -504,27 +540,61 @@ async function submitRequest(){
  await persist();closeModal('requestModal');toast('Solicitud enviada al Administrador.');showWelcome()
 }
 async function realizarLogin(){
+ window.__sendwayoLoginInProgress=true;
+ const status=document.getElementById('login-status');
+ const setStatus=(msg,kind='')=>{if(status){status.textContent=msg;status.className='login-status '+kind}};
  const identifier=document.getElementById('login-user').value.trim();
  const password=document.getElementById('login-pass').value;
- if(!identifier||!password)return toast('Escriba su usuario o correo y su contraseña.','warn');
+ if(!identifier||!password){setStatus('Escriba su usuario o correo y su contraseña.','warn');return toast('Escriba su usuario o correo y su contraseña.','warn')}
+ const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
+ if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='Conectando…'}
  try{
-   await initFirebase();
-   let found=Object.values(state.users||{}).find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase());
+   setStatus('Conectando con el servicio de acceso…');
+   const ready=await Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_TIMEOUT')),10000))]);
+   if(!ready)throw new Error('FIREBASE_UNAVAILABLE');
+   const users=Object.values(state.users||{});
+   let found=users.find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase());
    let email=found?authEmailFor(found):identifier.toLowerCase();
+   setStatus('Verificando credenciales…');
    let cred;
    try{
-     cred=await firebase.auth().signInWithEmailAndPassword(email,password);
+     cred=await Promise.race([
+       firebase.auth().signInWithEmailAndPassword(email,password),
+       new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
+     ]);
    }catch(firstError){
      const legacy=found?.legacyAuthEmail||((found&&!String(found.authEmail||'').endsWith('@comercial.com'))?found.authEmail:legacyAuthEmailFor(found));
      if(!legacy||legacy.toLowerCase()===String(email).toLowerCase())throw firstError;
-     cred=await firebase.auth().signInWithEmailAndPassword(legacy,password);
+     cred=await Promise.race([
+       firebase.auth().signInWithEmailAndPassword(legacy,password),
+       new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
+     ]);
    }
    const authUser=cred.user;
-   found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email==='sendwayoexpress@gmail.com')||u.authUid===authUser.uid||u.authEmail===authUser.email||u.username===identifier);
+   found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email===state.users.admin.authEmail)||(u.authUid===authUser.uid)||(u.authEmail===authUser.email)||String(u.username||'').toLowerCase()===identifier.toLowerCase());
    if(!found)throw new Error('PROFILE_NOT_FOUND');
    if(found.active===false)throw new Error('INACTIVE');
-   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();showAppForUser(found);applyRoleVisibility();renderAll();toast('Bienvenido, '+found.name+'.');
- }catch(e){console.warn('Firebase Auth:',e);const msg=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Usuario/correo o contraseña incorrectos.':e.message==='PROFILE_NOT_FOUND'?'La cuenta de Firebase no tiene un perfil SENDWAYO registrado.':e.message==='INACTIVE'?'Esta cuenta está inactiva.':'No se pudo iniciar sesión. Revise Firebase Authentication.';toast(msg,'error')}
+   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
+   setStatus('Acceso autorizado. Cargando su espacio…','ok');
+   showAppForUser(found);applyRoleVisibility();renderAll();toast('Bienvenido, '+found.name+'.','success');
+ }catch(e){
+   console.warn('SENDWAYO login diagnostic:',e);
+   let msg;
+   if(e.message==='FIREBASE_TIMEOUT')msg='El servicio de Firebase tardó demasiado en responder. La pantalla no quedará bloqueada; revise la conexión y vuelva a intentar.';
+   else if(e.message==='FIREBASE_UNAVAILABLE')msg='Firebase no está disponible en este momento. Verifique que los servicios de Firebase estén cargando correctamente.';
+   else if(e.message==='AUTH_TIMEOUT')msg='Firebase Authentication no respondió dentro de 15 segundos. Revise Internet y la configuración de Authentication.';
+   else if(e.code==='auth/operation-not-allowed')msg='El método Correo/Contraseña no está habilitado en Firebase Authentication.';
+   else if(e.code==='auth/invalid-api-key')msg='La configuración de Firebase contiene una clave API inválida.';
+   else if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found')msg='Usuario/correo o contraseña incorrectos.';
+   else if(e.code==='auth/network-request-failed')msg='No fue posible comunicarse con Firebase Authentication.';
+   else if(e.message==='PROFILE_NOT_FOUND')msg='La cuenta de Firebase existe, pero no tiene un perfil SENDWAYO asociado.';
+   else if(e.message==='INACTIVE')msg='Esta cuenta está inactiva. Solo el Administrador puede reactivarla.';
+   else msg='No se pudo iniciar sesión'+(e.code?' ('+e.code+')':e.message?' ('+e.message+')':'')+'.';
+   setStatus(msg,'error');toast(msg,'error');
+ }finally{
+   window.__sendwayoLoginInProgress=false;
+   if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'Ingresar al Sistema'}
+ }
 }
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
@@ -1021,7 +1091,7 @@ function updateSelectors(){
 const _renderAll=renderAll;renderAll=function(){updateSelectors();_renderAll()}
 setInterval(()=>{document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');updateSessionUI();if(currentUser&&Date.now()-lastActivity>=SESSION_TTL)cerrarSesion()},1000);
 window.addEventListener('load',()=>{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission().catch(()=>{});let access=new URLSearchParams(location.search).get('access');if(access&&!currentUser){showLogin();document.getElementById('login-user').value=access}updateSessionUI()});
-window.addEventListener('beforeunload',()=>{if(currentUser)saveSession()});
+window.addEventListener('error',e=>{console.error('SENDWAYO JS ERROR',e.error||e.message);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error del sistema: '+(e.message||'Error JavaScript');el.className='login-status error'}});window.addEventListener('unhandledrejection',e=>{console.error('SENDWAYO PROMISE ERROR',e.reason);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error de conexión: '+(e.reason?.message||e.reason||'Error desconocido');el.className='login-status error'}});window.addEventListener('beforeunload',()=>{if(currentUser)saveSession()});
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(document.activeElement?.id==='login-user'||document.activeElement?.id==='login-pass'))realizarLogin()});
 </script>
