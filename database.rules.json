@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null && (auth.token.admin === true || (data.child('users').child(auth.uid).child('role').val() === 'Administrador'))",
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true || data.child('role').val() === 'Administrador')",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.admin === true || data.child('role').val() === 'Administrador')"
+      }
+    },
+    "beneficiaries": {
+      "$id": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || auth.token.admin === true)",
+        ".write": "auth != null && (newData.child('userId').val() === auth.uid || auth.token.admin === true)"
+      }
+    },
+    "accounts": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.admin === true || data.child('role').val() === 'Administrador')"
+    },
+    "notifications": {
+      "$id": {
+        ".read": "auth != null && (data.child('targetUserId').val() === auth.uid || auth.token.admin === true)",
+        ".write": "auth != null && (auth.token.admin === true || newData.child('targetUserId').val() === auth.uid)"
+      }
+    }
+  }
+}
