@@ -163,13 +163,14 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <div class="card-header">
         <div><h3 style="margin-bottom:4px">Administración</h3><div class="muted">Control financiero exclusivo del Administrador</div></div>
         <div class="actions">
+          <button class="btn btn-success" onclick="openAdminDepositModal()"><i class="fa-solid fa-user-plus"></i> Acreditar Remitente</button>
           <button class="btn btn-primary" onclick="openAdminCreditModal()"><i class="fa-solid fa-circle-plus"></i> Acreditar Administración</button>
           <button class="btn btn-warning" onclick="switchView('ajustes_balances')"><i class="fa-solid fa-sliders"></i> Ajustar balances</button>
         </div>
       </div>
       <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
         <div><small class="muted">Balance de la Administración</small><h2 id="dashboard-admin-balance" style="margin:4px 0">RD$ 0.00</h2></div>
-        <div class="info-box" style="margin:0;flex:1;min-width:260px">Aquí el Administrador puede acreditar fondos directamente al balance administrativo. Esto es independiente del balance de cada Remitente.</div>
+        <div class="info-box" style="margin:0;flex:1;min-width:260px">El Administrador tiene dos opciones separadas: acreditar directamente a un Remitente o acreditar fondos a la Administración. Si acredita RD$5,000 a un Remitente, esos RD$5,000 llegan directamente a su balance/capital, sin comisión.</div>
       </div>
     </div>
     <div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
