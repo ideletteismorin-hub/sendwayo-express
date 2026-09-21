@@ -419,7 +419,7 @@ function updateSessionUI(){
  let ee=document.getElementById('session-elapsed');if(ee)ee.textContent=String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
  if(currentUser&&remain<=0)cerrarSesion();
 }
-function manualRefresh(){touch();if(firebaseReady){firebase.database().ref(DB_PATH).once('value').then(s=>{if(s.exists()){state=s.val();if(currentUser&&state.users?.[currentUser.id])currentUser=state.users[currentUser.id];renderAll();toast('Datos actualizados en tiempo real.')}}).catch(()=>toast('No se pudo actualizar desde Firebase.','warn'))}else{let saved=localStorage.getItem(DB_PATH);if(saved)try{state=JSON.parse(saved)}catch(e){}renderAll();toast('Datos locales actualizados.')}}
+async function manualRefresh(showMessage=true){touch();const btn=document.querySelector('.refresh-btn');if(btn)btn.disabled=true;try{if(firebaseReady&&firebase.auth().currentUser){const snap=await firebase.database().ref(DB_PATH).once('value');if(snap.exists()){const remote=snap.val()||{};state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};ensureSeedData();const fresh=currentUser&&state.users?.[currentUser.id];if(fresh&&fresh.active!==false)currentUser=fresh;lastSyncedState=cloneState(state);localSave();renderAll();if(showMessage)toast('Actualizado directamente desde Firebase.','success')}}else{let saved=localStorage.getItem(DB_PATH);if(saved)try{state=JSON.parse(saved)}catch(e){}renderAll();if(showMessage)toast('Firebase todavía no está conectado. Se muestran los datos guardados localmente.','warn')}}catch(e){console.warn('SENDWAYO manualRefresh:',e);if(showMessage)toast('No se pudo actualizar desde Firebase.','error')}finally{if(btn)btn.disabled=false}}
 
 function localSave(){localStorage.setItem(DB_PATH,JSON.stringify(state))}
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
@@ -489,6 +489,7 @@ async function crearAccesosIniciales(){
 function attachRealtimeListeners(){
  if(!firebaseReady||!firebase.auth().currentUser)return;
  const db=firebase.database().ref(DB_PATH);db.off();db.on('value',snap=>{if(!snap.exists())return;const remote=snap.val()||{};state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};ensureSeedData();lastSyncedState=cloneState(state);if(currentUser){const fresh=state.users?.[currentUser.id];if(fresh&&fresh.active!==false)currentUser=fresh}renderAll()});
+ const connRef=firebase.database().ref('.info/connected');connRef.off();connRef.on('value',snap=>{const connected=snap.val()===true;const b=document.querySelector('.refresh-btn');if(b){b.title=connected?'Firebase conectado · Actualizar ahora':'Firebase sin conexión · Reintentando';b.style.opacity=connected?'1':'.55'}});startAutoFirebaseRefresh();
  const nref=firebase.database().ref(DB_PATH+'/notifications');nref.off();nref.on('child_added',snap=>{const n=snap.val();if(!n)return;state.notifications=state.notifications||{};const existed=!!state.notifications[n.id];state.notifications[n.id]=n;if(notificationHydrated&&!existed&&(n.targetUserId===currentUser?.id||(isAdmin()&&n.target==='Administrador'))){playBell();if(n.collection&&n.recordId&&state[n.collection]?.[n.recordId]?.status==='Aprobado'&&state[n.collection]?.[n.recordId]?.receipt){setTimeout(()=>showReceipt(n.collection,n.recordId),180)}}renderNotifications()});nref.on('child_changed',snap=>{const n=snap.val();if(n){state.notifications=state.notifications||{};state.notifications[n.id]=n;renderNotifications()}});nref.on('child_removed',snap=>{const id=snap.key;if(state.notifications)delete state.notifications[id];renderNotifications()});nref.once('value').then(()=>notificationHydrated=true).catch(()=>notificationHydrated=true);
 }
 
@@ -667,7 +668,7 @@ function userById(id){return state.users[id]||{}}
 function isAdmin(){return currentUser?.role==='Administrador'}
 async function createTransaction(collection,fields,amount){
  const id=uid(collection),rate=collection==='envios'?.085:.05;
- const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false};
+ const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50'};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
  let ok=true;
@@ -917,8 +918,21 @@ async function approveDeposit(id,status){
  else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state.deposits[id]=r}
  const u=state.users?.[r.userId];if(!u)return;
  if(status==='Aprobado'){
-   if(!await updateUserFinancials(u.id,Number(r.amount||0),0))return toast('No se pudo acreditar el depósito.','error');
-   r=state.deposits[id];generateReceipt('deposits',id);state.deposits[id]=r;
+   const depositAmount=Number(r.amount||0);
+   if(!Number.isFinite(depositAmount)||depositAmount<=0)return toast('El monto del depósito no es válido.','error');
+   // DEPÓSITO = CAPITAL DEL REMITENTE. Nunca genera ni modifica comisión.
+   // Se acredita únicamente una vez, al aprobar, mediante transacción atómica de Firebase.
+   if(r.balanceCredited===true)return toast('Este depósito ya fue acreditado al balance.','warn');
+   if(firebaseReady){
+     const userRef=firebase.database().ref(DB_PATH+'/users/'+u.id);
+     const tx=await userRef.transaction(v=>v?({...v,balance:Number(v.balance||0)+depositAmount}):undefined);
+     if(!tx.committed)return toast('No se pudo acreditar el depósito en Firebase.','error');
+     state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];
+     if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);
+   }else{
+     const updated=await updateUserFinancials(u.id,depositAmount,0);if(!updated)return toast('No se pudo acreditar el depósito.','error');
+   }
+   r=state.deposits[id];r.balanceCredited=true;r.balanceCreditedAt=now();r.depositPrincipal=depositAmount;r.commission=0;r.commissionUser=0;r.commissionAdmin=0;generateReceipt('deposits',id);state.deposits[id]=r;
  }
  await addNotification(u.id,status==='Aprobado'?'Depósito de '+money(r.amount)+' APROBADO. Su balance fue actualizado y el recibo está disponible.':'Su depósito fue '+status.toUpperCase()+'. '+reviewReason,'deposits',id);
  await persist();renderAll();if(status==='Aprobado'&&state.deposits[id]?.receipt)setTimeout(()=>showReceipt('deposits',id),180);toast('Depósito '+status)
@@ -1044,7 +1058,7 @@ function renderSimple(collection,table,fields){
  let rows=Object.values(state[collection]).filter(r=>isAdmin()||r.userId===currentUser.id);
  document.querySelector('#'+table+' tbody').innerHTML=rows.map((r,i)=>{let vals=fields.map(f=>f==='amount'||f==='cost'?money(r[f]):escapeHtml(r[f]??'')).join('</td><td>');return `<tr><td>${i+1}</td><td>${vals}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}">${actionButtons(collection,r.id,r.status||'Pendiente')}</td></tr>`}).join('')||'<tr><td colspan="'+(fields.length+3)+'" class="muted">No hay registros.</td></tr>'
 }
-function renderCommissions(){let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${money(r.availableBefore)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('commissions','${r.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editRecord('commissions','${r.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('commissions','${r.id}')">Eliminar</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No hay pagos de comisión.</td></tr>'}
+function renderCommissions(){let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${money(r.availableBefore)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('commissions','${r.id}')">Ver</button>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editRecord(\\'commissions\\',\\''+r.id+'\\')">Modificar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord(\\'commissions\\',\\''+r.id+'\\')">Eliminar</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No hay pagos de comisión.</td></tr>'}
 function renderRequests(){
  let rows=Object.values(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
  document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${isAdmin()?'<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'requests\',\''+r.id+'\')"><i class="fa-solid fa-trash"></i></button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\''+r.id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\''+r.id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\''+r.id+'\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
@@ -1096,6 +1110,10 @@ function updateSelectors(){
 }
 const _renderAll=renderAll;renderAll=function(){updateSelectors();_renderAll()}
 setInterval(()=>{document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');updateSessionUI();if(currentUser&&Date.now()-lastActivity>=SESSION_TTL)cerrarSesion()},1000);
+let autoFirebaseRefreshTimer=null;
+function startAutoFirebaseRefresh(){if(autoFirebaseRefreshTimer)clearInterval(autoFirebaseRefreshTimer);autoFirebaseRefreshTimer=setInterval(()=>{if(currentUser&&firebaseReady&&firebase.auth().currentUser&&!document.hidden)manualRefresh(false)},15000)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady)manualRefresh(false)});
+
 window.addEventListener('load',()=>{let access=new URLSearchParams(location.search).get('access');if(access&&!currentUser){showLogin();document.getElementById('login-user').value=access}updateSessionUI()});
 window.addEventListener('error',e=>{console.error('SENDWAYO JS ERROR',e.error||e.message);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error del sistema: '+(e.message||'Error JavaScript');el.className='login-status error'}});window.addEventListener('unhandledrejection',e=>{console.error('SENDWAYO PROMISE ERROR',e.reason);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error de conexión: '+(e.reason?.message||e.reason||'Error desconocido');el.className='login-status error'}});window.addEventListener('beforeunload',()=>{if(currentUser)saveSession()});
 
