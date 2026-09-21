@@ -1724,7 +1724,8 @@ async function realizarLogin(){
    const ready=await Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_TIMEOUT')),10000))]);
    if(!ready)throw new Error('FIREBASE_UNAVAILABLE');
    const users=Object.values(state.users||{});
-   const normalizedIdentifier=normalizeUsername(identifier);\n   let found=users.find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
+   const normalizedIdentifier=normalizeUsername(identifier);
+   let found=users.find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
    let email=found?(found.authEmail||authEmailFor(found)):identifier.toLowerCase();
    setStatus('Verificando credenciales…');
    let cred;
