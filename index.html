@@ -526,8 +526,9 @@ async function realizarLogin(){
  }catch(e){console.warn('Firebase Auth:',e);const msg=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Usuario/correo o contraseña incorrectos.':e.message==='PROFILE_NOT_FOUND'?'La cuenta de Firebase no tiene un perfil SENDWAYO registrado.':e.message==='INACTIVE'?'Esta cuenta está inactiva.':'No se pudo iniciar sesión. Revise Firebase Authentication.';toast(msg,'error')}
 }
 async function loadAuthorizedState(authUser){
- const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');
- if(snap.exists()){const remote=snap.val()||{};state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
+ const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
+ if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
+ if(remoteResetVersion!=='2026-09-21-FINAL-PRODUCTION-RESET-1'){delete state.settings.productionResetVersion;productionResetState()}
  const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
