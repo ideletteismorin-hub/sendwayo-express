@@ -1399,6 +1399,11 @@ function renderDashboardNotifications(){
 }
 function commissionDateKey(v){const t=parseSendwayoDate(v);if(!t)return '';const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function todayDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function scheduleCommissionDayRefresh(){
+ if(window.__sendwayoCommissionTimer)clearTimeout(window.__sendwayoCommissionTimer);
+ const nowD=new Date(),next=new Date(nowD.getFullYear(),nowD.getMonth(),nowD.getDate()+1,0,0,1,0);
+ window.__sendwayoCommissionTimer=setTimeout(()=>{if(currentUser){renderDashboard();}scheduleCommissionDayRefresh()},Math.max(1000,next.getTime()-Date.now()));
+}
 function commissionTodayFor(userId){
  const today=todayDateKey();let total=0;
  ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>{
@@ -1482,6 +1487,7 @@ async function saveAdminBalanceAdjustment(){
 }
 
 function renderDashboard(){
+ scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
  const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
  document.getElementById('kpi-commission').textContent=money(u.commission);
