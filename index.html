@@ -449,7 +449,7 @@ function ensureSeedData(){
   ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]=state[k]||{});
   ensureStaffDirectory();
 }
-async function initFirebase(){try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);firebaseReady=true;return true}catch(e){firebaseReady=false;console.warn('Firebase no disponible.',e);return false}}
+async function initFirebase(){try{if(typeof firebase==='undefined'||!firebase.initializeApp)throw new Error('FIREBASE_SDK_NOT_LOADED');if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);firebaseReady=true;return true}catch(e){firebaseReady=false;console.warn('Firebase no disponible.',e);return false}}
 async function createFirebaseAccountForUser(user){
   if(!user||user.id==='admin')return {status:'skip'};
   try{
@@ -540,11 +540,11 @@ async function submitRequest(){
  await persist();closeModal('requestModal');toast('Solicitud enviada al Administrador.');showWelcome()
 }
 async function realizarLogin(){
- window.__sendwayoLoginInProgress=true;
  const status=document.getElementById('login-status');
  const setStatus=(msg,kind='')=>{if(status){status.textContent=msg;status.className='login-status '+kind}};
  const identifier=document.getElementById('login-user').value.trim();
  const password=document.getElementById('login-pass').value;
+ window.__sendwayoLoginInProgress=false;
  if(!identifier||!password){setStatus('Escriba su usuario o correo y su contraseña.','warn');return toast('Escriba su usuario o correo y su contraseña.','warn')}
  const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
  if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='Conectando…'}
