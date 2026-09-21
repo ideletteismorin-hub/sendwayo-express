@@ -352,12 +352,26 @@ const UI_TRANSLATIONS={
 }};
 function translateInterface(){
  const lang=localStorage.getItem('sendwayo_language')||'es', map=UI_TRANSLATIONS[lang]||{};
- if(lang==='es')return;
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
- nodes.forEach(n=>{const raw=n.nodeValue||'',key=raw.trim();if(!key||!map[key])return;n.nodeValue=raw.replace(key,map[key])});
+ nodes.forEach(n=>{
+   if(!n.parentElement)return;
+   const raw=n.nodeValue||'';
+   if(!n.__sendwayoOriginal) n.__sendwayoOriginal=raw;
+   const original=n.__sendwayoOriginal;
+   if(original.trim()&&n.parentElement.closest('script,style'))return;
+   const key=original.trim();
+   if(lang==='es'){n.nodeValue=original;return}
+   if(map[key])n.nodeValue=original.replace(key,map[key]);
+   else n.nodeValue=original;
+ });
  document.querySelectorAll('input[placeholder],textarea[placeholder],button[title],select[title]').forEach(el=>{
-   ['placeholder','title'].forEach(a=>{const v=el.getAttribute(a);if(v&&map[v])el.setAttribute(a,map[v])});
+   ['placeholder','title'].forEach(a=>{
+     const marker='sendwayoOriginal'+a.charAt(0).toUpperCase()+a.slice(1);
+     if(el[marker]===undefined)el[marker]=el.getAttribute(a)||'';
+     const v=el[marker];
+     el.setAttribute(a,(lang!=='es'&&map[v])?map[v]:v);
+   });
  });
 }
 function setLanguage(lang){
