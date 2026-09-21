@@ -814,12 +814,23 @@ async function loadAuthorizedState(authUser){
    state.accounts={...state.accounts,...(remote.accounts||{})};
    state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};
  }
- // PRODUCCIÓN: nunca reiniciar ni poner balances en cero al iniciar sesión.
- // Firebase es la fuente de verdad. Los balances existentes se conservan.
+ // PRODUCCIÓN: Firebase es la fuente de verdad. Nunca reiniciar balances al iniciar sesión.
  const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
-function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auths:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
+function applyRoleVisibility(){
+ let admin=isAdmin();
+ document.querySelectorAll('#sidebar-menu li').forEach(li=>{let txt=li.innerText;li.style.display=(!admin && (txt.includes('Solicitudes')||txt.includes('Información Secreta'))) ? 'none':''});
+ let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display=admin?'flex':'none';document.querySelectorAll('.admin-only').forEach(e=>e.style.display=admin?'':'none');
+ if(!admin)document.getElementById('sidebar-role-label').textContent=currentUser.role.toUpperCase();
+}
+function toggleMobileMenu(){document.getElementById('app-sidebar').classList.toggle('active')}
+function switchView(id){
+ document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
+ let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
+ document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
+ let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
