@@ -313,7 +313,7 @@ function fullPhone(countryId,number){const c=String(document.getElementById(coun
 const LANG={es:{approved:'APROBADO',download:'Descargar / guardar',thanks:'¡Gracias por preferirnos!'},fr:{approved:'APPROUVÉ',download:'Télécharger / enregistrer',thanks:'Merci de nous avoir choisis !'},en:{approved:'APPROVED',download:'Download / save',thanks:'Thank you for choosing us!'},ht:{approved:'APWOUVE',download:'Telechaje / sove',thanks:'Mèsi paske ou chwazi nou!'}};
 function setLanguage(lang){if(!LANG[lang])lang='es';localStorage.setItem('sendwayo_language',lang);const s=document.getElementById('language-selector');if(s)s.value=lang;const ws=document.getElementById('welcome-language-selector');if(ws)ws.value=lang;document.documentElement.lang=lang==='ht'?'ht':lang;const t=LANG[lang];document.querySelectorAll('[data-lang-key]').forEach(el=>{const k=el.dataset.langKey;if(t[k])el.textContent=t[k]})}
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
-function productionResetState(){const marker='2026-09-21-PRODUCTION-RESET-2';state.settings=state.settings||{};if(state.settings.productionResetVersion===marker)return false;['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]={});state.beneficiaries={};state.accounts=state.accounts||{}; BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});Object.values(state.users||{}).filter(u=>u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;u.active=true;u.phone=u.phone||'';u.doc=u.doc||''});if(state.users?.admin){state.users.admin.balance=0;state.users.admin.commission=0;state.users.admin.referrals=0}state.settings.productionResetVersion=marker;return true}
+function productionResetState(){const marker='2026-09-21-PRODUCTION-RESET-3';state.settings=state.settings||{};if(state.settings.productionResetVersion===marker)return false;['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]={});state.beneficiaries={};state.accounts=state.accounts||{}; BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});Object.values(state.users||{}).filter(u=>u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;u.active=true;u.phone=u.phone||'';u.doc=u.doc||''});if(state.users?.admin){state.users.admin.balance=0;state.users.admin.commission=0;state.users.admin.referrals=0}state.settings.productionResetVersion=marker;return true}
 const DEMO_ACCOUNTS=[
       {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:0},
  {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
@@ -440,7 +440,7 @@ async function manualRefresh(showMessage=true){
    state={
      users:remote.users||{},
      beneficiaries:remote.beneficiaries||{},
-     accounts:remote.accounts||{},
+     accounts:(remote.accounts&&Object.keys(remote.accounts).length)?remote.accounts:Object.fromEntries(BANKS.map(x=>[x.id,{...x}])),
      envios:remote.envios||{},
      recargas:remote.recargas||{},
      paqueticos:remote.paqueticos||{},
@@ -549,7 +549,7 @@ function attachRealtimeListeners(){
    state={...remote};
    state.users=remote.users||{};
    state.beneficiaries=remote.beneficiaries||{};
-   state.accounts=remote.accounts||{};
+   state.accounts=(remote.accounts&&Object.keys(remote.accounts).length)?remote.accounts:Object.fromEntries(BANKS.map(x=>[x.id,{...x}]));
    state.settings=remote.settings||{};
    lastSyncedState=cloneState(state);
    if(currentUser){
@@ -744,7 +744,7 @@ async function repairLegacyDepositCommissions(){
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
- if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-2'){delete state.settings.productionResetVersion;productionResetState()}
+ if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-3'){delete state.settings.productionResetVersion;productionResetState()}
  const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
@@ -765,7 +765,7 @@ function switchView(id){
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
 }
-function openModal(id){document.getElementById(id).style.display='flex';if(id==='depositoModal'&&currentUser){let rw=document.getElementById('dep-remitente-wrap'),sel=document.getElementById('dep-remitente');if(rw)rw.style.display=isAdmin()?'block':'none';if(sel)sel.innerHTML='<option value="">Seleccione un remitente</option>'+Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.name||u.username||u.id)+' — '+escapeHtml(u.username||'')+'</option>').join('');let ac=document.getElementById('dep-cuenta');if(ac)ac.innerHTML='<option value="">Seleccione una cuenta</option>'+Object.values(state.accounts||{}).filter(a=>a.active!==false).map(a=>'<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.bank||'')+' — '+escapeHtml(a.number||'')+'</option>').join('')}if(id==='comisionModal'&&currentUser){let wrap=document.getElementById('com-target-wrap');if(wrap)wrap.style.display=isAdmin()?'block':'none';updateCommissionTarget();document.getElementById('com-disp').value=money(currentUser.commission)}if(id==='retiroCuentaModal'&&currentUser)document.getElementById('cuenta-disp').value=money(currentUser.balance)}
+function openModal(id){document.getElementById(id).style.display='flex';if(id==='depositoModal'&&currentUser){let rw=document.getElementById('dep-remitente-wrap'),sel=document.getElementById('dep-remitente');if(rw)rw.style.display=isAdmin()?'block':'none';if(sel)sel.innerHTML='<option value="">Seleccione un remitente</option>'+Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.name||u.username||u.id)+' — '+escapeHtml(u.username||'')+'</option>').join('');let ac=document.getElementById('dep-cuenta');if(ac){let accounts=Object.values(state.accounts||{});if(!accounts.length){accounts=BANKS.map(x=>({...x}));state.accounts=Object.fromEntries(accounts.map(x=>[x.id,x]))}ac.innerHTML='<option value="">Seleccione una cuenta bancaria oficial</option>'+accounts.filter(a=>a.active!==false).map(a=>'<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.bank||'')+' — '+escapeHtml(a.number||'')+'</option>').join('')}}if(id==='comisionModal'&&currentUser){let wrap=document.getElementById('com-target-wrap');if(wrap)wrap.style.display=isAdmin()?'block':'none';updateCommissionTarget();document.getElementById('com-disp').value=money(currentUser.commission)}if(id==='retiroCuentaModal'&&currentUser)document.getElementById('cuenta-disp').value=money(currentUser.balance)}
 function handleModalBackdropClick(ev){
  const el=ev.currentTarget;
  if(!el||ev.target!==el)return;
@@ -1068,13 +1068,16 @@ async function setTransactionStatus(collection,id,status){
  if(status==='Aprobado'){
    // REGLA CONTABLE SENDWAYO: la comisión de una operación pertenece al Remitente.
    // Nunca se acredita al balance administrativo.
-   const userShare=commission,adminShare=0;
-   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar la comisión al balance del remitente.','error');
+   const userShare=commission*0.50,adminShare=commission*0.50;
+   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar la comisión del remitente.','error');
+   const adminUserId=state.users?.admin?.id||'admin';
+   if(adminShare>0&&!await updateUserFinancials(adminUserId,adminShare,adminShare))return toast('No se pudo acreditar la comisión del Administrador.','error');
    r=state[collection][id];
    r.commissionUser=userShare;
-   r.commissionAdmin=0;
+   r.commissionAdmin=adminShare;
+   r.commissionTotal=commission;
    r.commissionRate=(collection==='envios'?.085:.05);
-   r.commissionAccount='REMITENTE';
+   r.commissionAccount='50% REMITENTE / 50% ADMINISTRADOR';
    r.balanceDebited=!!r.balanceDebited;
    r.balanceSettledAt=now();
    r.net=Number(r.amount||0)-Number(r.commission||0);
@@ -1084,7 +1087,7 @@ async function setTransactionStatus(collection,id,status){
    if(!await adjustReservedBalance(u.id,Number(r.amount||0)*-1))return toast('No se pudo devolver el balance reservado al remitente.','error');
    r=state[collection][id];r.balanceRefunded=true;r.balanceRefundedAt=now();state[collection][id]=r;
  }
- const msg=status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; el 50% de la comisión corresponde al remitente y el 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
+ const msg=status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
  await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast('Estado actualizado: '+status)
 }
 
@@ -1295,13 +1298,14 @@ function deleteUser(id){if(id==='admin')return;if(!confirm('¿Eliminar usuario?'
 function renderBeneficiaries(){let rows=newestFirst(state.beneficiaries).filter(b=>isAdmin()||b.userId===currentUser?.id);document.querySelector('#benefTable tbody').innerHTML=rows.map((b,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(b.name)}</td><td>${escapeHtml(b.phone)}</td><td>${escapeHtml(b.address)}</td><td><span class="status ${b.active?'st-Activo':'st-Inactivo'}">${b.active?'Activo':'Inactivo'}</span></td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('beneficiaries','${b.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editBeneficiary('${b.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('beneficiaries','${b.id}')">Eliminar</button></div></td></tr>`).join('')}
 function editBeneficiary(id){let b=state.beneficiaries[id];b.name=prompt('Nombre y apellido:',b.name)??b.name;b.phone=prompt('Celular:',b.phone)??b.phone;b.active=confirm('¿Beneficiario activo?');persist();renderAll()}
 function renderAccounts(){
- let rows=Object.values(state.accounts);
+ let rows=Object.values(state.accounts||{});
+ if(!rows.length){state.accounts=Object.fromEntries(BANKS.map(x=>[x.id,{...x}]));rows=Object.values(state.accounts)}
  document.querySelector('#cuentaTable tbody').innerHTML=rows.map((a,i)=>{
   let actions=`<button class="btn btn-light btn-sm" onclick="viewRecord('accounts','${a.id}')">Ver</button>`;
   if(isAdmin())actions+=`<button class="btn btn-warning btn-sm" onclick="editAccount('${a.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('accounts','${a.id}')">Eliminar</button>`;
   return `<tr><td>${i+1}</td><td>${escapeHtml(a.bank)}</td><td>${escapeHtml(a.holder)}</td><td>${escapeHtml(a.number)}</td><td><div class="actions">${actions}</div></td></tr>`;
  }).join('');
- document.getElementById('dep-cuenta').innerHTML=rows.map(a=>`<option value="${a.id}">${escapeHtml(a.bank)} - ${escapeHtml(a.number)} (${escapeHtml(a.holder)})</option>`).join('')
+ const depSelect=document.getElementById('dep-cuenta');if(depSelect)depSelect.innerHTML='<option value="">Seleccione una cuenta bancaria oficial</option>'+rows.filter(a=>a.active!==false).map(a=>`<option value="${a.id}">${escapeHtml(a.bank)} - ${escapeHtml(a.number)} (${escapeHtml(a.holder)})</option>`).join('')
 }
 function editAccount(id){
  if(!isAdmin())return toast('Solo el Administrador puede modificar números de cuenta.','warn');
