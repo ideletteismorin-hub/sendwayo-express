@@ -750,14 +750,24 @@ async function guardarDeposito(){
  let amount=Number(document.getElementById('dep-monto').value),accountId=document.getElementById('dep-cuenta').value;
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
  if(!accountId)return toast('Seleccione una cuenta bancaria oficial.','warn');
- let file=document.getElementById('dep-voucher').files[0];let voucher=file?file.name:'Sin archivo';
- let id=uid('dep');state.deposits[id]={id,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountId,amount,voucher,status:'Pendiente',createdAt:now(),accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0};
- addAudit('Crear depósito',id);
- const ok=await persist();
- if(!ok){delete state.deposits[id];return toast('El depósito no pudo guardarse en Firebase.','error');}
- await addNotification('Administrador','Nuevo depósito de '+currentUser.name+' por '+money(amount),'deposits',id);
- await persist();
- closeModal('depositoModal');renderAll();toast('Depósito enviado al Administrador para aprobación.');
+ let targetId=isAdmin()?(document.getElementById('dep-remitente')?.value||''):currentUser.id;
+ if(!targetId)return toast('Seleccione el remitente al que se acreditará el depósito.','warn');
+ let target=state.users?.[targetId];if(!target||target.role!=='Remitente')return toast('El remitente seleccionado no es válido.','warn');
+ let file=document.getElementById('dep-voucher').files[0],voucher=file?file.name:'Sin archivo',id=uid('dep'),directAdmin=isAdmin();
+ state.deposits[id]={id,userId:target.id,username:target.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountId,amount,voucher,status:directAdmin?'Aprobado':'Pendiente',createdAt:now(),accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0,createdByAdmin:directAdmin,balanceCredited:false};
+ if(directAdmin&&firebaseReady){
+   const ref=firebase.database().ref(DB_PATH+'/users/'+target.id);
+   const tx=await ref.transaction(v=>{if(!v)return undefined;const credits={...(v.depositCredits||{})};if(credits[id]!==undefined)return v;return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[id]:amount}}});
+   if(!tx.committed){delete state.deposits[id];return toast('No se pudo acreditar el depósito al remitente.','error')}
+   state.users[target.id]=tx.snapshot.val();
+   state.deposits[id].balanceCredited=true;state.deposits[id].balanceCreditedAt=now();state.deposits[id].depositPrincipal=amount;state.deposits[id].reviewedAt=now();state.deposits[id].reviewedBy=currentUser.username;generateReceipt('deposits',id);
+ }
+ addAudit(directAdmin?'Depósito asignado por Administrador':'Crear depósito',id);
+ const ok=await persist();if(!ok){delete state.deposits[id];return toast('El depósito no pudo guardarse en Firebase.','error')}
+ await addNotification(target.id,directAdmin?'El Administrador acreditó '+money(amount)+' directamente a su balance. Comisión: RD$0.00.':'Nuevo depósito de '+target.name+' por '+money(amount),'deposits',id);
+ await persist();closeModal('depositoModal');renderAll();
+ if(directAdmin&&state.deposits[id]?.receipt)setTimeout(()=>showReceipt('deposits',id),180);
+ toast(directAdmin?'Depósito acreditado directamente al balance del remitente. Comisión: RD$0.00.':'Depósito enviado al Administrador para aprobación.');
 }
 async function guardarRecarga(){
  let amount=Number(document.getElementById('rec-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
