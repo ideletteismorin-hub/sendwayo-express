@@ -751,7 +751,7 @@ async function guardarDeposito(){
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
  if(!accountId)return toast('Seleccione una cuenta bancaria oficial.','warn');
  let file=document.getElementById('dep-voucher').files[0];let voucher=file?file.name:'Sin archivo';
- let id=uid('dep');state.deposits[id]={id,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountId,amount,voucher,status:'Pendiente',createdAt:now()};
+ let id=uid('dep');state.deposits[id]={id,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountId,amount,voucher,status:'Pendiente',createdAt:now(),accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0};
  addAudit('Crear depósito',id);
  const ok=await persist();
  if(!ok){delete state.deposits[id];return toast('El depósito no pudo guardarse en Firebase.','error');}
@@ -992,7 +992,7 @@ function transactionConcept(collection,r){
 }
 function generateReceipt(collection,id){
  let r=state[collection]?.[id];if(!r||r.status!=='Aprobado')return;let u=state.users[r.userId]||state.users.admin,benName=r.beneficiario||r.beneficiary||'Según operación',benPhone=r.beneficiarioPhone||r.beneficiaryPhone||'',d=new Date(),receiptId=r.receipt?.id||('SW-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'));
- r.receipt={id:receiptId,date:d.toLocaleDateString('es-DO'),time:d.toLocaleTimeString('es-DO'),business:'SENDWAYO EXPRESS',user:u.name,username:u.username,staffId:u.staffId,role:'Remitente',concept:transactionConcept(collection,r),type:r.type||transactionConcept(collection,r),route:r.route||r.type||'Según operación',amount:Number(r.amount||0),net:Number(r.net||r.amount||0),commission:Number(r.commission||0),beneficiario:benName,beneficiarioPhone:benPhone,collection,status:'Aprobado',original:true};state[collection][id]=r;
+ r.receipt={id:receiptId,date:d.toLocaleDateString('es-DO'),time:d.toLocaleTimeString('es-DO'),business:'SENDWAYO EXPRESS',user:u.name,username:u.username,staffId:u.staffId,role:'Remitente',concept:transactionConcept(collection,r),type:r.type||transactionConcept(collection,r),route:r.route||r.type||'Según operación',amount:Number(r.amount||0),net:Number(r.net||r.amount||0),commission:collection==='deposits'?0:Number(r.commission||0),beneficiario:benName,beneficiarioPhone:benPhone,collection,status:'Aprobado',original:true};state[collection][id]=r;
 }
 
 function downloadReceipt(collection,id){
