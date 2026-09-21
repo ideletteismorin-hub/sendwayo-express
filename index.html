@@ -1274,7 +1274,8 @@ async function approveDeposit(id,status){
    }else{
      const credits={...(u.depositCredits||{})};
      if(credits[id]===undefined){u.balance=Number(u.balance||0)+depositAmount;credits[id]=depositAmount;u.depositCredits=credits}
-     u.commission=Number(u.commission||0);
+     // Depósito = CAPITAL/BALANCE DEL REMITENTE. Nunca crea, aumenta ni retiene comisión.
+     delete u.commissionRate;delete u.commissionDeposit;delete u.depositCommission;
      state.users[u.id]=u;
    }
    r=enforceDepositCapital(r);
