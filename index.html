@@ -503,7 +503,7 @@ async function submitRequest(){
  await addNotification('Administrador','Nueva solicitud: '+type+' de '+name,'requests',id);
  await persist();closeModal('requestModal');toast('Solicitud enviada al Administrador.');showWelcome()
 }
-async async function realizarLogin(){
+async function realizarLogin(){
  const identifier=document.getElementById('login-user').value.trim();
  const password=document.getElementById('login-pass').value;
  if(!identifier||!password)return toast('Escriba su usuario o correo y su contraseña.','warn');
@@ -565,7 +565,7 @@ async function removeNotificationByRecord(collection,id){
  for(const nid of ids)await removeNotification(nid);
 }
 
-async async function notificationClick(id){
+async function notificationClick(id){
  const n=state.notifications?.[id];if(!n)return;
  const collection=n.collection,recordId=n.recordId;
  if(collection&&recordId&&firebaseReady&&(!state[collection]||!state[collection][recordId])){
@@ -900,7 +900,7 @@ function guardarRetiroCuenta(){
  addNotification('Administrador','Solicitud de retiro de cuenta de '+currentUser.name+' por '+money(amount),'accountWithdrawals',id);addAudit('Solicitar retiro de cuenta',id);persist();closeModal('retiroCuentaModal');renderAll();toast('Solicitud de retiro enviada al Administrador.')
 }
 function renderContact(){let c=state.settings?.contact||{phone:'8920051255',email:'sendwayoexpress@gmail.com'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
-async async function reviewAccountWithdrawal(id,status){
+async function reviewAccountWithdrawal(id,status){
  if(!isAdmin())return;let r=state.accountWithdrawals?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
  if(status!=='Aprobado'){
