@@ -1058,7 +1058,17 @@ function renderSimple(collection,table,fields){
  let rows=Object.values(state[collection]).filter(r=>isAdmin()||r.userId===currentUser.id);
  document.querySelector('#'+table+' tbody').innerHTML=rows.map((r,i)=>{let vals=fields.map(f=>f==='amount'||f==='cost'?money(r[f]):escapeHtml(r[f]??'')).join('</td><td>');return `<tr><td>${i+1}</td><td>${vals}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}">${actionButtons(collection,r.id,r.status||'Pendiente')}</td></tr>`}).join('')||'<tr><td colspan="'+(fields.length+3)+'" class="muted">No hay registros.</td></tr>'
 }
-function renderCommissions(){let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.username)}</td><td>${money(r.availableBefore)}</td><td>${money(r.amount)}</td><td>${escapeHtml(r.date)}</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewRecord('commissions','${r.id}')">Ver</button>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editRecord(\\'commissions\\',\\''+r.id+'\\')">Modificar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord(\\'commissions\\',\\''+r.id+'\\')">Eliminar</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">No hay pagos de comisión.</td></tr>'}
+function renderCommissions(){
+ let rows=Object.values(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id);
+ document.querySelector('#comTable tbody').innerHTML=rows.map((r,i)=>{
+   let actions="<button class='btn btn-light btn-sm' onclick='viewRecord(\"commissions\",\""+r.id+"\")'>Ver</button>";
+   if(isAdmin()){
+     actions+="<button class='btn btn-warning btn-sm' onclick='editRecord(\"commissions\",\""+r.id+"\")'>Modificar</button>";
+     actions+="<button class='btn btn-danger btn-sm' onclick='deleteRecord(\"commissions\",\""+r.id+"\")'>Eliminar</button>";
+   }
+   return "<tr><td>"+(i+1)+"</td><td>"+escapeHtml(r.username)+"</td><td>"+money(r.availableBefore)+"</td><td>"+money(r.amount)+"</td><td>"+escapeHtml(r.date)+"</td><td><div class='actions'>"+actions+"</div></td></tr>";
+ }).join("")||"<tr><td colspan='6' class='muted'>No hay pagos de comisión.</td></tr>";
+}
 function renderRequests(){
  let rows=Object.values(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
  document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${isAdmin()?'<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'requests\',\''+r.id+'\')"><i class="fa-solid fa-trash"></i></button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\''+r.id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\''+r.id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\''+r.id+'\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
