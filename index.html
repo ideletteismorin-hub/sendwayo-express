@@ -964,7 +964,7 @@ function toggleNotifications(){let p=document.getElementById('notif-panel');p.cl
 function renderNotifications(){const arr=Object.values(state.notifications||{}).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));const mine=arr.filter(x=>x.targetUserId===currentUser?.id||(isAdmin()&&x.target==='Administrador'));const unread=mine.filter(x=>!x.read).length;document.getElementById('notif-count').textContent=unread;document.getElementById('notif-list').innerHTML=mine.slice(0,30).map(x=>`<div class="notif-item unread" data-notification-id="${x.id}" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small><br><span class="muted">Clic para abrir la operación y quitar esta notificación</span></div>`).join('')||'<div class="notif-item muted">No hay notificaciones.</div>'}
 
 function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,createdAt:now()}}
-function calcEnvio(m){let commission=Number(m||0)*.085,net=Number(m||0)-commission,total=net*2.10;return{commission,net,total}}
+function calcEnvio(m){let commission=Number(m||0)*.05,net=Number(m||0)-commission,total=net*2.10;return{commission,net,total}}
 function calcularEnvioModal(){let x=calcEnvio(document.getElementById('env-monto').value);document.getElementById('calc-neto').textContent=money(x.net);document.getElementById('calc-comision').textContent=money(x.commission);document.getElementById('calc-total').textContent=x.total.toFixed(2)+' HTG'}
 function canTransact(){return currentUser&&['Remitente','Administrador'].includes(currentUser.role)}
 function owner(){return currentUser}
@@ -973,7 +973,7 @@ function isAdmin(){return currentUser?.role==='Administrador'}
 async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
- const id=uid(collection),rate=collection==='envios'?.085:.05;
+ const id=uid(collection),rate=collection==='envios'?.05:.05;
  const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50'};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
@@ -1236,7 +1236,7 @@ async function editRecord(collection,id){
    const newAmount=Number(val);if(!Number.isFinite(newAmount)||newAmount<=0)return toast('Ingrese un monto válido.','warn');
    const delta=newAmount-old;
    if(r.balanceDebited&&r.status!=='Aprobado'&&delta!==0){if(!await adjustReservedBalance(r.userId,delta))return toast('Balance insuficiente para aumentar ese monto.','warn');}
-   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate||(collection==='envios'?.085:.05));
+   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate||(collection==='envios'?.05:.05));
    if(collection==='envios'){r.net=newAmount-r.commission;r.destination=r.net*2.10;}
  }else if(['cost','weight'].includes(key)){
    const n=Number(val);if(!Number.isFinite(n)||n<0)return toast('Ingrese un valor válido.','warn');r[key]=n;
@@ -1284,7 +1284,7 @@ async function setTransactionStatus(collection,id,status){
    r=tx.snapshot.val();state[collection][id]=r;
  }else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state[collection][id]=r}
  const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
- const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?.085:.05));
+ const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?.05:.05));
  if(status==='Aprobado'){
    // REGLA CONTABLE: 50% de la comisión al Remitente y 50% al Administrador.
    const userShare=commission*0.50,adminShare=commission*0.50;
@@ -1294,7 +1294,7 @@ async function setTransactionStatus(collection,id,status){
    r.commissionUser=userShare;
    r.commissionAdmin=adminShare;
    r.commissionTotal=commission;
-   r.commissionRate=(collection==='envios'?.085:.05);
+   r.commissionRate=(collection==='envios'?.05:.05);
    r.commissionAccount='50% REMITENTE / 50% ADMINISTRADOR';
    r.balanceDebited=!!r.balanceDebited;
    r.balanceSettledAt=now();
@@ -1795,6 +1795,11 @@ function startProductionRealtimeRefresh(){
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady)manualRefresh(false)});
 window.addEventListener('online',()=>{if(currentUser&&firebaseReady)manualRefresh(false)});
 window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='function')startProductionRealtimeRefresh()});
+
+/* POLITICA FINANCIERA SENDWAYO EXPRESS — DEPÓSITOS Y COMISIONES 2026-09-21 */
+/* DEPÓSITOS: 100% al balance/capital del Remitente; comisión = RD$0.00; nunca pasan por el reparto 50/50. */
+/* TRANSACCIONES CON COMISIÓN: tasa 5%; 50% de la comisión al Remitente + 50% al Administrador. */
+function sendwayoFinancialPolicy(){return {depositRate:0,transactionCommissionRate:0.05,remitterShare:0.50,adminShare:0.50}}
 </script>
 <div class="modal" id="adminDepositModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('adminDepositModal')">×</button><h3 style="color:#0f2c59;margin-bottom:12px">Asignar depósito directo al Remitente</h3><div class="info-box" style="margin-bottom:12px">Este depósito se acredita directamente al balance/capital del Remitente. <b>No genera comisión</b> y no aumenta el balance administrativo.</div><div class="form-group"><label>Remitente</label><div class="search-select-wrap"><input id="admin-dep-remitente-search" class="form-control" placeholder="Buscar por nombre, usuario o número..." autocomplete="off" oninput="updateAdminDepositSuggestions()" onfocus="updateAdminDepositSuggestions()"><button type="button" class="plus-btn" title="Buscar remitente" onclick="updateAdminDepositSuggestions()">⌕</button></div><div id="admin-dep-remitente-suggestions" class="env-suggestions"></div><select id="admin-dep-remitente" class="form-control" style="display:none"></select></div><div class="form-grid"><div class="form-group"><label>Monto RD$</label><input id="admin-dep-monto" type="number" min="0" step="0.01" class="form-control"></div><div class="form-group"><label>Referencia / nota</label><input id="admin-dep-nota" class="form-control" placeholder="Opcional"></div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('adminDepositModal')">Cerrar</button><button class="btn btn-warning" onclick="guardarDepositoAdministrativo()">Acreditar al balance</button></div></div></div>
 <script>
