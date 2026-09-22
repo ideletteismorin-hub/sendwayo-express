@@ -87,7 +87,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
         <div class="slogan"><b>¡Hazlo todo sin moverte de casa!</b><br>Quédate cómodo y nosotros nos encargamos.</div>
         <div class="company-purpose-grid" aria-label="Información institucional">
   <article class="purpose-card"><h4>Misión</h4><p>Ofrecer servicios confiables de envíos, recepción y distribución de paquetes nacionales e internacionales, transferencias y servicios de dinero, recargas, paqueticos y pagos, conectando a personas y familias con seguridad, transparencia y atención de calidad.</p></article>
-  <article class="purpose-card"><h4>Visión</h4><p>Ser una empresa real de referencia en servicios de conexión entre República Dominicana, Haití y destinos internacionales, integrando envíos y recepción de paquetes, compras internacionales y servicios financieros con seguridad, innovación, transparencia y calidad.</p></article>
+  <article class="purpose-card"><h4>Visión</h4><p>Ser una empresa real de referencia en servicios de conexión y soluciones integrales, integrando envíos y recepción de paquetes, compras internacionales y servicios financieros con seguridad, innovación, transparencia y calidad.</p></article>
   <article class="purpose-card"><h4>Objetivo</h4><p>Gestionar de forma integral y trazable los envíos y recepción de paquetes, incluidos paquetes y compras internacionales como Temu, Amazon, SHEIN y AliExpress, además de remesas, recargas, paqueticos, pagos y operaciones autorizadas, con control administrativo y una experiencia clara para cada cliente.</p></article>
 </div>
 <h3 style="color:#0f2c59;margin-bottom:8px">Bienvenido</h3>
@@ -1039,7 +1039,7 @@ function updateEnvioSuggestions(kind){
 function updateDepositSuggestions(){
  const input=document.getElementById('dep-remitente-search'),box=document.getElementById('dep-remitente-suggestions'),sel=document.getElementById('dep-remitente');if(!input||!box||!sel)return;
  const q=input.value.trim(),list=Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).filter(u=>personMatchesQuery(u,q)).sort((a,b)=>personName(a).localeCompare(personName(b))).slice(0,10);
- box.innerHTML=list.map(u=>'<button type="button" class="env-suggestion" onclick="chooseDepositRemitente(\\''+escapeHtml(u.id)+'\\')"><b>'+escapeHtml(personPhone(u)||u.staffId||'Sin número')+'</b> <span>('+escapeHtml(personName(u)||'')+')</span></button>').join('');
+ box.innerHTML=list.map(u=>'<button type="button" class="env-suggestion" onclick="chooseDepositRemitente(\''+escapeHtml(u.id)+'\')"><b>'+escapeHtml(personPhone(u)||u.staffId||'Sin número')+'</b> <span>('+escapeHtml(personName(u)||'')+')</span></button>').join('');
  box.style.display=list.length?'block':'none';
 }
 function chooseDepositRemitente(id){
@@ -1049,7 +1049,7 @@ function chooseDepositRemitente(id){
 function updateAdminDepositSuggestions(){
  const input=document.getElementById('admin-dep-remitente-search'),box=document.getElementById('admin-dep-remitente-suggestions'),sel=document.getElementById('admin-dep-remitente');if(!input||!box||!sel)return;
  const q=input.value.trim(),list=Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).filter(u=>personMatchesQuery(u,q)).sort((a,b)=>personName(a).localeCompare(personName(b))).slice(0,10);
- box.innerHTML=list.map(u=>'<button type="button" class="env-suggestion" onclick="chooseAdminDepositRemitente(\\''+escapeHtml(u.id)+'\\')"><b>'+escapeHtml(personPhone(u)||u.staffId||'Sin número')+'</b> <span>('+escapeHtml(personName(u)||'')+')</span></button>').join('');
+ box.innerHTML=list.map(u=>'<button type="button" class="env-suggestion" onclick="chooseAdminDepositRemitente(\''+escapeHtml(u.id)+'\')"><b>'+escapeHtml(personPhone(u)||u.staffId||'Sin número')+'</b> <span>('+escapeHtml(personName(u)||'')+')</span></button>').join('');
  box.style.display=list.length?'block':'none';
 }
 function chooseAdminDepositRemitente(id){
