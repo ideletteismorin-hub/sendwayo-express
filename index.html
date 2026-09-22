@@ -1619,7 +1619,12 @@ function buildDailyReportRows(dateKey,userFilter=''){
  for(const [col,label,detailFn] of transactionCols){
   for(const r of Object.values(state[col]||{})){
    if(reportRecordDay(r)!==dateKey)continue;
-   const share=r.status==='Aprobado'?(userFilter==='admin'?Number(r.commissionAdmin??(Number(r.commission||0)*0.5)):(Number(r.commissionUser??(Number(r.commission||0)*0.5)))):0;
+   let share=0;
+   if(r.status==='Aprobado'){
+     if(userFilter==='admin')share=Number(r.commissionAdmin??(Number(r.commission||0)*0.5));
+     else if(userFilter)share=(r.userId===userFilter?Number(r.commissionUser??(Number(r.commission||0)*0.5)):0);
+     else share=Number(r.commission||0);
+   }
    add(r,label,detailFn(r),r.amount,share,r.status);
   }
  }
@@ -1789,7 +1794,7 @@ async function saveAdminCredit(){
  if(type==='bonus'&&id!=='admin')return toast('El bono solo puede acreditarse a la Administración.','warn');
  const availableCommission=commissionAvailableForAdminCredit(u);
  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
- if(type==='commission'&&amount>availableCommission)return toast('El monto no puede superar la comisión disponible.','warn');
+ if(type==='commission'&&id!=='admin'&&amount>availableCommission)return toast('El monto no puede superar la comisión disponible.','warn');
  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
  const ref=firebase.database().ref(DB_PATH+'/users/'+id);
  try{
