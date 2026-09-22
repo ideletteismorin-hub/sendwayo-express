@@ -1219,7 +1219,7 @@ async function setTransactionStatus(collection,id,status){
    const userShare=commission*0.50,adminShare=commission*0.50;
    if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar la comisión del remitente.','error');
    const adminUserId=state.users?.admin?.id||'admin';
-   if(adminShare>0&&!await updateUserFinancials(adminUserId,adminShare,adminShare))return toast('No se pudo acreditar la comisión del Administrador.','error');
+   if(adminShare>0&&!await updateUserFinancials(adminUserId,0,adminShare))return toast('No se pudo acreditar la comisión del Administrador.','error');
    r=state[collection][id];
    r.commissionUser=userShare;
    r.commissionAdmin=adminShare;
@@ -1562,8 +1562,12 @@ function renderRequests(){
 }
 function renderSecrets(){
  if(!isAdmin())return;
- const rows=Object.values(state.users).filter(u=>u.role==='Remitente');
- document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>`<tr><td>${i+1}</td><td>Remitente</td><td><b>${escapeHtml(u.staffId||'')}</b></td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.phone)}</td><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>${u.accountStatus==='Pendiente de activación'?'<span class="status st-Pendiente">Pendiente de activación</span>':'Firebase Auth'}</td><td><b>${money(u.balance)}</b></td><td><div class="actions"><button class="btn btn-success btn-sm" onclick="openAdminBalanceModal('${u.id}','set')">Acreditar</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('${u.id}','adjust')">Ajustar balance</button><button class="btn btn-light btn-sm" onclick="viewUser('${u.id}')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset('${u.id}')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users['${u.id}'],INITIAL_PASSWORD)">Enviar WhatsApp</button></div></td></tr>`).join('')||'<tr><td colspan="11" class="muted">No hay remitentes registrados.</td></tr>';
+ const adminUser=state.users?.admin;
+ const rows=[...(adminUser?[adminUser]:[]),...Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente')];
+ document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>{
+   const admin=u.id==='admin';
+   return `<tr style="${admin?'background:#fff8e1;font-weight:600':''}"><td>${i+1}</td><td>${admin?'ADMINISTRACIÓN':'Remitente'}</td><td><b>${escapeHtml(admin?'ADMIN':(u.staffId||''))}</b></td><td>${escapeHtml(u.name||'Administración SENDWAYO EXPRESS')}</td><td>${escapeHtml(u.phone||'')}</td><td>${escapeHtml(u.username||'admin')}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>Firebase Auth</td><td><b>${money(u.balance)}</b></td><td><div class="actions">${admin?'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\'admin\',\'set\')">Acreditar Admin</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\'admin\',\'adjust\')">Ajustar balance</button>':'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'set\')">Acreditar</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'adjust\')">Ajustar balance</button><button class="btn btn-light btn-sm" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser(\''+u.id+'\')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser(\''+u.id+'\')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset(\''+u.id+'\')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users[\''+u.id+'\'],INITIAL_PASSWORD)">Enviar WhatsApp</button>'}</div></td></tr>`;
+ }).join('')||'<tr><td colspan="11" class="muted">No hay cuentas registradas.</td></tr>';
 }
 
 async function sendPasswordReset(id){
