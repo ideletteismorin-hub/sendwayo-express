@@ -270,7 +270,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 <div class="form-group"><label>Monto en RD$</label><input id="env-monto" type="number" min="0" step="0.01" class="form-control" oninput="calcularEnvioModal()"></div>
 <div class="form-group"><label>Beneficiario</label><div class="search-select-wrap"><input id="env-beneficiario-input" class="form-control" placeholder="Escriba nombre o número..." autocomplete="off" oninput="document.getElementById('env-beneficiario-select').value='';updateEnvioSuggestions('beneficiario')" onfocus="updateEnvioSuggestions('beneficiario')"><button type="button" class="plus-btn" onclick="openModal('beneficiarioModal')" title="Agregar beneficiario">+</button></div><div id="env-beneficiario-suggestions" class="env-suggestions"></div><input id="env-beneficiario-select" type="hidden"><div class="field-hint">Seleccione: número (nombre del beneficiario).</div></div></div>
 <div class="account-card" style="padding:10px;margin:8px 0"><b>Identificación del remitente</b><div class="form-grid" style="margin-top:8px"><div><label style="font-size:.75rem">WhatsApp</label><input id="env-remitente-phone" class="form-control" readonly></div><div><label style="font-size:.75rem">Cédula / Pasaporte</label><input id="env-remitente-doc" class="form-control" readonly></div></div></div>
-<div class="info-box">La comisión de las transacciones es 5%. De esa comisión, 50% corresponde al Remitente y 50% al Administrador. RD→HTI usa tasa de referencia 2.10. HTI→HTI queda registrado sin convertir a HTG. Para otras rutas se conserva el flujo de conversión configurado.</div>
+<div class="info-box">Los envíos internacionales cobran 10% de comisión. De esa comisión, 50% corresponde al Remitente y 50% al Administrador. HTI→HTI conserva la tasa de 5%. Las recargas, paqueticos, facturas y servicios cobran 5%. RD→HTI usa tasa de referencia 2.10.</div>
 <div style="background:#f1f5f9;padding:12px;border-radius:7px;margin:12px 0"><p>MONTO NETO: <b id="calc-neto">0.00 RD$</b></p><p>COMISIÓN: <b id="calc-comision">0.00 RD$</b></p><p>MONTO DESTINO: <b id="calc-total">0.00 HTG</b></p></div>
 <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('envioModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarEnvio()">Guardar y Notificar</button></div></div></div>
 
@@ -378,7 +378,7 @@ function setLanguage(lang){
  document.documentElement.lang=lang==='ht'?'ht':lang; translateInterface(); try{if(typeof renderAll==='function')renderAll()}catch(e){} setTimeout(()=>translateInterface(),0);
 }
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
-function productionResetState(){const marker='2026-09-21-PRODUCTION-RESET-5';state.settings=state.settings||{};if(state.settings.productionResetVersion===marker)return false;['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]={});state.beneficiaries={};state.accounts=state.accounts||{}; BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});Object.values(state.users||{}).filter(u=>u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;u.active=true;u.phone=u.phone||'';u.doc=u.doc||''});if(state.users?.admin){state.users.admin.balance=0;state.users.admin.commission=0;state.users.admin.referrals=0}state.settings.productionResetVersion=marker;return true}
+function productionResetState(){state.settings=state.settings||{};state.users=state.users||{};state.accounts=state.accounts||{};BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});state.envios=state.envios||{};state.recargas=state.recargas||{};state.paqueticos=state.paqueticos||{};state.pagos=state.pagos||{};state.paquetes=state.paquetes||{};state.deposits=state.deposits||{};state.accountWithdrawals=state.accountWithdrawals||{};state.commissions=state.commissions||{};state.requests=state.requests||{};state.notifications=state.notifications||{};state.audit=state.audit||{};state.beneficiaries=state.beneficiaries||{};return false}
 const DEMO_ACCOUNTS=[
       {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:0},
  {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
@@ -751,7 +751,7 @@ async function realizarLogin(){
    found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email===state.users.admin.authEmail)||(u.authUid===authUser.uid)||(u.authEmail===authUser.email)||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
    if(!found)throw new Error('PROFILE_NOT_FOUND');
    if(found.active===false)throw new Error('INACTIVE');
-   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;await ensureAllRemittersStartAtZero();lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
+   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
    setStatus('Acceso autorizado. Sincronizando…','ok');
    showAppForUser(found);applyRoleVisibility();renderAll();
    // Ya dentro del sistema, sincronizamos Firebase sin bloquear ni cerrar la sesión.
@@ -845,50 +845,11 @@ async function repairLegacyDepositCommissions(){
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
- if(remoteResetVersion!=='2026-09-21-PRODUCTION-RESET-3'){delete state.settings.productionResetVersion;productionResetState()}
- if(authUser?.email===state.users?.admin?.authEmail || authUser?.email==='sendwayoexpress@gmail.com'){
- const resetMarker='2026-09-21-PRODUCTION-FINANCIAL-RESET-5';
- if(state.settings?.productionFinancialResetVersion!==resetMarker){
-  const users={...state.users};
-  Object.values(users).forEach(u=>{if(u){u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits;}});
-  const resetUpdates={};
-  // REINICIO OFICIAL: se eliminan todas las operaciones y movimientos previos.
-  // Se conservan únicamente los usuarios, sus accesos y las cuentas bancarias oficiales.
-  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>resetUpdates[k]=null);
-  Object.entries(users).forEach(([id,u])=>resetUpdates['users/'+id]=u);
-  resetUpdates['settings/productionFinancialResetVersion']=resetMarker;
-  resetUpdates['settings/depositAccountingRepairV2']=null;
-  await firebase.database().ref(DB_PATH).update(resetUpdates);
-  state.users=users;state.envios={};state.recargas={};state.paqueticos={};state.pagos={};state.paquetes={};state.deposits={};state.accountWithdrawals={};state.commissions={};state.requests={};state.notifications={};state.audit={};state.beneficiaries={};
-  state.settings=state.settings||{};state.settings.productionFinancialResetVersion=resetMarker;delete state.settings.depositAccountingRepairV2;localSave();
- }
-}
+ // PRODUCCIÓN: nunca se borran ni se ponen a cero operaciones/balances automáticamente.
 const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
-async function resetProductionFinancialsIfNeeded(){
- if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-PRODUCTION-FINANCIAL-RESET-5';
- if(state.settings?.productionFinancialResetVersion===marker)return false;
- const users={...state.users};
- Object.values(users).forEach(u=>{
-   if(!u)return;
-   u.balance=0;u.commission=0;u.referrals=0;
-   delete u.depositCredits;
- });
- const updates={};
- ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','beneficiaries'].forEach(k=>updates[k]=null);
- Object.entries(users).forEach(([id,u])=>{updates['users/'+id]=u});
- updates['settings/productionFinancialResetVersion']=marker;
- try{
-   await firebase.database().ref(DB_PATH).update(updates);
-   state.users=users;
-   state.envios={};state.recargas={};state.paqueticos={};state.pagos={};state.paquetes={};state.deposits={};state.accountWithdrawals={};state.commissions={};state.requests={};state.notifications={};state.audit={};state.beneficiaries={};
-   state.settings=state.settings||{};state.settings.productionFinancialResetVersion=marker;
-   lastSyncedState=cloneState(state);localSave();knownNotificationIds.clear();
-   return true;
- }catch(e){console.warn('Production financial reset:',e);toast('No se pudo completar el reinicio a cero en Firebase.','error');return false}
-}
+async function resetProductionFinancialsIfNeeded(){return false;}
 function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
 function applyRoleVisibility(){
  let admin=isAdmin();
@@ -965,8 +926,10 @@ function toggleNotifications(){let p=document.getElementById('notif-panel');p.cl
 function renderNotifications(){const arr=Object.values(state.notifications||{}).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));const mine=arr.filter(x=>x.targetUserId===currentUser?.id||(isAdmin()&&x.target==='Administrador'));const unread=mine.filter(x=>!x.read).length;document.getElementById('notif-count').textContent=unread;document.getElementById('notif-list').innerHTML=mine.slice(0,30).map(x=>`<div class="notif-item unread" data-notification-id="${x.id}" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small><br><span class="muted">Clic para abrir la operación y quitar esta notificación</span></div>`).join('')||'<div class="notif-item muted">No hay notificaciones.</div>'}
 
 function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,createdAt:now()}}
-function calcEnvio(m){let commission=Number(m||0)*.05,net=Number(m||0)-commission,total=net*2.10;return{commission,net,total}}
-function calcularEnvioModal(){let x=calcEnvio(document.getElementById('env-monto').value);document.getElementById('calc-neto').textContent=money(x.net);document.getElementById('calc-comision').textContent=money(x.commission);document.getElementById('calc-total').textContent=x.total.toFixed(2)+' HTG'}
+function envioCommissionRate(type){return String(type||'').trim().toUpperCase()==='HTI A HTI'?0.05:0.10}
+function commissionRateFor(collection,record){return collection==='envios'?envioCommissionRate(record?.type):0.05}
+function calcEnvio(m,type){let commission=Number(m||0)*envioCommissionRate(type),net=Number(m||0)-commission,total=net*2.10;return{commission,net,total}}
+function calcularEnvioModal(){let x=calcEnvio(document.getElementById('env-monto').value,document.getElementById('env-tipo-trans')?.value);document.getElementById('calc-neto').textContent=money(x.net);document.getElementById('calc-comision').textContent=money(x.commission);document.getElementById('calc-total').textContent=x.total.toFixed(2)+' HTG'}
 function canTransact(){return currentUser&&['Remitente','Administrador'].includes(currentUser.role)}
 function owner(){return currentUser}
 function userById(id){return state.users[id]||{}}
@@ -974,7 +937,7 @@ function isAdmin(){return currentUser?.role==='Administrador'}
 async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
- const id=uid(collection),rate=collection==='envios'?0.05:0.05;
+ const id=uid(collection),rate=commissionRateFor(collection,fields);
  const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50',adminVisible:true,adminInbox:true};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
@@ -1253,7 +1216,7 @@ async function editRecord(collection,id){
    const newAmount=Number(val);if(!Number.isFinite(newAmount)||newAmount<=0)return toast('Ingrese un monto válido.','warn');
    const delta=newAmount-old;
    if(r.balanceDebited&&r.status!=='Aprobado'&&delta!==0){if(!await adjustReservedBalance(r.userId,delta))return toast('Balance insuficiente para aumentar ese monto.','warn');}
-   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate||(collection==='envios'?0.05:0.05));
+   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate??commissionRateFor(collection,r));
    if(collection==='envios'){r.net=newAmount-r.commission;r.destination=r.net*2.10;}
  }else if(['cost','weight'].includes(key)){
    const n=Number(val);if(!Number.isFinite(n)||n<0)return toast('Ingrese un valor válido.','warn');r[key]=n;
@@ -1301,7 +1264,7 @@ async function setTransactionStatus(collection,id,status){
    r=tx.snapshot.val();state[collection][id]=r;
  }else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state[collection][id]=r}
  const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
- const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?0.05:0.05));
+ const commission=Number(r.commission??(Number(r.amount||0)*commissionRateFor(collection,r)));
  if(status==='Aprobado'){
    // REGLA CONTABLE: 50% de la comisión al Remitente y 50% al Administrador.
    const userShare=commission*0.50,adminShare=commission*0.50;
@@ -1311,7 +1274,7 @@ async function setTransactionStatus(collection,id,status){
    r.commissionUser=userShare;
    r.commissionAdmin=adminShare;
    r.commissionTotal=commission;
-   r.commissionRate=(collection==='envios'?0.05:0.05);
+   r.commissionRate=commissionRateFor(collection,r);
    r.commissionAccount='50% REMITENTE / 50% ADMINISTRADOR';
    r.balanceDebited=!!r.balanceDebited;
    r.balanceSettledAt=now();
@@ -1517,40 +1480,8 @@ function commissionTodayFor(userId){
  }
  return total;
 }
-async function ensureAllRemittersStartAtZero(){
- if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-ALL-REMITTERS-START-ZERO-1';
- if(state.settings?.allRemittersStartZeroVersion===marker)return false;
- const updates={};
- Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente').forEach(u=>{
-   updates['users/'+u.id+'/balance']=0;
-   updates['users/'+u.id+'/commission']=0;
-   updates['users/'+u.id+'/referrals']=0;
-   updates['users/'+u.id+'/depositCredits']=null;
- });
- updates['settings/allRemittersStartZeroVersion']=marker;
- try{
-   await firebase.database().ref(DB_PATH).update(updates);
-   Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente').forEach(u=>{u.balance=0;u.commission=0;u.referrals=0;delete u.depositCredits});
-   state.settings=state.settings||{};state.settings.allRemittersStartZeroVersion=marker;
-   lastSyncedState=cloneState(state);localSave();return true;
- }catch(e){console.warn('Inicio a cero de remitentes:',e);return false}
-}
-async function ensureAdminStartAtZero(){
- if(!firebaseReady||!currentUser||!isAdmin())return false;
- const marker='2026-09-21-ADMIN-BALANCE-START-ZERO-1';
- if(state.settings?.adminBalanceStartZeroVersion===marker)return false;
- try{
-   const ref=firebase.database().ref(DB_PATH+'/users/admin');
-   const tx=await ref.transaction(u=>u?{...u,balance:0}:u);
-   if(!tx.committed)return false;
-   state.users.admin=tx.snapshot.val();
-   if(currentUser?.id==='admin')currentUser=state.users.admin;
-   state.settings=state.settings||{};state.settings.adminBalanceStartZeroVersion=marker;
-   await firebase.database().ref(DB_PATH+'/settings/adminBalanceStartZeroVersion').set(marker);
-   lastSyncedState=cloneState(state);localSave();return true;
- }catch(e){console.warn('Inicio a cero de Administración:',e);return false}
-}
+async function ensureAllRemittersStartAtZero(){return false;}
+async function ensureAdminStartAtZero(){return false;}
 function openAdminBalanceModal(targetId='admin',mode='set'){
  if(!isAdmin())return toast('Solo el Administrador puede ajustar balances.','warn');
  const sel=document.getElementById('admin-balance-target');if(!sel)return;
@@ -1825,8 +1756,8 @@ window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='
 
 /* POLITICA FINANCIERA SENDWAYO EXPRESS — DEPÓSITOS Y COMISIONES 2026-09-21 */
 /* DEPÓSITOS: 100% al balance/capital del Remitente; comisión = RD$0.00; nunca pasan por el reparto 50/50. */
-/* TRANSACCIONES CON COMISIÓN: tasa 5%; 50% de la comisión al Remitente + 50% al Administrador. */
-function sendwayoFinancialPolicy(){return {depositRate:0,transactionCommissionRate:0.05,remitterShare:0.50,adminShare:0.50}}
+/* ENVÍOS INTERNACIONALES: 10%; HTI→HTI: 5%; recargas/paqueticos/facturas/servicios: 5%. Siempre 50/50. */
+function sendwayoFinancialPolicy(){return {depositRate:0,internationalRate:0.10,htiToHtiRate:0.05,serviceRate:0.05,remitterShare:0.50,adminShare:0.50}}
 </script>
 <div class="modal" id="adminDepositModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('adminDepositModal')">×</button><h3 style="color:#0f2c59;margin-bottom:12px">Asignar depósito directo al Remitente</h3><div class="info-box" style="margin-bottom:12px">Este depósito se acredita directamente al balance/capital del Remitente. <b>No genera comisión</b> y no aumenta el balance administrativo.</div><div class="form-group"><label>Remitente</label><div class="search-select-wrap"><input id="admin-dep-remitente-search" class="form-control" placeholder="Buscar por nombre, usuario o número..." autocomplete="off" oninput="updateAdminDepositSuggestions()" onfocus="updateAdminDepositSuggestions()"><button type="button" class="plus-btn" title="Buscar remitente" onclick="updateAdminDepositSuggestions()">⌕</button></div><div id="admin-dep-remitente-suggestions" class="env-suggestions"></div><select id="admin-dep-remitente" class="form-control" style="display:none"></select></div><div class="form-grid"><div class="form-group"><label>Monto RD$</label><input id="admin-dep-monto" type="number" min="0" step="0.01" class="form-control"></div><div class="form-group"><label>Referencia / nota</label><input id="admin-dep-nota" class="form-control" placeholder="Opcional"></div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('adminDepositModal')">Cerrar</button><button class="btn btn-warning" onclick="guardarDepositoAdministrativo()">Acreditar al balance</button></div></div></div>
 <script>
