@@ -669,11 +669,22 @@ async function boot(){
             showWelcome();
             return;
           }
-          await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
-          const found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
+          // Restaurar la sesión local primero. Una recarga nunca debe expulsar al usuario
+          // por una demora temporal de Firebase; la sincronización se realiza después.
+          let found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
+          if(!found){
+            try{await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);}
+            catch(syncError){console.warn('SENDWAYO sincronización inicial:',syncError)}
+            found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
+          }
           if(found&&found.active!==false){
-            found.authUid=authUser.uid;found.authEmail=authUser.email;currentUser=found;await resetProductionFinancialsIfNeeded();await ensureAllRemittersStartAtZero();await ensureAdminStartAtZero();lastActivity=Date.now();sessionStartedAt=Date.now();showAppForUser(found);applyRoleVisibility();renderAll();
-          }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
+            found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;
+            lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
+            showAppForUser(found);applyRoleVisibility();renderAll();
+            Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_SYNC_TIMEOUT')),15000))])
+              .then(()=>{const fresh=state.users?.[found.id];if(fresh&&fresh.active!==false){currentUser=fresh;lastActivity=Date.now();saveSession();showAppForUser(fresh);applyRoleVisibility();renderAll()}})
+              .catch(syncError=>console.warn('SENDWAYO sincronización posterior:',syncError));
+          }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;localStorage.removeItem(SESSION_KEY);showWelcome()}
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
     }).catch(e=>console.warn('SENDWAYO Firebase boot:',e));
@@ -1238,6 +1249,22 @@ async function resubmitTransaction(collection,id){
  state[collection][id]=r;await addNotification('Administrador','Operación reenviada para revisión: '+id,collection,id);await persist();renderAll();toast('Operación reenviada al Administrador.');
 }
 
+async function creditAdminCommission(amount){
+ const n=Number(amount||0);if(!Number.isFinite(n)||n<=0)return true;
+ const ref=firebase.database().ref(DB_PATH+'/users/admin');
+ if(firebaseReady){
+   try{
+     const tx=await ref.transaction(u=>u?{...u,commission:Number(u.commission||0)+n}:u);
+     if(!tx.committed)return false;
+     state.users.admin=tx.snapshot.val();
+     if(currentUser?.id==='admin')currentUser=state.users.admin;
+     if(lastSyncedState?.users?.admin)lastSyncedState.users.admin=cloneState(state.users.admin);
+     return true;
+   }catch(e){console.warn('Comisión Administración:',e);return false}
+ }
+ const u=state.users?.admin;if(!u)return false;
+ u.commission=Number(u.commission||0)+n;state.users.admin=u;if(currentUser?.id==='admin')currentUser=u;return true;
+}
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+Number(deltaBalance||0),commission:Number(u.commission||0)+Number(deltaCommission||0)}):u);if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;u.balance=Number(u.balance||0)+Number(deltaBalance||0);u.commission=Number(u.commission||0)+Number(deltaCommission||0);state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
  if(!isAdmin())return;
@@ -1256,12 +1283,10 @@ async function setTransactionStatus(collection,id,status){
  const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
  const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?.085:.05));
  if(status==='Aprobado'){
-   // REGLA CONTABLE SENDWAYO: la comisión de una operación pertenece al Remitente.
-   // Nunca se acredita al balance administrativo.
+   // REGLA CONTABLE: 50% de la comisión al Remitente y 50% al Administrador.
    const userShare=commission*0.50,adminShare=commission*0.50;
-   if(!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar la comisión del remitente.','error');
-   const adminUserId=state.users?.admin?.id||'admin';
-   if(adminShare>0&&!await updateUserFinancials(adminUserId,0,adminShare))return toast('No se pudo acreditar la comisión del Administrador.','error');
+   if(userShare>0&&!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar el 50% de la comisión al Remitente.','error');
+   if(adminShare>0&&!await creditAdminCommission(adminShare))return toast('No se pudo acreditar el 50% de la comisión al Administrador.','error');
    r=state[collection][id];
    r.commissionUser=userShare;
    r.commissionAdmin=adminShare;
