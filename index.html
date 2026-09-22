@@ -1251,19 +1251,22 @@ async function resubmitTransaction(collection,id){
 
 async function creditAdminCommission(amount){
  const n=Number(amount||0);if(!Number.isFinite(n)||n<=0)return true;
+ if(!firebaseReady)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/admin');
- if(firebaseReady){
-   try{
-     const tx=await ref.transaction(u=>u?{...u,commission:Number(u.commission||0)+n}:u);
-     if(!tx.committed)return false;
-     state.users.admin=tx.snapshot.val();
-     if(currentUser?.id==='admin')currentUser=state.users.admin;
-     if(lastSyncedState?.users?.admin)lastSyncedState.users.admin=cloneState(state.users.admin);
-     return true;
-   }catch(e){console.warn('Comisión Administración:',e);return false}
+ try{
+   // Incremento atómico en Firebase: conserva cualquier comisión existente y suma exactamente el 50%.
+   await ref.update({commission:firebase.database.ServerValue.increment(n)});
+   const snap=await ref.once('value');
+   if(!snap.exists())return false;
+   state.users.admin=snap.val();
+   if(currentUser?.id==='admin')currentUser=state.users.admin;
+   if(lastSyncedState?.users)lastSyncedState.users.admin=cloneState(state.users.admin);
+   localSave();
+   return true;
+ }catch(e){
+   console.warn('Comisión Administración:',e);
+   return false;
  }
- const u=state.users?.admin;if(!u)return false;
- u.commission=Number(u.commission||0)+n;state.users.admin=u;if(currentUser?.id==='admin')currentUser=u;return true;
 }
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+Number(deltaBalance||0),commission:Number(u.commission||0)+Number(deltaCommission||0)}):u);if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;u.balance=Number(u.balance||0)+Number(deltaBalance||0);u.commission=Number(u.commission||0)+Number(deltaCommission||0);state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
