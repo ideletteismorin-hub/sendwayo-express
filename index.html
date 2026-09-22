@@ -162,7 +162,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
     </div>
     <div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Ajustes financieros de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Permite acreditar un saldo exacto a la Administración o agregar/quitar dinero del balance administrativo. Los cambios se guardan directamente en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div></div>
-    <div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">Acreditaciones de Administración</h2><p class="muted" style="margin-top:4px">Solo Administración. Acreditar Balance y Acreditar Bono suman el monto directamente al balance de la cuenta seleccionada. Acreditar Comisión pasa el monto desde la comisión disponible al balance.</p></div></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisión</button></div></div>
+    <div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">Acreditaciones de Administración</h2><p class="muted" style="margin-top:4px">Solo Administración. Acreditar Balance y Acreditar Bono suman el monto directamente al balance de la cuenta seleccionada. Acreditar Comisiones pasa el monto desde la comisión disponible al balance.</p></div></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button></div></div>
     <div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
   </section>
 
@@ -247,7 +247,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
   <section id="view-secretas" class="view-section">
     <div class="card admin-only" style="margin-bottom:12px"><div class="card-header"><h3>Acreditar Administración</h3><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button></div><p class="muted">Acredita la administración para ir ajustando los precios según lo conveniente. El monto indicado establece exactamente el balance de la Administración.</p><div style="margin-top:8px"><b>Balance actual:</b> <span id="secret-admin-balance">RD$ 0.00</span></div></div>
-    <div class="card admin-only" style="margin-bottom:12px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h3 style="color:#0f2c59">Acreditaciones de Administración</h3><p class="muted" style="margin-top:4px">Funciones exclusivas del Administrador. Acreditar Balance y Acreditar Bono entran directamente al balance. Acreditar Comisión mueve el monto desde la comisión disponible hacia el balance.</p></div></div><div class="actions" style="gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal('bonus')">Acreditar Bono</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission')">Acreditar Comisión</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission');setTimeout(()=>acreditarTodaComisionDisponible(),80)">Acreditar Toda la Comisión</button></div></div>
+    <div class="card admin-only" style="margin-bottom:12px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h3 style="color:#0f2c59">Acreditaciones de Administración</h3><p class="muted" style="margin-top:4px">Funciones exclusivas del Administrador. Acreditar Balance y Acreditar Bono entran directamente al balance. Acreditar Comisiones mueve el monto desde la comisión disponible hacia el balance.</p></div></div><div class="actions" style="gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal('bonus')">Acreditar Bono</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission');setTimeout(()=>acreditarTodaComisionDisponible(),80)">Acreditar Toda la Comisión</button></div></div>
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
     <div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
@@ -1012,14 +1012,19 @@ function updateEnvioSuggestions(kind){
    const ae=normalizeSearchText(personName(a))===qa||normalizeSearchText(a.username)===qa||(da&&phoneDigits(personPhone(a))===da);
    const be=normalizeSearchText(personName(b))===qa||normalizeSearchText(b.username)===qa||(da&&phoneDigits(personPhone(b))===da);
    return Number(be)-Number(ae)||personName(a).localeCompare(personName(b));
- }).slice(0,10);
+ });
  box.innerHTML=list.map(x=>`<button type="button" class="env-suggestion" onclick="chooseEnvioPerson('${escapeHtml(kind)}','${escapeHtml(x.id)}')"><b>${escapeHtml(personPhone(x)||'Sin número')}</b> <span>(${escapeHtml(personName(x)||'Sin nombre')})</span></button>`).join('');
  box.style.display=list.length?'block':'none';
 }
 function updateDepositSuggestions(){
  const input=document.getElementById('dep-remitente-search'),box=document.getElementById('dep-remitente-suggestions'),sel=document.getElementById('dep-remitente');if(!input||!box||!sel)return;
- const q=input.value.trim(),list=Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).filter(u=>personMatchesQuery(u,q)||normalizeSearchText(u.staffId).includes(normalizeSearchText(q))).sort((a,b)=>personName(a).localeCompare(personName(b))).slice(0,10);
- box.innerHTML=list.map(u=>'<button type="button" class="env-suggestion" onclick="chooseDepositRemitente(\''+escapeHtml(u.id)+'\')"><b>'+escapeHtml(personPhone(u)||u.staffId||'Sin número')+'</b> <span>('+escapeHtml(personName(u)||'')+')</span></button>').join('');
+ const q=input.value.trim(),nq=normalizeSearchText(q),qd=phoneDigits(q);
+ const list=Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente'&&u.active!==false).filter(u=>personMatchesQuery(u,q)||normalizeSearchText(u.staffId).includes(nq)).sort((a,b)=>{
+   const ae=nq&&(normalizeSearchText(personName(a))===nq||normalizeSearchText(a.username)===nq||normalizeSearchText(a.staffId)===nq||(qd&&phoneDigits(personPhone(a))===qd));
+   const be=nq&&(normalizeSearchText(personName(b))===nq||normalizeSearchText(b.username)===nq||normalizeSearchText(b.staffId)===nq||(qd&&phoneDigits(personPhone(b))===qd));
+   return Number(be)-Number(ae)||personName(a).localeCompare(personName(b));
+ });
+ box.innerHTML=list.map(u=>{const phone=personPhone(u)||u.staffId||'Sin número',name=personName(u)||'Sin nombre';return '<button type="button" class="env-suggestion" onclick="chooseDepositRemitente(\''+escapeHtml(u.id)+'\')"><b>'+escapeHtml(phone)+'</b> <span>('+escapeHtml(name)+')</span></button>'}).join('');
  box.style.display=list.length?'block':'none';
 }
 function chooseDepositRemitente(id){
@@ -1028,8 +1033,13 @@ function chooseDepositRemitente(id){
 }
 function updateAdminDepositSuggestions(){
  const input=document.getElementById('admin-dep-remitente-search'),box=document.getElementById('admin-dep-remitente-suggestions'),sel=document.getElementById('admin-dep-remitente');if(!input||!box||!sel)return;
- const q=input.value.trim(),list=Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).filter(u=>personMatchesQuery(u,q)||normalizeSearchText(u.staffId).includes(normalizeSearchText(q))).sort((a,b)=>personName(a).localeCompare(personName(b))).slice(0,10);
- box.innerHTML=list.map(u=>'<button type="button" class="env-suggestion" onclick="chooseAdminDepositRemitente(\''+escapeHtml(u.id)+'\')"><b>'+escapeHtml(personPhone(u)||u.staffId||'Sin número')+'</b> <span>('+escapeHtml(personName(u)||'')+')</span></button>').join('');
+ const q=input.value.trim(),nq=normalizeSearchText(q),qd=phoneDigits(q);
+ const list=Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente'&&u.active!==false).filter(u=>personMatchesQuery(u,q)||normalizeSearchText(u.staffId).includes(nq)).sort((a,b)=>{
+   const ae=nq&&(normalizeSearchText(personName(a))===nq||normalizeSearchText(a.username)===nq||normalizeSearchText(a.staffId)===nq||(qd&&phoneDigits(personPhone(a))===qd));
+   const be=nq&&(normalizeSearchText(personName(b))===nq||normalizeSearchText(b.username)===nq||normalizeSearchText(b.staffId)===nq||(qd&&phoneDigits(personPhone(b))===qd));
+   return Number(be)-Number(ae)||personName(a).localeCompare(personName(b));
+ });
+ box.innerHTML=list.map(u=>{const phone=personPhone(u)||u.staffId||'Sin número',name=personName(u)||'Sin nombre';return '<button type="button" class="env-suggestion" onclick="chooseAdminDepositRemitente(\''+escapeHtml(u.id)+'\')"><b>'+escapeHtml(phone)+'</b> <span>('+escapeHtml(name)+')</span></button>'}).join('');
  box.style.display=list.length?'block':'none';
 }
 function chooseAdminDepositRemitente(id){
@@ -1302,8 +1312,8 @@ async function setTransactionStatus(collection,id,status){
    if(!await adjustReservedBalance(u.id,Number(r.amount||0)*-1))return toast('No se pudo devolver el balance reservado al remitente.','error');
    r=state[collection][id];r.balanceRefunded=true;r.balanceRefundedAt=now();state[collection][id]=r;
  }
- const msg=status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
- await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast('Estado actualizado: '+status)
+ const msg=collection==='deposits'&&status==='Aprobado'?('Balance de '+u.name+' actualizado: el depósito de '+money(Number(r.amount||0))+' fue acreditado directamente a su balance. Comisión: RD$0.00.'):(status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason);
+ await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast(collection==='deposits'&&status==='Aprobado'?'Balance de '+u.name+' actualizado: depósito acreditado directamente.':'Estado actualizado: '+status)
 }
 
 function enforceDepositCapital(r){
@@ -1357,14 +1367,14 @@ async function approveDeposit(id,status){
    r.status='Aprobado';r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason='';
    generateReceipt('deposits',id);state.deposits[id]=r;
    if(firebaseReady)await firebase.database().ref(DB_PATH+'/deposits/'+id).set(r);
-   try{await addNotification(u.id,'Depósito de '+money(depositAmount)+' APROBADO. El 100% fue acreditado directamente a su balance/capital. Comisión: RD$0.00. No afecta el balance ni la comisión del Administrador.','deposits',id)}catch(e){console.warn('Notificación de depósito:',e)}
+   try{await addNotification(u.id,'Balance de '+u.name+' actualizado: el depósito de '+money(depositAmount)+' fue acreditado directamente a su balance/capital. Comisión: RD$0.00. No afecta el balance ni la comisión del Administrador.','deposits',id)}catch(e){console.warn('Notificación de depósito:',e)}
    // IMPORTANTE: NO usar persist() aquí. Un depósito no debe pasar por el motor de comisiones ni por un guardado global que pueda tocar otros balances.
    // El balance del Remitente y el registro del depósito ya fueron escritos directamente en Firebase.
    lastSyncedState=cloneState(state);
    localSave();
    renderAll();
    if(r.receipt)setTimeout(()=>showReceipt('deposits',id),180);
-   return toast('Depósito aprobado: '+money(depositAmount)+' acreditado directamente al balance del remitente. Comisión: RD$0.00.','success');
+   return toast('Balance de '+u.name+' actualizado: '+money(depositAmount)+' acreditado directamente a su balance. Comisión: RD$0.00.','success');
  }
 
  // Rechazado / No coincide: como nunca se acreditó mientras estaba pendiente, no se toca ningún balance.
@@ -1569,7 +1579,7 @@ function openAdminBalanceModal(targetId='admin',mode='set'){
 }
 function openAdminCreditModal(type='balance'){
  if(!isAdmin())return toast('Solo el Administrador puede realizar acreditaciones.','warn');
- const titles={balance:'Acreditar Balance',bonus:'Acreditar Bono',commission:'Acreditar Comisión'};
+ const titles={balance:'Acreditar Balance',bonus:'Acreditar Bono',commission:'Acreditar Comisiones'};
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
   bonus:'El bono se acredita directamente al balance de la cuenta seleccionada. No genera ni modifica comisión.',
@@ -1590,7 +1600,7 @@ function acreditarTodaComisionDisponible(){
  const id=document.getElementById('admin-credit-target')?.value,u=state.users?.[id];
  if(!u)return toast('Seleccione una cuenta.','warn');
  window.__adminCreditType='commission';
- document.getElementById('admin-credit-title').textContent='Acreditar Comisión';
+ document.getElementById('admin-credit-title').textContent='Acreditar Comisiones';
  document.getElementById('admin-credit-info').textContent='Se acreditará al balance el 100% de la comisión disponible de la cuenta seleccionada.';
  document.getElementById('admin-credit-amount').value=Number(u.commission||0).toFixed(2);
  refreshAdminCreditModal();
@@ -1601,7 +1611,7 @@ function refreshAdminCreditModal(){
  document.getElementById('admin-credit-current').textContent=money(u.balance);
  document.getElementById('admin-credit-commission').textContent=money(u.commission);
  const btn=document.getElementById('admin-credit-save-btn');
- if(btn)btn.textContent=window.__adminCreditType==='bonus'?'Acreditar Bono':window.__adminCreditType==='commission'?'Acreditar Comisión':'Acreditar Balance';
+ if(btn)btn.textContent=window.__adminCreditType==='bonus'?'Acreditar Bono':window.__adminCreditType==='commission'?'Acreditar Comisiones':'Acreditar Balance';
 }
 async function saveAdminCredit(){
  if(!isAdmin())return;
@@ -1639,7 +1649,7 @@ async function saveAdminCredit(){
   if(!tx.committed)return toast('La operación no pudo acreditarse. El balance o la comisión cambió; vuelva a intentarlo.','warn');
   const updated=tx.snapshot.val();state.users[id]=updated;if(currentUser?.id===id)currentUser=updated;
   lastSyncedState=cloneState(state);localSave();
-  const label=type==='bonus'?'Acreditar Bono':type==='commission'?'Acreditar Comisión':'Acreditar Balance';
+  const label=type==='bonus'?'Acreditar Bono':type==='commission'?'Acreditar Comisiones':'Acreditar Balance';
   const auditId=uid('acr');
   const audit={id:auditId,action:label,targetUserId:id,amount,commissionBefore:Number(u.commission||0),commissionAfter:Number(updated.commission||0),balanceBefore:Number(u.balance||0),balanceAfter:Number(updated.balance||0),processedBy:currentUser.username,createdAt:now()};
   try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set(audit)}catch(_){}
