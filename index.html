@@ -1108,7 +1108,7 @@ async function guardarDeposito(){
  if(!firebaseReady||!firebase.auth().currentUser)return toast('La sesión de Firebase no está activa.','error');
  const file=document.getElementById('dep-voucher')?.files?.[0],voucher=file?file.name:'Sin archivo';
  const id=uid('dep'),directAdmin=isAdmin(),createdAt=now();
- const record={id,userId:target.id,username:target.username,createdByAuthUid:firebase.auth().currentUser.uid,accountId,amount,voucher,status:directAdmin?'Aprobado':'Pendiente',createdAt,accountingType:'DEPOSITO_CAPITAL',createdByAdmin:directAdmin,balanceCredited:false,balanceRefunded:false,targetType:'REMITENTE'};
+ const record={id,userId:target.id,username:target.username,createdByAuthUid:firebase.auth().currentUser.uid,accountId,amount,voucher,status:directAdmin?'Aprobado':'Pendiente',createdAt,accountingType:'DEPOSITO_CAPITAL',commissionRate:0,commission:0,createdByAdmin:directAdmin,balanceCredited:false,balanceRefunded:false,targetType:'REMITENTE'};
  try{
    // Remitente: guarda el depósito como PENDIENTE y NO toca el balance.
    // Administrador: guarda y acredita inmediatamente al balance del Remitente.
@@ -1310,7 +1310,8 @@ function enforceDepositCapital(r){
  if(!r)return r;
  // DEPÓSITO = CAPITAL DEL REMITENTE. Nunca es comisión.
  r.accountingType='DEPOSITO_CAPITAL';
- delete r.commissionRate;delete r.commission;delete r.commissionUser;delete r.commissionAdmin;delete r.commissionSplit;
+ r.commissionRate=0;r.commission=0;
+ delete r.commissionUser;delete r.commissionAdmin;delete r.commissionSplit;
  return r;
 }
 async function removeDepositCommissionArtifacts(depositId){
