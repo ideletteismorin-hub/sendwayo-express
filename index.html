@@ -1416,20 +1416,51 @@ function downloadReceipt(collection,id){
 function showReceipt(collection,id){
  let r=state[collection]?.[id];
  if(!r||r.status!=='Aprobado')return toast('El recibo solo aparece después de la aprobación del Administrador.','warn');
- if(!r.receipt){generateReceipt(collection,id);r=state[collection]?.[id];if(!r?.receipt)return toast('No se pudo generar el recibo.','error');if(firebaseReady){firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt}).catch(e=>console.warn('Guardado de recibo:',e))}else{localSave()}}
+ if(!r.receipt){
+   generateReceipt(collection,id);r=state[collection]?.[id];
+   if(!r?.receipt)return toast('No se pudo generar el recibo.','error');
+   if(firebaseReady)firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt}).catch(e=>console.warn('Guardado de recibo:',e));
+   else localSave();
+ }
  const rec=r.receipt;
- const u=state.users?.[r.userId]||state.users?.admin||{},
- idRem=rec.staffId||u.staffId||'XXX-[ID-REMITENTE]',
- benName=rec.beneficiario||r.beneficiario||'Según operación',
- benPhone=rec.beneficiarioPhone||r.beneficiarioPhone||'',
- tipo=rec.type||r.type||transactionConcept(collection,r),
- amount=Number(rec.amount??r.amount??0),
- netAmount=Number(r.net??rec.net??r.amount??0),
- isRdHaiti=/^RD\s*a\s*HTI/i.test(String(r.type||r.route||tipo)),
- displayAmount=isRdHaiti?(netAmount*2.10):amount,
- displayCurrency=isRdHaiti?'HTG':'RD'+String.fromCharCode(36),
- displayLabel=isRdHaiti?'MONTO NETO QUE RECIBE EL BENEFICIARIO':'MONTO TOTAL DE LA TRANSACCIÓN';
- const html='<div class="receipt-shell receipt-compact receipt-final" style="max-width:760px!important;padding:24px!important"><div class="receipt-head"><img class="receipt-logo" src="'+LOGO_DATA+'" alt="SENDWAYO EXPRESS" data-current-brand-logo="true"><h2 style="font-size:1.35rem;margin-top:2px">SENDWAYO EXPRESS</h2><p class="receipt-slogan">Conectando distancias, entregando confianza</p><p style="margin:8px 0;font-size:.8rem">WhatsApp / Celular: 8298573043 · Correo: sendwayoexpress@gmail.com</p><div class="receipt-original">FACTURA / COMPROBANTE # '+escapeHtml(rec.id)+'</div><div style="font-size:.78rem;margin-top:8px"><b>FECHA Y HORA</b> '+escapeHtml(rec.date)+' — '+escapeHtml(rec.time)+'</div></div><div class="receipt-concept"><b>DETALLES DE LA TRANSACCIÓN</b></div><div class="receipt-grid-compact"><div><b>Concepto</b><span>'+escapeHtml(tipo)+'</span></div><div><b>ID del Remitente</b><span>'+escapeHtml(idRem)+'</span></div><div><b>Estado</b><span style="color:#166534">✓ APROBADO</span></div></div><div class="receipt-concept"><b>INFORMACIÓN DEL BENEFICIARIO</b></div><div class="receipt-grid-compact"><div><b>Nombre y Apellido</b><span>'+escapeHtml(benName)+'</span></div><div><b>Número de Celular</b><span>'+escapeHtml(benPhone||'—')+'</span></div></div><div class="receipt-amount-main"><div class="receipt-amount-label">'+displayLabel+'</div><div class="receipt-amount-value">'+displayAmount.toLocaleString("es-DO",{minimumFractionDigits:2,maximumFractionDigits:2})+' '+displayCurrency+'</div></div><div style="text-align:center;border-top:1px solid #d8e0e8;margin-top:16px;padding-top:11px"><b>FACTURA ORIGINAL</b></div><p class="receipt-thanks">¡Gracias por preferirnos!</p><p class="receipt-bottom-line">¡Hazlo todo sin moverte de casa! Quédate cómodo y nosotros nos encargamos.</p><div class="receipt-capture"><button class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-download"></i> Descargar / guardar</button></div><div style="text-align:center;font-size:.58rem;margin-top:6px;color:#52606d;white-space:nowrap">SENDWAYO EXPRESS — Comprobante Oficial</div></div>';
+ const u=state.users?.[r.userId]||state.users?.admin||{};
+ const idRem=rec.staffId||u.staffId||'XXX-[ID-REMITENTE]';
+ const benName=rec.beneficiario||r.beneficiario||r.beneficiarioNombre||'Según operación';
+ const benPhone=rec.beneficiarioPhone||r.beneficiarioPhone||'';
+ const tipo=rec.type||r.type||transactionConcept(collection,r);
+ const amount=Number(rec.amount??r.amount??0);
+ const netAmount=Number(r.net??rec.net??r.amount??0);
+ const isRdHaiti=/^RD\s*a\s*HTI/i.test(String(r.type||r.route||tipo));
+ const displayAmount=isRdHaiti?Number(r.destination??(netAmount*2.10)):amount;
+ const displayCurrency=isRdHaiti?'HTG':'RD$';
+ const contact=state.settings?.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};
+ const amountText=displayAmount.toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+displayCurrency;
+ const html=`<div class="receipt-shell receipt-compact receipt-final" style="max-width:650px!important;padding:12px!important">
+ <div class="receipt-head">
+   <img class="receipt-logo" src="${LOGO_DATA}" alt="SENDWAYO EXPRESS" data-current-brand-logo="true">
+   <h2 style="font-size:1.12rem;margin-top:1px">SENDWAYO EXPRESS</h2>
+   <div class="receipt-slogan">Conectando distancias, entregando confianza</div>
+   <div class="receipt-original">COMPROBANTE #${escapeHtml(rec.id||'')}</div>
+ </div>
+ <div class="receipt-grid-compact">
+   <div><b>Fecha</b><span>${escapeHtml(rec.date||'')}</span></div>
+   <div><b>Hora</b><span>${escapeHtml(rec.time||'')}</span></div>
+   <div><b>Transacción</b><span>${escapeHtml(tipo)}</span></div>
+   <div><b>ID Remitente</b><span>${escapeHtml(idRem)}</span></div>
+ </div>
+ <div class="receipt-concept"><b>BENEFICIARIO</b><br>${escapeHtml(benName)}${benPhone?' — '+escapeHtml(benPhone):''}</div>
+ <div class="receipt-amount-main" style="margin:8px 0 6px;padding:10px 12px">
+   <div class="receipt-amount-label" style="font-size:.86rem">MONTO RECIBIDO</div>
+   <div class="receipt-amount-value" style="font-size:1.55rem;margin-top:4px">${amountText}</div>
+ </div>
+ <div class="receipt-status">✓ APROBADO</div>
+ <div class="receipt-thanks">Gracias por confiar en SENDWAYO EXPRESS.</div>
+ <div class="contact-card" style="padding:7px 9px;margin-top:6px;text-align:center;font-size:.66rem">
+   <strong>SENDWAYO EXPRESS</strong> · WhatsApp/Cel.: ${escapeHtml(contact.phone||'')} · ${escapeHtml(contact.email||'')}
+ </div>
+ <div style="text-align:center;font-size:.56rem;margin-top:4px;color:#52606d;white-space:nowrap">SENDWAYO EXPRESS · COMPROBANTE OFICIAL</div>
+ <div class="receipt-capture"><button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Guardar</button></div>
+ </div>`;
  document.getElementById('detail-content').innerHTML=html;
  openModal('detailModal');
 }
