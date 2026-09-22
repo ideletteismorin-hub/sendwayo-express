@@ -378,7 +378,9 @@ function setLanguage(lang){
  document.documentElement.lang=lang==='ht'?'ht':lang; translateInterface(); try{if(typeof renderAll==='function')renderAll()}catch(e){} setTimeout(()=>translateInterface(),0);
 }
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
-function productionResetState(){state.settings=state.settings||{};state.users=state.users||{};state.accounts=state.accounts||{};BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});state.envios=state.envios||{};state.recargas=state.recargas||{};state.paqueticos=state.paqueticos||{};state.pagos=state.pagos||{};state.paquetes=state.paquetes||{};state.deposits=state.deposits||{};state.accountWithdrawals=state.accountWithdrawals||{};state.commissions=state.commissions||{};state.requests=state.requests||{};state.notifications=state.notifications||{};state.audit=state.audit||{};state.beneficiaries=state.beneficiaries||{};return false}
+const FINANCIAL_COLLECTIONS=['envios','recargas','paqueticos','pagos','paquetes','deposits'];
+function productionResetState(){state.settings=state.settings||{};state.users=state.users||{};state.accounts=state.accounts||{};state.ledger=state.ledger||{};BANKS.forEach(b=>{if(!state.accounts[b.id])state.accounts[b.id]={...b}});state.envios=state.envios||{};state.recargas=state.recargas||{};state.paqueticos=state.paqueticos||{};state.pagos=state.pagos||{};state.paquetes=state.paquetes||{};state.deposits=state.deposits||{};state.accountWithdrawals=state.accountWithdrawals||{};state.commissions=state.commissions||{};state.requests=state.requests||{};state.notifications=state.notifications||{};state.audit=state.audit||{};state.beneficiaries=state.beneficiaries||{};return false}
+function mergeFinancialLedgerIntoState(){state.ledger=state.ledger||{};FINANCIAL_COLLECTIONS.forEach(col=>{state[col]=state[col]||{};Object.entries(state.ledger[col]||{}).forEach(([id,record])=>{if(record&&!state[col][id])state[col][id]=cloneState(record)})})}
 const DEMO_ACCOUNTS=[
       {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:0},
  {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
@@ -546,7 +548,9 @@ async function manualRefresh(showMessage=true){
 function localSave(){localStorage.setItem(DB_PATH,JSON.stringify(state))}
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
 function markSynced(pathParts,value){if(!lastSyncedState)return;let cur=lastSyncedState;for(let i=0;i<pathParts.length-1;i++){const k=pathParts[i];if(!cur[k]||typeof cur[k]!=='object')cur[k]={};cur=cur[k]}if(pathParts.length)cur[pathParts.length-1]=cloneState(value)}
-function buildFirebaseUpdates(){const updates={};if(!lastSyncedState){Object.keys(state||{}).forEach(k=>updates[k]=state[k]);return updates}const keys=new Set([...Object.keys(state||{}),...Object.keys(lastSyncedState||{})]);keys.forEach(k=>{const cur=state[k],prev=lastSyncedState[k];const both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);if(both){const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);ids.forEach(id=>{if(JSON.stringify(cur[id]??null)!==JSON.stringify(prev[id]??null))updates[k+'/'+id]=(id in cur)?cur[id]:null})}else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null))updates[k]=cur??null});return updates}
+function buildFirebaseUpdates(){const updates={};if(!lastSyncedState){Object.keys(state||{}).forEach(k=>updates[k]=state[k]);}
+ const keys=new Set([...Object.keys(state||{}),...Object.keys(lastSyncedState||{})]);keys.forEach(k=>{const cur=state[k],prev=lastSyncedState?.[k],both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);if(both){const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);ids.forEach(id=>{if(JSON.stringify(cur[id]??null)!==JSON.stringify(prev[id]??null)){if(FINANCIAL_COLLECTIONS.includes(k)){if(id in cur){updates[k+'/'+id]=cur[id];updates['ledger/'+k+'/'+id]=cur[id]}}else{updates[k+'/'+id]=(id in cur)?cur[id]:null}}})}else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null))updates[k]=cur??null});
+ FINANCIAL_COLLECTIONS.forEach(k=>Object.entries(state[k]||{}).forEach(([id,record])=>{if(record)updates['ledger/'+k+'/'+id]=record}));return updates}
 async function persist(){localSave();if(!firebaseReady)return Promise.resolve(true);const updates=buildFirebaseUpdates();if(!Object.keys(updates).length)return Promise.resolve(true);persistQueue=persistQueue.then(async()=>{try{await firebase.database().ref(DB_PATH).update(updates);for(const p of Object.keys(updates)){let v=state;for(const part of p.split('/')){if(v==null)break;v=v[part]}markSynced(p.split('/'),v===undefined?null:v)}return true}catch(e){console.warn('Firebase persist:',e);let code=e?.code||'';let msg=code==='PERMISSION_DENIED'?'Firebase rechazó el guardado por permisos. El Administrador debe revisar las reglas de la base de datos.':(code==='NETWORK_ERROR'||/network|offline/i.test(String(e?.message||''))?'No hay conexión estable con Firebase. Revise Internet e inténtelo nuevamente.':'No se pudo sincronizar con Firebase'+(code?' ('+code+')':'')+'.');toast(msg,'error');return false}});return persistQueue}
 async function firebasePatch(patch){
  localSave();
@@ -567,7 +571,7 @@ function ensureSeedData(){
   productionResetState();
   state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};
   DEMO_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]={...x,balance:0,commission:0,referrals:0};if(!state.users[x.id].authEmail)state.users[x.id].authEmail=authEmailFor(state.users[x.id])}); state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{};
-  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit'].forEach(k=>state[k]=state[k]||{});
+  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','ledger'].forEach(k=>state[k]=state[k]||{});
   ensureStaffDirectory();
 }
 async function loadScript(src,timeout=8000){return new Promise((resolve,reject)=>{if(document.querySelector('script[data-src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.async=true;s.dataset.src=src;let done=false;const finish=(err)=>{if(done)return;done=true;clearTimeout(timer);s.onload=s.onerror=null;err?reject(err):resolve()};const timer=setTimeout(()=>finish(new Error('SCRIPT_TIMEOUT: '+src)),timeout);s.onload=()=>finish();s.onerror=()=>finish(new Error('SCRIPT_LOAD_ERROR: '+src));document.head.appendChild(s)})}
@@ -618,10 +622,14 @@ function attachRealtimeListeners(){
    // RTDB es la fuente de verdad: sustituimos el estado visible completo,
    // evitando que registros eliminados o antiguos sobrevivan en memoria.
    state={...remote};
+   state.ledger=remote.ledger||{};
+   mergeFinancialLedgerIntoState();
    state.users=remote.users||{};
    state.beneficiaries=remote.beneficiaries||{};
    state.accounts=(remote.accounts&&Object.keys(remote.accounts).length)?remote.accounts:Object.fromEntries(BANKS.map(x=>[x.id,{...x}]));
    state.settings=remote.settings||{};
+   state.ledger=remote.ledger||{};
+   mergeFinancialLedgerIntoState();
    lastSyncedState=cloneState(state);
    if(currentUser){
      const fresh=state.users?.[currentUser.id];
@@ -846,7 +854,7 @@ async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
  // PRODUCCIÓN: nunca se borran ni se ponen a cero operaciones/balances automáticamente.
-const before=JSON.stringify(state);ensureSeedData();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
+mergeFinancialLedgerIntoState();const before=JSON.stringify(state);ensureSeedData();mergeFinancialLedgerIntoState();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
 }
 
 async function resetProductionFinancialsIfNeeded(){return false;}
