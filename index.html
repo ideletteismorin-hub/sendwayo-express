@@ -1031,21 +1031,11 @@ function chooseEnvioPerson(kind,id){
 function updateEnvioSuggestions(kind){
  const input=document.getElementById('env-'+kind+'-input'),box=document.getElementById('env-'+kind+'-suggestions');if(!input||!box)return;
  const q=String(input.value||'').trim(),col=kind==='remitente'?state.users:state.beneficiaries;
- let list=Object.values(col||{}).filter(x=>x&&x.active!==false&&(kind==='remitente'?x.role==='Remitente':true))
+ const list=Object.values(col||{}).filter(x=>x&&x.active!==false&&(kind==='remitente'?x.role==='Remitente':true))
    .filter(x=>isAdmin()||kind!=='remitente'||x.id===currentUser?.id)
    .filter(x=>personMatchesQuery(x,q))
-   .sort((a,b)=>{
-     const qa=normalizeSearchText(q),aa=normalizeSearchText(personName(a)),bb=normalizeSearchText(personName(b));
-     const pa=phoneDigits(personPhone(a)),pb=phoneDigits(personPhone(b)),qd=phoneDigits(q);
-     const score=x=>{const n=normalizeSearchText(personName(x)),p=phoneDigits(personPhone(x)),u=normalizeSearchText(x.username);return (qd&&p===qd?0:n===qa?0:u===qa?1:(qd&&p.includes(qd)?2:n.includes(qa)?3:u.includes(qa)?4:5))};
-     return score(a)-score(b)||aa.localeCompare(bb);
-   }).slice(0,10);
- box.innerHTML=list.map(x=>{
-   const phone=personPhone(x)||'Sin número',name=personName(x)||'Sin nombre';
-   return '<button type="button" class="env-suggestion" onclick="chooseEnvioPerson(\\''+escapeHtml(x.id)+'\\',\\''+escapeHtml(x.id)+'\\')"><b>'+escapeHtml(phone)+'</b> <span>('+escapeHtml(name)+')</span></button>';
- }).join('');
- // Correct the generated handler to preserve the requested kind argument.
- box.innerHTML=box.innerHTML.replace(/chooseEnvioPerson\\('([^']+)','([^']+)'\\)/g,(m,a,b)=>'chooseEnvioPerson(\\''+kind+'\\',\\''+b+'\\')');
+   .sort((a,b)=>personName(a).localeCompare(personName(b))).slice(0,10);
+ box.innerHTML=list.map(x=>`<button type="button" class="env-suggestion" onclick="chooseEnvioPerson('${escapeHtml(kind)}','${escapeHtml(x.id)}')"><b>${escapeHtml(personPhone(x)||'Sin número')}</b> <span>(${escapeHtml(personName(x)||'Sin nombre')})</span></button>`).join('');
  box.style.display=list.length?'block':'none';
 }
 function updateDepositSuggestions(){
