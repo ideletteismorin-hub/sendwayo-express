@@ -56,7 +56,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.64);justify-content:center;align-items:center;z-index:11000;padding:20px}.modal.public-request{z-index:20000;background:rgba(3,18,45,.78)}.modal-content{background:#fff;padding:22px;border-radius:12px;width:min(720px,96vw);max-height:92vh;overflow:auto;position:relative}.modal-close-x{position:absolute;right:15px;top:10px;background:none;border:0;font-size:1.6rem;color:var(--gray);cursor:pointer}
 .toast{position:fixed;right:18px;bottom:18px;z-index:9000;background:#071a36;color:#fff;padding:13px 16px;border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:380px}.toast.success{border-left:5px solid var(--accent)}.toast.warn{border-left:5px solid var(--secondary)}.toast.error{border-left:5px solid var(--danger)}
 .notif-panel{display:none;position:fixed;right:20px;top:66px;width:min(390px,92vw);max-height:65vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.2);z-index:4500;border:1px solid #dce3eb}.notif-panel.show{display:block}.notif-item{padding:11px;border-bottom:1px solid #edf1f5}.notif-item small{color:var(--gray)}
-.info-box{padding:12px;border-left:4px solid var(--secondary);background:#fffbeb;border-radius:6px;font-size:.8rem}
+.info-box{padding:12px;border-left:4px solid var(--secondary);background:#fffbeb;border-radius:6px;font-size:.8rem}.secret-divider{height:2px;background:#dbe3ec;margin:18px 0 12px;border-radius:2px;width:100%}
 .mobile-toggle-btn{display:none;background:none;border:0;color:var(--primary);font-size:1.4rem;cursor:pointer}
 .qr-link{word-break:break-all;font-size:.76rem;color:#1d4ed8}
 @media(max-width:800px){aside{position:fixed;left:-280px;height:100%;transition:.25s;box-shadow:8px 0 20px rgba(0,0,0,.25)}aside.active{left:0}.mobile-toggle-btn{display:block}.form-grid{grid-template-columns:1fr}.welcome-grid{grid-template-columns:1fr}.brand-logo{width:145px;height:145px}}
@@ -250,7 +250,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="card admin-only" style="margin-bottom:12px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h3 style="color:#0f2c59">Acreditaciones de Administración</h3><p class="muted" style="margin-top:4px">Funciones exclusivas del Administrador. Acreditar Balance y Acreditar Bono entran directamente al balance. Acreditar Comisiones mueve el monto desde la comisión disponible hacia el balance.</p></div></div><div class="actions" style="gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal('bonus')">Acreditar Bono</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission');setTimeout(()=>acreditarTodaComisionDisponible(),80)">Acreditar Toda la Comisión</button></div></div>
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
-    <div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
+    <div class="secret-divider" role="separator" aria-label="Separador de Información Secreta"></div><div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
     <div class="table-wrap"><table id="secTable"><thead><tr><th>N°</th><th>Rol</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Correo Auth</th><th>Estado</th><th>Acceso</th><th>Balance</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
@@ -280,7 +280,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
 <div class="modal" id="cuentaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('cuentaModal')">×</button><h3>Agregar Cuenta Bancaria</h3><div class="form-grid"><div class="form-group"><label>Banco</label><input id="cta-banco" class="form-control"></div><div class="form-group"><label>Titular</label><input id="cta-titular" class="form-control" value="Herace Fleuranvil"></div><div class="form-group"><label>Número de Cuenta</label><input id="cta-numero" class="form-control"></div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal('cuentaModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarCuenta()">Guardar</button></div></div></div>
 
-<div class="modal" id="adminCreditModal" onclick="handleModalBackdropClick(event)"><div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal('adminCreditModal')">×</button><h3 id="admin-credit-title">Acreditar</h3><div class="info-box" id="admin-credit-info">Esta herramienta es exclusiva del Administrador.</div><div class="form-group" style="margin-top:12px"><label>Cuenta a acreditar (incluye Administración y todos los Remitentes)</label><select id="admin-credit-target" class="form-control" onchange="refreshAdminCreditModal()"></select></div><div class="form-group"><label>Monto a acreditar (RD$)</label><input id="admin-credit-amount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00" oninput="refreshAdminCreditModal()"></div><div class="info-box" id="admin-credit-current-box">Balance actual: <b id="admin-credit-current">RD$ 0.00</b><br>Comisión disponible: <b id="admin-credit-commission">RD$ 0.00</b></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('adminCreditModal')">Cerrar</button><button class="btn btn-primary" id="admin-credit-save-btn" onclick="saveAdminCredit()">Acreditar</button></div></div></div>
+<div class="modal" id="adminCreditModal" onclick="handleModalBackdropClick(event)"><div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal('adminCreditModal')">×</button><h3 id="admin-credit-title">Acreditar</h3><div class="info-box" id="admin-credit-info">Esta herramienta es exclusiva del Administrador.</div><div class="form-group" style="margin-top:12px"><label id="admin-credit-target-label">Cuenta a acreditar</label><select id="admin-credit-target" class="form-control" onchange="refreshAdminCreditModal()"></select></div><div class="form-group"><label>Monto a acreditar (RD$)</label><input id="admin-credit-amount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00" oninput="refreshAdminCreditModal()"></div><div class="info-box" id="admin-credit-current-box">Balance actual: <b id="admin-credit-current">RD$ 0.00</b><br>Comisión disponible: <b id="admin-credit-commission">RD$ 0.00</b></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('adminCreditModal')">Cerrar</button><button class="btn btn-primary" id="admin-credit-save-btn" onclick="saveAdminCredit()">Acreditar</button></div></div></div>
 
 <div class="modal" id="adminBalanceModal" onclick="handleModalBackdropClick(event)"><div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal('adminBalanceModal')">×</button><h3 id="admin-balance-title">Ajustar balance</h3><div class="info-box">Esta herramienta es exclusiva del Administrador y actualiza directamente Firebase.</div><div class="form-group" style="margin-top:12px"><label>Cuenta</label><select id="admin-balance-target" class="form-control" onchange="refreshAdminBalanceModal()"></select></div><div class="form-group"><label>Operación</label><select id="admin-balance-mode" class="form-control" onchange="refreshAdminBalanceModal()"><option value="set">Acreditar: establecer saldo exacto</option><option value="add">Agregar dinero al balance</option><option value="subtract">Quitar dinero del balance</option></select></div><div class="form-group"><label id="admin-balance-amount-label">Nuevo saldo exacto (RD$)</label><input id="admin-balance-amount" type="number" min="0" step="0.01" class="form-control"></div><div class="muted">Balance actual: <b id="admin-balance-current">RD$ 0.00</b></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('adminBalanceModal')">Cerrar</button><button class="btn btn-primary" onclick="saveAdminBalanceAdjustment()">Guardar en Firebase</button></div></div></div>
 
@@ -297,7 +297,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 <div class="modal" id="paqueteModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('paqueteModal')">×</button><h3>Paquete - Recepción y Envío</h3><div class="form-grid"><div class="form-group"><label>Tipo</label><select id="paq-tipo" class="form-control"><option>Enviar paquete</option><option>Recibir paquete</option></select></div><div class="form-group"><label>Peso (kg)</label><input id="paq-peso" type="number" step=".01" class="form-control"></div><div class="form-group"><label>Descripción</label><input id="paq-desc" class="form-control"></div><div class="form-group"><label>Costo RD$</label><input id="paq-costo" type="number" step=".01" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarPaquete()">Guardar y Notificar</button></div></div>
 
 <div class="modal" id="retiroCuentaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('retiroCuentaModal')">×</button><h3>Solicitar Retiro de Mi Cuenta</h3><div class="form-group"><label>Saldo disponible</label><input id="cuenta-disp" class="form-control" readonly></div><div class="form-group"><label>Monto a retirar</label><input id="cuenta-retiro-monto" type="number" min="0" step=".01" class="form-control"></div><div class="form-group"><label>Nota / Motivo</label><textarea id="cuenta-retiro-nota" class="form-control" rows="3"></textarea></div><div class="info-box">El retiro queda PENDIENTE y solamente se aplica al balance cuando el administrador lo apruebe.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('retiroCuentaModal')">Cerrar</button><button class="btn btn-primary" onclick="guardarRetiroCuenta()">Solicitar Retiro</button></div></div></div>
-<div class="modal" id="comisionModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('comisionModal')">×</button><h3>Pago / Retiro de Comisión</h3><div class="form-group" id="com-target-wrap" style="display:none"><label>Usuario beneficiario</label><select id="com-target" class="form-control" onchange="updateCommissionTarget()"></select></div><div class="form-group"><label>Comisión disponible</label><input id="com-disp" class="form-control" readonly></div><div class="form-group"><label>Monto a pagar</label><input id="com-monto" type="number" min="0" step=".01" class="form-control"></div><div class="info-box">Este módulo es el único que se aplica inmediatamente sin aprobación administrativa, siempre que el monto sea menor o igual a la comisión disponible.</div><button class="btn btn-primary" onclick="guardarComision()">Guardar y Aplicar</button></div></div>
+<div class="modal" id="comisionModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('comisionModal')">×</button><h3>Pago / Retiro de Comisión</h3><div class="form-group" id="com-target-wrap" style="display:none"><label>Usuario beneficiario</label><select id="com-target" class="form-control" onchange="updateCommissionTarget()"></select></div><div class="form-group"><label>Comisión disponible</label><input id="com-disp" class="form-control" readonly></div><div class="form-group"><label>Monto a pagar</label><input id="com-monto" type="number" min="0" step=".01" class="form-control"></div><div class="info-box">Este es el único módulo que permite al Remitente aplicar su propia comisión inmediatamente, sin aprobación administrativa. El monto debe ser menor o igual a su comisión disponible y pasa directamente a su balance.</div><button class="btn btn-primary" onclick="guardarComision()">Guardar y Aplicar</button></div></div>
 
 <div class="modal" id="secretaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('secretaModal')">×</button><h3>Credencial Secreta</h3><div class="form-grid"><div class="form-group"><label>Rol</label><select id="sec-role" class="form-control"><option>Remitente</option></select></div><div class="form-group"><label>Nombre</label><input id="sec-name" class="form-control"></div><div class="form-group"><label>WhatsApp</label><input id="sec-phone" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="sec-user" class="form-control"></div><div class="form-group"><label>Contraseña</label><input id="sec-pass" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarCredencial()">Guardar</button></div></div>
 
@@ -805,59 +805,16 @@ async function realizarLogin(){
  }
 }
 async function repairApprovedDeposits(){
- if(!firebaseReady)return;
- const deposits=newestFirst(state.deposits||{}).filter(r=>r&&r.status==='Aprobado');
- for(const r of deposits){
-   const amount=Number(r.amount||0);if(!Number.isFinite(amount)||amount<=0)continue;
-   const u=state.users?.[r.userId];if(!u)continue;
-   // REGLA CONTABLE INVIOLABLE: un depósito es CAPITAL/BALANCE, nunca comisión.
-   r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;
-   if(r.balanceCredited!==true){
-     const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
-     const tx=await ref.transaction(v=>{
-       if(!v)return undefined;
-       const credits={...(v.depositCredits||{})};
-       if(credits[r.id]!==undefined)return v;
-       return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}};
-     });
-     if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;}
-   }
-   state.deposits[r.id]=r;
-   await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);
- }
- if(currentUser)renderAll();
+  // PRODUCCIÓN: no se recalculan ni se vuelven a acreditar depósitos históricos automáticamente.
+  // Esto evita duplicar balances cuando un registro antiguo no trae balanceCredited/depositCredits.
+  return false;
 }
 
 async function repairLegacyDepositCommissions(){
- if(!firebaseReady||state.settings?.depositAccountingRepairV2==='DONE')return;
- for(const r of Object.values(state.deposits||{})){
-   if(!r)continue;
-   const u=state.users?.[r.userId];
-   r.accountingType='DEPOSITO_CAPITAL';r.commissionRate=0;r.commission=0;delete r.commissionUser;delete r.commissionAdmin;delete r.commissionSplit;
-   if(r.status==='Aprobado'&&u&&!r.balanceCredited){
-     const amount=Number(r.amount||0);
-     if(amount>0){
-       const ref=firebase.database().ref(DB_PATH+'/users/'+u.id);
-       const tx=await ref.transaction(v=>{
-         if(!v)return undefined;const credits={...(v.depositCredits||{})};
-         if(credits[r.id]!==undefined)return v;
-         return {...v,balance:Number(v.balance||0)+amount,depositCredits:{...credits,[r.id]:amount}};
-       });
-       if(tx.committed){state.users[u.id]=tx.snapshot.val();if(currentUser?.id===u.id)currentUser=state.users[u.id];r.balanceCredited=true;r.balanceCreditedAt=r.balanceCreditedAt||now();r.depositPrincipal=amount;}
-     }
-   }
-   // Cualquier comisión explícitamente vinculada a un depósito se elimina; el depósito jamás genera comisión.
-   const linked=Object.values(state.commissions||{}).filter(c=>c&&(c.depositId===r.id||c.recordId===r.id));
-   for(const cm of linked){delete state.commissions[cm.id];await firebase.database().ref(DB_PATH+'/commissions/'+cm.id).remove();}
-   if(u)await firebase.database().ref(DB_PATH+'/users/'+u.id).update({commission:Number(u.commission||0)});
-   await firebase.database().ref(DB_PATH+'/deposits/'+r.id).update(r);
-   state.deposits[r.id]=r;
- }
- state.settings=state.settings||{};state.settings.depositAccountingRepairV2='DONE';
- await firebase.database().ref(DB_PATH+'/settings/depositAccountingRepairV2').set('DONE');
- if(currentUser)renderAll();
+  // PRODUCCIÓN: los depósitos nunca se corrigen mediante una rutina automática que toque balances.
+  // Los depósitos nuevos se controlan exclusivamente por approveDeposit()/creditDepositToRemitente().
+  return false;
 }
-
 
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
@@ -1088,22 +1045,28 @@ async function guardarPersona(){const role=document.getElementById('personaModal
 async function creditDepositToRemitente(depositId,remitenteId,amount){
   const n=Number(amount);
   if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');
+  if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
   const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);
   const tx=await ref.transaction(u=>{
     if(!u||u.role!=='Remitente')return undefined;
     const credits={...(u.depositCredits||{})};
-    if(credits[depositId]!==undefined)return u;
-    return {
-      ...u,
-      balance:Number(u.balance||0)+n,
-      depositCredits:{...credits,[depositId]:n}
-    };
+    if(credits[depositId]!==undefined){
+      const recorded=Number(credits[depositId]);
+      return Math.abs(recorded-n)<0.000001?u:undefined;
+    }
+    const balance=Number(u.balance||0);
+    return {...u,balance:balance+n,depositCredits:{...credits,[depositId]:n}};
   });
   if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');
-  state.users[remitenteId]=tx.snapshot.val();
-  if(currentUser?.id===remitenteId)currentUser=state.users[remitenteId];
-  if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(state.users[remitenteId]);
-  return tx.snapshot.val();
+  const updated=tx.snapshot.val();
+  if(!updated||updated.role!=='Remitente')throw new Error('DEPOSITO_DESTINO_INVALIDO');
+  const recorded=Number(updated.depositCredits?.[depositId]);
+  if(!Number.isFinite(recorded)||Math.abs(recorded-n)>=0.000001)throw new Error('DEPOSITO_NO_CONFIRMADO');
+  state.users[remitenteId]=updated;
+  if(currentUser?.id===remitenteId)currentUser=updated;
+  if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(updated);
+  localSave();
+  return updated;
 }
 
 async function guardarDeposito(){
@@ -1171,17 +1134,38 @@ async function guardarPaquete(){
 }
 function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
 async function guardarComision(){
- let targetId=isAdmin()?document.getElementById('com-target').value:currentUser.id,target=state.users[targetId]||currentUser;
- let amount=Number(document.getElementById('com-monto').value),available=Number(target.commission||0);
- if(!amount||amount<=0||amount>available)return toast('El monto debe ser menor o igual a la comisión disponible.','warn');
- if(firebaseReady){
+ if(!currentUser)return;
+ const targetId=isAdmin()?document.getElementById('com-target').value:currentUser.id;
+ const target=state.users[targetId]||currentUser;
+ if(!isAdmin()&&targetId!==currentUser.id)return toast('Solo puede aplicar su propia comisión.','warn');
+ const amount=Number(document.getElementById('com-monto').value);
+ const available=Number(target.commission||0);
+ if(!Number.isFinite(amount)||amount<=0||amount>available)return toast('El monto debe ser menor o igual a la comisión disponible.','warn');
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('La sesión de Firebase no está activa.','error');
+ try{
    const ref=firebase.database().ref(DB_PATH+'/users/'+target.id);
-   const tx=await ref.transaction(u=>u&&Number(u.commission||0)>=amount?{...u,commission:Number(u.commission||0)-amount,balance:Number(u.balance||0)+amount}:undefined);
+   const tx=await ref.transaction(u=>{
+     if(!u||Number(u.commission||0)<amount)return undefined;
+     const next={...u,commission:Number(u.commission||0)-amount,balance:Number(u.balance||0)+amount};
+     const credits={...(u.commissionCredits||{})};
+     const creditId=uid('cpay');
+     next.commissionCredits={...credits,[creditId]:{id:creditId,amount,processedAt:now(),processedBy:currentUser.id}};
+     return next;
+   });
    if(!tx.committed)return toast('La comisión disponible cambió. Intente nuevamente.','warn');
-   target=tx.snapshot.val();state.users[target.id]=target;if(currentUser?.id===target.id)currentUser=target;
- }else{target.commission=available-amount;target.balance=Number(target.balance||0)+amount;state.users[target.id]=target}
- let id=uid('com');state.commissions[id]={id,userId:target.id,username:target.username,availableBefore:available,amount,date:now(),status:'Pagado',processedBy:currentUser.username};
- await addNotification(target.id,'Pago de comisión aplicado inmediatamente por '+money(amount),'commissions',id);addAudit('Pago de comisión',id);await persist();closeModal('comisionModal');renderAll();toast('Pago de comisión aplicado inmediatamente.')
+   const updated=tx.snapshot.val();
+   state.users[target.id]=updated;
+   if(currentUser?.id===target.id)currentUser=updated;
+   const id=uid('com');
+   const record={id,userId:target.id,username:target.username,availableBefore:available,amount,date:now(),status:'Pagado',processedBy:currentUser.username,accountingType:'COMISION_PAGADA'};
+   state.commissions[id]=record;
+   await firebase.database().ref(DB_PATH+'/commissions/'+id).set(record);
+   markSynced(['commissions',id],record);
+   if(lastSyncedState?.users?.[target.id])lastSyncedState.users[target.id]=cloneState(updated);
+   addAudit('Pago de comisión',id);
+   try{await addNotification(target.id,'Pago de comisión aplicado inmediatamente por '+money(amount)+'. El monto pasó directamente a su balance.', 'commissions',id)}catch(e){console.warn('Notificación de comisión:',e)}
+   localSave();closeModal('comisionModal');renderAll();toast('Pago de comisión aplicado inmediatamente: '+money(amount)+' pasó al balance.','success');
+ }catch(e){console.warn('guardarComision:',e);toast('No se pudo aplicar la comisión en Firebase.','error')}
 }
 
 async function guardarCredencial(){
@@ -1346,13 +1330,14 @@ async function approveDeposit(id,status){
  if(!Number.isFinite(depositAmount)||depositAmount<=0)return toast('El monto del depósito no es válido.','error');
 
  // REGLA ÚNICA DE DEPÓSITOS:
- // 1) El depósito del Remitente permanece pendiente y NO modifica ningún balance.
- // 2) Solo al aprobarlo el Administrador se acredita el 100% al balance/capital del Remitente.
- // 3) El depósito nunca genera comisión y nunca modifica el balance/comisión del Administrador.
- // 4) La acreditación es idempotente: un depósito aprobado no puede sumarse dos veces.
+ // 1) PENDIENTE = no cambia ningún balance.
+ // 2) APROBADO por Administrador = 100% directo al balance/capital del Remitente.
+ // 3) Comisión de depósito = RD$0.00; nunca afecta la Administración.
+ // 4) Idempotencia obligatoria por depositCredits[depositId]: un mismo depósito no puede volver a sumar.
  if(status==='Aprobado'){
    if(firebaseReady){
-     try{await creditDepositToRemitente(id,u.id,depositAmount)}
+     try{const creditedUser=await creditDepositToRemitente(id,u.id,depositAmount);
+     if(!creditedUser||Number(creditedUser.depositCredits?.[id])!==depositAmount)return toast('Firebase no confirmó la acreditación exacta del depósito al balance del remitente.','error')}
      catch(e){return toast('No se pudo acreditar el 100% del depósito al balance del remitente.','error')}
    }else{
      const credits={...(u.depositCredits||{})};
@@ -1542,27 +1527,21 @@ function scheduleCommissionDayRefresh(){
  window.__sendwayoCommissionTimer=setTimeout(()=>{if(currentUser){renderDashboard();}scheduleCommissionDayRefresh()},Math.max(1000,next.getTime()-Date.now()));
 }
 function commissionTodayFor(userId){
- const today=todayDateKey();let total=0;
- ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>{
-   Object.values(state[col]||{}).forEach(r=>{
-     if(!r||r.status!=='Aprobado'||r.userId!==userId)return;
-     const settled=r.balanceSettledAt||r.reviewedAt||r.createdAt||r.date;
-     if(commissionDateKey(settled)!==today)return;
-     total+=Number(r.commissionUser??(Number(r.commission||0)*0.5))||0;
-   });
- });
- if(userId==='admin'){
-   total=0;
-   ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>{
-     Object.values(state[col]||{}).forEach(r=>{
-       if(!r||r.status!=='Aprobado')return;
-       const settled=r.balanceSettledAt||r.reviewedAt||r.createdAt||r.date;
-       if(commissionDateKey(settled)!==today)return;
-       total+=Number(r.commissionAdmin??(Number(r.commission||0)*0.5))||0;
-     });
-   });
+ const today=todayDateKey();
+ const cols=['envios','recargas','paqueticos','pagos','paquetes'];
+ let total=0;
+ for(const col of cols){
+   for(const r of Object.values(state[col]||{})){
+     if(!r||r.status!=='Aprobado')continue;
+     const day=commissionDateKey(r.reviewedAt||r.balanceSettledAt||r.createdAt||r.date);
+     if(day!==today)continue;
+     const share=userId==='admin'
+       ?Number(r.commissionAdmin??(Number(r.commission||0)*0.5))
+       :(r.userId===userId?Number(r.commissionUser??(Number(r.commission||0)*0.5)):0);
+     if(Number.isFinite(share)&&share>0)total+=share;
+   }
  }
- return total;
+ return Number(total.toFixed(2));
 }
 async function ensureAllRemittersStartAtZero(){return false;}
 async function ensureAdminStartAtZero(){return false;}
@@ -1577,16 +1556,26 @@ function openAdminBalanceModal(targetId='admin',mode='set'){
  document.getElementById('adminBalanceModal').style.display='flex';
  refreshAdminBalanceModal();
 }
+function financeCreditTargets(type){
+ const admin=state.users?.admin;
+ const remitters=Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente');
+ return type==='bonus'?[admin].filter(Boolean):[admin,...remitters].filter(Boolean);
+}
+function commissionAvailableForAdminCredit(u){
+ if(!u)return 0;
+ if(u.id==='admin')return 0;
+ return Number(u.commission||0);
+}
 function openAdminCreditModal(type='balance'){
  if(!isAdmin())return toast('Solo el Administrador puede realizar acreditaciones.','warn');
  const titles={balance:'Acreditar Balance',bonus:'Acreditar Bono',commission:'Acreditar Comisiones'};
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
-  bonus:'El bono se acredita directamente al balance de la cuenta seleccionada. No genera ni modifica comisión.',
-  commission:'El monto se mueve desde la comisión disponible de la cuenta hacia su balance. En Administración, las comisiones de transacciones ya se acreditan automáticamente al balance y no se vuelven a sumar aquí.'
+  bonus:'El bono es dinero externo a las operaciones y se acredita directamente al balance de la Administración. No genera ni modifica comisión.',
+  commission:'Permite acreditar las comisiones disponibles de los Remitentes. En Administración, la comisión de cada operación ya fue acreditada automáticamente al balance y no se vuelve a sumar.'
  };
  window.__adminCreditType=['balance','bonus','commission'].includes(type)?type:'balance';
- const users=[state.users?.admin,...Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente')].filter(Boolean);
+ const users=financeCreditTargets(window.__adminCreditType);
  const sel=document.getElementById('admin-credit-target');
  sel.innerHTML=users.map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.id==='admin'?'Administración':(u.name||u.username||u.id))+' — '+escapeHtml(u.username||u.id)+'</option>').join('');
  document.getElementById('admin-credit-title').textContent=titles[window.__adminCreditType];
@@ -1600,27 +1589,39 @@ function acreditarTodaComisionDisponible(){
  const id=document.getElementById('admin-credit-target')?.value,u=state.users?.[id];
  if(!u)return toast('Seleccione una cuenta.','warn');
  window.__adminCreditType='commission';
+ if(id==='admin'){
+   document.getElementById('admin-credit-amount').value='';
+   return refreshAdminCreditModal();
+ }
  document.getElementById('admin-credit-title').textContent='Acreditar Comisiones';
- document.getElementById('admin-credit-info').textContent='Se acreditará al balance el 100% de la comisión disponible de la cuenta seleccionada.';
- document.getElementById('admin-credit-amount').value=Number(u.commission||0).toFixed(2);
+ document.getElementById('admin-credit-info').textContent='Se acreditará al balance el 100% de la comisión disponible del Remitente seleccionado.';
+ document.getElementById('admin-credit-amount').value=commissionAvailableForAdminCredit(u).toFixed(2);
  refreshAdminCreditModal();
 }
 function refreshAdminCreditModal(){
  const id=document.getElementById('admin-credit-target')?.value,u=state.users?.[id];
  if(!u)return;
+ const commission=commissionAvailableForAdminCredit(u);
+ const targetLabel=document.getElementById('admin-credit-target-label');
+ if(targetLabel)targetLabel.textContent=window.__adminCreditType==='bonus'?'Administración':'Cuenta a acreditar';
  document.getElementById('admin-credit-current').textContent=money(u.balance);
- document.getElementById('admin-credit-commission').textContent=money(u.commission);
+ document.getElementById('admin-credit-commission').textContent=money(commission);
  const btn=document.getElementById('admin-credit-save-btn');
  if(btn)btn.textContent=window.__adminCreditType==='bonus'?'Acreditar Bono':window.__adminCreditType==='commission'?'Acreditar Comisiones':'Acreditar Balance';
+ const amt=document.getElementById('admin-credit-amount');
+ if(amt&&window.__adminCreditType==='commission')amt.setAttribute('max',String(commission));
 }
 async function saveAdminCredit(){
  if(!isAdmin())return;
- const type=window.__adminCreditType||'balance',id=document.getElementById('admin-credit-target')?.value,amount=Number(document.getElementById('admin-credit-amount')?.value);
- const u=state.users?.[id];
+ const type=window.__adminCreditType||'balance',id=document.getElementById('admin-credit-target')?.value;
+ const amount=Number(document.getElementById('admin-credit-amount')?.value),u=state.users?.[id];
  if(!u||!['balance','bonus','commission'].includes(type))return toast('Seleccione una cuenta válida.','warn');
+ if(type==='bonus'&&id!=='admin')return toast('El bono solo puede acreditarse a la Administración.','warn');
+ const availableCommission=commissionAvailableForAdminCredit(u);
  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
- if(type==='commission'&&amount>Number(u.commission||0))return toast('El monto no puede superar la comisión disponible.','warn');
- if(!firebaseReady)return toast('Firebase no está conectado.','error');
+ if(type==='commission'&&amount>availableCommission)return toast('El monto no puede superar la comisión disponible.','warn');
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
+ if(type==='commission'&&id==='admin')return toast('La comisión de la Administración ya está acreditada directamente en el balance. No se vuelve a sumar.','warn');
  const ref=firebase.database().ref(DB_PATH+'/users/'+id);
  try{
   const tx=await ref.transaction(v=>{
@@ -1647,13 +1648,15 @@ async function saveAdminCredit(){
    return next;
   });
   if(!tx.committed)return toast('La operación no pudo acreditarse. El balance o la comisión cambió; vuelva a intentarlo.','warn');
-  const updated=tx.snapshot.val();state.users[id]=updated;if(currentUser?.id===id)currentUser=updated;
-  lastSyncedState=cloneState(state);localSave();
+  const updated=tx.snapshot.val();state.users[id]=updated;
+  if(currentUser?.id===id)currentUser=updated;
+  if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);
+  localSave();
   const label=type==='bonus'?'Acreditar Bono':type==='commission'?'Acreditar Comisiones':'Acreditar Balance';
   const auditId=uid('acr');
   const audit={id:auditId,action:label,targetUserId:id,amount,commissionBefore:Number(u.commission||0),commissionAfter:Number(updated.commission||0),balanceBefore:Number(u.balance||0),balanceAfter:Number(updated.balance||0),processedBy:currentUser.username,createdAt:now()};
   try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set(audit)}catch(_){}
-  await addNotification(id,label+' aplicado por '+money(amount)+'. Nuevo balance: '+money(updated.balance), 'audit', auditId);
+  try{await addNotification(id,label+' aplicado por '+money(amount)+'. Nuevo balance: '+money(updated.balance), 'audit', auditId)}catch(_){}
   closeModal('adminCreditModal');renderAll();toast(label+' aplicado directamente al balance de '+(updated.name||updated.username)+'.','success');
  }catch(e){console.warn('Acreditación administrativa:',e);toast('No se pudo acreditar el monto en Firebase.','error')}
 }
@@ -1938,6 +1941,6 @@ if(lastSyncedState){lastSyncedState.users=lastSyncedState.users||{};lastSyncedSt
 localSave();
 await addNotification(u.id,'El Administrador acreditó '+money(amount)+' directamente a su balance/capital. Este depósito no genera comisión.','deposits',id);
 closeModal('adminDepositModal');renderAll();
-toast('Depósito acreditado directamente al balance de '+u.name+'. Comisión: RD$0.00.','success')}
+toast('Balance de '+u.name+' actualizado: '+money(amount)+' acreditado directamente. Comisión: RD$0.00.','success')}
 </script></body>
 </html>
