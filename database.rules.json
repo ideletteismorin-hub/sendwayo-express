@@ -21,7 +21,7 @@
     "notifications": {
       "$id": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (data.exists() && data.child('targetUserId').val() === root.child('sendwayo_express_v2/users').child(data.child('targetUserId').val()).child('id').val() && (!newData.exists() || newData.child('targetUserId').val() === data.child('targetUserId').val())))"
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (data.exists() && root.child('sendwayo_express_v2/users').child(data.child('targetUserId').val()).child('authUid').val() === auth.uid && (!newData.exists() || newData.child('targetUserId').val() === data.child('targetUserId').val())))"
       }
     },
     "settings": {
@@ -73,7 +73,7 @@
     "commissions": {
       "$id": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('userId').val() === root.child('sendwayo_express_v2/users').child(newData.child('userId').val()).child('id').val() && newData.child('createdByAuthUid').val() === auth.uid && newData.child('accountingType').val() === 'COMISION_PAGADA'))"
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && root.child('sendwayo_express_v2/users').child(newData.child('userId').val()).child('authUid').val() === auth.uid && newData.child('createdByAuthUid').val() === auth.uid && newData.child('accountingType').val() === 'COMISION_PAGADA'))"
       }
     },
     "requests": {
