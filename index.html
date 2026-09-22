@@ -56,7 +56,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.64);justify-content:center;align-items:center;z-index:11000;padding:20px}.modal.public-request{z-index:20000;background:rgba(3,18,45,.78)}.modal-content{background:#fff;padding:22px;border-radius:12px;width:min(720px,96vw);max-height:92vh;overflow:auto;position:relative}.modal-close-x{position:absolute;right:15px;top:10px;background:none;border:0;font-size:1.6rem;color:var(--gray);cursor:pointer}
 .toast{position:fixed;right:18px;bottom:18px;z-index:9000;background:#071a36;color:#fff;padding:13px 16px;border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:380px}.toast.success{border-left:5px solid var(--accent)}.toast.warn{border-left:5px solid var(--secondary)}.toast.error{border-left:5px solid var(--danger)}
 .notif-panel{display:none;position:fixed;right:20px;top:66px;width:min(390px,92vw);max-height:65vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.2);z-index:4500;border:1px solid #dce3eb}.notif-panel.show{display:block}.notif-item{padding:11px;border-bottom:1px solid #edf1f5}.notif-item small{color:var(--gray)}
-.info-box{padding:12px;border-left:4px solid var(--secondary);background:#fffbeb;border-radius:6px;font-size:.8rem}.secret-divider{height:2px;background:#dbe3ec;margin:18px 0 12px;border-radius:2px;width:100%}
+.info-box{padding:12px;border-left:4px solid var(--secondary);background:#fffbeb;border-radius:6px;font-size:.8rem}.secret-divider{height:2px;background:#dbe3ec;margin:18px 0 12px;border-radius:2px;width:100%}.report-controls{display:grid;grid-template-columns:minmax(180px,260px) minmax(240px,1fr);gap:12px;margin:12px 0}.report-kpis{margin-top:10px}.report-person-card{display:none;padding:13px 15px;border:1px solid #dbe7f3;border-radius:10px;background:linear-gradient(135deg,#f8fbff,#fffdf3);margin-bottom:12px}.report-person-card.show{display:block}.report-person-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.report-person-grid>div{font-size:.78rem}.report-person-grid b{display:block;color:#52606d;font-size:.68rem;margin-bottom:2px}@media(max-width:800px){.report-controls{grid-template-columns:1fr}.report-person-grid{grid-template-columns:1fr 1fr}}
 .mobile-toggle-btn{display:none;background:none;border:0;color:var(--primary);font-size:1.4rem;cursor:pointer}
 .qr-link{word-break:break-all;font-size:.76rem;color:#1d4ed8}
 @media(max-width:800px){aside{position:fixed;left:-280px;height:100%;transition:.25s;box-shadow:8px 0 20px rgba(0,0,0,.25)}aside.active{left:0}.mobile-toggle-btn{display:block}.form-grid{grid-template-columns:1fr}.welcome-grid{grid-template-columns:1fr}.brand-logo{width:145px;height:145px}}
@@ -123,6 +123,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="sidebar-brand"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTAwIDUwMCI+CjxkZWZzPgogPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHgyPSIxIj48c3RvcCBzdG9wLWNvbG9yPSIjMDYxYTNhIi8+PHN0b3Agb2Zmc2V0PSIuNTgiIHN0b3AtY29sb3I9IiMwZDNjN2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNjI0NTEiLz48L2xpbmVhckdyYWRpZW50PgogPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkIiB4MT0iMCIgeDI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNmZmY1OGEiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZDQzYiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2U2OWIwMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8bGluZWFyR3JhZGllbnQgaWQ9ImJsdWUiIHgxPSIwIiB4Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU0ZTRmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA4N2NmMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI4IiByZXN1bHQ9ImIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+CjwvZGVmcz4KPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMTQ3NiIgaGVpZ2h0PSI0NzYiIHJ4PSI5MCIgZmlsbD0idXJsKCNiZykiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIxMCIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjE3NSIgZmlsbD0iIzA5MmM2MSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjEyIiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPHBhdGggZD0iTTgwIDM4NSBMMjIwIDc4IEwzNjAgMzg1IFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIyNSIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjgwIiBmaWxsPSJ1cmwoI2JsdWUpIiBzdHJva2U9IiNmZmY1OGEiIHN0cm9rZS13aWR0aD0iNyIvPgo8cGF0aCBkPSJNMTU1IDI1NWMzNS0yOCA5NS0yOCAxMzAgME0xNjUgMzAwYzMyIDIyIDc4IDIyIDExMCAwTTIyMCAxNzBjLTIyIDMwLTIyIDEyMCAwIDE2ME0yMjAgMTcwYzIyIDMwIDIyIDEyMCAwIDE2MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTlmYmZmIiBzdHJva2Utd2lkdGg9IjgiIG9wYWNpdHk9Ii45NSIvPgo8cmVjdCB4PSIxNzUiIHk9IjMwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjQyIiByeD0iOCIgZmlsbD0iIzEyM2I3OCIgc3Ryb2tlPSIjZmZmNThhIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIyMjAiIHk9IjMzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiNmZmYiPiQ8L3RleHQ+CjwhLS0gbW9uZXkgaWNvbiAtLT4gPGNpcmNsZSBjeD0iMzY1IiBjeT0iMTM1IiByPSIzOCIgZmlsbD0iIzE3Yjg2YSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIzNjUiIHk9IjE0OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIj4kPC90ZXh0Pgo8IS0tIHBhY2thZ2UgaWNvbiAtLT4gPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzQwIDM1MCkiPjxwYXRoIGQ9Ik0wIDIyIDU1IDAgMTEwIDIydjcwTDU1IDExNSAwIDkyWiIgZmlsbD0iI2Y1OWUwYiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMCAyMiA1NSA0NyAxMTAgMjJNNTUgNDd2NjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1IDE0aDQwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNSIvPjwvZz4KPHRleHQgeD0iNDMwIiB5PSIyMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTYiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSItNCIgZmlsbD0idXJsKCNnb2xkKSI+U0VORFdBWU88L3RleHQ+CjxyZWN0IHg9IjQzMCIgeT0iMjU1IiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjEwMCIgcng9IjUwIiBmaWxsPSIjZmZmIi8+Cjx0ZXh0IHg9IjcxMCIgeT0iMzI2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNzIiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSIxMCIgZmlsbD0iIzEyM2I3OCI+RVhQUkVTUzwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjEwIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNkZmY3ZmYiPkRJTkVSTyDigKIgUEFRVUVURVMg4oCiIENPTkVYScOTTjwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjUyIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY1OGEiPlNFUlZJQ0lPIOKAoiBDT05GSUFOWkEg4oCiIFNFR1VSSURBRDwvdGV4dD4KPHBhdGggZD0iTTEwMjAgMzAwaDM5MCIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCB4PSIxMDI1IiB5PSIzNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+wqFUdSBkaW5lcm8geSB0dXMgZW52w61vcyBlbiBidWVuYXMgbWFub3MhPC90ZXh0Pgo8L3N2Zz4="><span>SENDWAYO EXPRESS</span><button class="mobile-toggle-btn" style="color:#fff" onclick="toggleMobileMenu()">×</button></div>
     <ul class="sidebar-menu" id="sidebar-menu">
       <li><a href="#" onclick="switchView('dashboard')"><i class="fa-solid fa-chart-pie"></i> Tablero Principal</a></li>
+      <li><a href="#" onclick="switchView('informes')"><i class="fa-solid fa-file-lines"></i> Informes del Día</a></li>
       <li><a href="#" onclick="switchView('envios')"><i class="fa-solid fa-paper-plane"></i> Envíos (Transacciones Globales)</a></li>
       <li><a href="#" onclick="switchView('beneficiarios')"><i class="fa-solid fa-address-book"></i> Beneficiarios</a></li>
       <li><a href="#" onclick="switchView('paquetes')"><i class="fa-solid fa-box-open"></i> Paquetes Recepción y Envío</a></li>
@@ -156,14 +157,43 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <section id="view-dashboard" class="view-section active">
     <div class="kpis">
       <div class="kpi"><b>Balance Disponible</b><h2 id="kpi-balance">RD$ 0.00</h2><small class="muted">Disponible para operaciones autorizadas</small></div>
-      <div class="kpi" style="border-top-color:#f3b51b"><b>Total de Comisión</b><h2 id="kpi-commission">RD$ 0.00</h2><small class="muted">Acumulada histórica</small></div>
-      <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión de hoy</b><h2 id="kpi-commission-today">RD$ 0.00</h2><small class="muted">Generada y aprobada hoy</small></div><div class="kpi admin-only" style="border-top-color:#0f2c59"><b>50% Comisión Administración</b><h2 id="kpi-admin-commission-today">RD$ 0.00</h2><small class="muted">Participación administrativa de hoy</small></div>
+      <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión del Día (Hoy)</b><h2 id="kpi-commission-today">RD$ 0.00</h2><small class="muted">Comisiones generadas y aprobadas en la fecha de hoy</small></div>
+      <div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2><small class="muted">Histórico global de comisiones generadas</small></div>
+      <div class="kpi admin-only" style="border-top-color:#0f2c59"><b>Comisión Administración · Hoy</b><h2 id="kpi-admin-commission-today">RD$ 0.00</h2><small class="muted">Participación administrativa generada hoy y acreditada al balance</small></div>
+      <div class="kpi admin-only" style="border-top-color:#7c3aed"><b>Bono Administración</b><h2 id="kpi-admin-bonus">RD$ 0.00</h2><small class="muted">Bonos manuales acumulados y acreditados al balance administrativo</small></div>
       <div class="kpi admin-only" id="kpi-remitters-card"><b>Total de Remitentes</b><h2 id="kpi-remitters">0</h2></div>
       <div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
     </div>
     <div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Ajustes financieros de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Permite acreditar un saldo exacto a la Administración o agregar/quitar dinero del balance administrativo. Los cambios se guardan directamente en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div></div>
     <div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">Acreditaciones de Administración</h2><p class="muted" style="margin-top:4px">Solo Administración. Acreditar Balance y Acreditar Bono suman el monto directamente al balance de la cuenta seleccionada. Acreditar Comisiones pasa el monto desde la comisión disponible al balance.</p></div></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button></div></div>
     <div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
+  </section>
+
+  <section id="view-informes" class="view-section">
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Informes del Día</h2><p class="muted" style="margin-top:5px">Consolidación de la actividad de SENDWAYO EXPRESS por fecha y por remitente.</p></div>
+        <div class="actions">
+          <button class="btn btn-primary btn-sm" onclick="renderDailyReports(true)"><i class="fa-solid fa-rotate"></i> Actualizar informe</button>
+          <button class="btn btn-success btn-sm" onclick="exportData('Excel','dailyReportTable')">Excel</button>
+          <button class="btn btn-danger btn-sm" onclick="exportData('PDF','dailyReportTable')">PDF</button>
+          <button class="btn btn-warning btn-sm" onclick="exportData('CSV','dailyReportTable')">CSV</button>
+        </div>
+      </div>
+      <div class="report-controls">
+        <div class="form-group"><label>Fecha del informe</label><input id="daily-report-date" type="date" class="form-control" onchange="renderDailyReports()"></div>
+        <div class="form-group"><label>Consultar actividad de</label><select id="daily-report-user" class="form-control" onchange="renderDailyReports()"></select></div>
+      </div>
+      <div id="daily-report-status" class="info-box" style="margin-bottom:14px"></div>
+      <div id="daily-report-person" class="report-person-card"></div>
+      <div class="kpis report-kpis">
+        <div class="kpi"><b>Operaciones</b><h2 id="daily-report-count">0</h2></div>
+        <div class="kpi"><b>Monto procesado</b><h2 id="daily-report-amount">RD$ 0.00</h2></div>
+        <div class="kpi"><b>Comisiones generadas</b><h2 id="daily-report-commission">RD$ 0.00</h2></div>
+        <div class="kpi"><b>Depósitos aprobados</b><h2 id="daily-report-deposits">RD$ 0.00</h2></div>
+      </div>
+      <div class="table-wrap" style="margin-top:14px"><table id="dailyReportTable"><thead><tr><th>Hora</th><th>Tipo</th><th>ID operación</th><th>Remitente</th><th>Detalle</th><th>Monto</th><th>Comisión</th><th>Estado</th></tr></thead><tbody></tbody></table></div>
+    </div>
   </section>
 
   <section id="view-envios" class="view-section">
@@ -251,7 +281,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
     <div class="secret-divider" role="separator" aria-label="Separador de Información Secreta"></div><div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
-    <div class="table-wrap"><table id="secTable"><thead><tr><th>N°</th><th>Rol</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Correo Auth</th><th>Estado</th><th>Acceso</th><th>Balance</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="table-wrap"><table id="secTable"><thead><tr><th>N°</th><th>Rol</th><th>ID</th><th>Nombre y Apellido</th><th>WhatsApp</th><th>Usuario</th><th>Correo Auth</th><th>Estado</th><th>Acceso</th><th>Balance</th><th>Comisión disponible</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
   <section id="view-perfil" class="view-section">
@@ -462,7 +492,7 @@ const BENEFICIARIES=[
  {id:'bn7',name:'Robert Louis',phone:'50937010004',address:'Haití',active:true},
  {id:'bn8',name:'Elie Charles',phone:'50937010005',address:'Haití',active:true}
 ];
-let state={settings:{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{}};
+let state={settings:{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0,commissionAccrued:0,bonusAccrued:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{},dailyReports:{}};
 DEMO_ACCOUNTS.forEach(x=>state.users[x.id]=x);
 BENEFICIARIES.forEach(x=>state.beneficiaries[x.id]=x);
 BANKS.forEach(x=>state.accounts[x.id]=x);
@@ -529,6 +559,7 @@ async function manualRefresh(showMessage=true){
      requests:remote.requests||{},
      notifications:remote.notifications||{},
      audit:remote.audit||{},
+     dailyReports:remote.dailyReports||{},
      settings:remote.settings||{},
      ...remote
    };
@@ -836,7 +867,7 @@ function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
  let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
  document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+ let title={dashboard:'Tablero Principal',informes:'Informes del Día',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
@@ -899,7 +930,7 @@ async function notificationClick(id){
 function toggleNotifications(){let p=document.getElementById('notif-panel');p.classList.toggle('show');renderNotifications()}
 function renderNotifications(){const arr=Object.values(state.notifications||{}).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));const mine=arr.filter(x=>x.targetUserId===currentUser?.id||(isAdmin()&&x.target==='Administrador'));const unread=mine.filter(x=>!x.read).length;document.getElementById('notif-count').textContent=unread;document.getElementById('notif-list').innerHTML=mine.slice(0,30).map(x=>`<div class="notif-item unread" data-notification-id="${x.id}" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small><br><span class="muted">Clic para abrir la operación y quitar esta notificación</span></div>`).join('')||'<div class="notif-item muted">No hay notificaciones.</div>'}
 
-function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,createdAt:now()}}
+function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,targetUserId:typeof detail==='string'&&state.users?.[detail]?detail:(state.users?.[currentUser?.id]?currentUser.id:null),createdByAuthUid:firebase.auth().currentUser?.uid||null,createdAt:now()}}
 const SENDWAYO_OFFICIAL_HTI_TARIFF=[[50,500,50],[501,1000,100],[1001,2000,150],[2001,3000,200],[3001,4000,250],[4001,5000,300],[5001,6000,350],[6001,7000,400],[7001,8000,450],[8001,9000,500],[9001,10000,550],[10001,11000,600],[11001,12000,650],[12001,13000,700],[13001,14000,750],[14001,15000,800],[15001,16000,850],[16001,17000,900],[17001,18000,950],[18001,19000,1000],[19001,20000,1050],[20001,21000,1100],[21001,22000,1150],[22001,23000,1200],[23001,24000,1250],[24001,25000,1300],[25001,26000,1350],[26001,27000,1400],[27001,28000,1500],[28001,29000,1550],[29001,30000,1600],[30001,31000,1650],[31001,32000,1700],[32001,33000,1750],[33001,34000,1800],[34001,35000,1850],[35001,36000,1900]];
 function isOfficialHtiCashRoute(type){const t=String(type||'').trim().toUpperCase().replace(/\s+/g,' ');return t==='RD A HTI MONCASH'||t==='RD A HTI NATCASH'}
 function officialHtiCashFee(amount,type){if(!isOfficialHtiCashRoute(type))return null;const m=Number(amount||0);if(!Number.isFinite(m)||m<50||m>36000)return null;const whole=Math.floor(m);const row=SENDWAYO_OFFICIAL_HTI_TARIFF.find(([min,max])=>whole>=min&&whole<=max);return row?Number(row[2]):null}
@@ -1160,7 +1191,7 @@ async function guardarComision(){
    state.users[target.id]=updated;
    if(currentUser?.id===target.id)currentUser=updated;
    const id=uid('com');
-   const record={id,userId:target.id,username:target.username,availableBefore:available,amount,date:now(),status:'Pagado',processedBy:currentUser.username,accountingType:'COMISION_PAGADA'};
+   const record={id,userId:target.id,username:target.username,availableBefore:available,amount,date:now(),status:'Pagado',processedBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountingType:'COMISION_PAGADA'};
    state.commissions[id]=record;
    await firebase.database().ref(DB_PATH+'/commissions/'+id).set(record);
    markSynced(['commissions',id],record);
@@ -1261,7 +1292,7 @@ async function creditAdminCommission(amount){
    return false;
  }
 }
-async function updateUserFinancials(userId,deltaBalance,deltaCommission){if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+Number(deltaBalance||0),commission:Number(u.commission||0)+Number(deltaCommission||0)}):u);if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;u.balance=Number(u.balance||0)+Number(deltaBalance||0);u.commission=Number(u.commission||0)+Number(deltaCommission||0);state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
+async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+Number(deltaBalance||0),commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}):u);if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;u.balance=Number(u.balance||0)+Number(deltaBalance||0);u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
  if(!isAdmin())return;
  let r=state[collection]?.[id];if(!r||r.status!=='Pendiente')return;
@@ -1515,7 +1546,7 @@ async function reviewAccountWithdrawal(id,status){
 }
 
 function renderAll(){
- setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
+ setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderDailyReports();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
 function renderDashboardNotifications(){
  const box=document.getElementById('dashboard-notifications');if(!box||!currentUser)return;
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -1545,6 +1576,140 @@ function commissionTodayFor(userId){
  }
  return Number(total.toFixed(2));
 }
+function commissionTotalFor(userId){
+ if(userId==='admin'){
+   const stored=Number(state.users?.admin?.commissionAccrued||0);
+   if(stored>0)return Number(stored.toFixed(2));
+ }
+ const cols=['envios','recargas','paqueticos','pagos','paquetes'];
+ let total=0;
+ for(const col of cols){
+  for(const r of Object.values(state[col]||{})){
+   if(!r||r.status!=='Aprobado'||r.userId!==userId)continue;
+   const share=Number(r.commissionUser??(Number(r.commission||0)*0.5));
+   if(Number.isFinite(share)&&share>0)total+=share;
+  }
+ }
+ return Number(total.toFixed(2));
+}
+function adminBonusTotal(){
+ const stored=Number(state.users?.admin?.bonusAccrued||0);
+ if(stored>0)return Number(stored.toFixed(2));
+ let total=0;for(const x of Object.values(state.users?.admin?.bonusCredits||{})){const n=Number(x?.amount||0);if(Number.isFinite(n))total+=n}
+ return Number(total.toFixed(2));
+}
+function reportRecordDay(record){return commissionDateKey(record?.reviewedAt||record?.balanceSettledAt||record?.createdAt||record?.date)}
+function reportTime(record){
+ const t=parseSendwayoDate(record?.reviewedAt||record?.balanceSettledAt||record?.createdAt||record?.date);
+ return t?new Date(t).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+}
+function buildDailyReportRows(dateKey,userFilter=''){
+ const rows=[], add=(r,type,detail,amount,commission,status,forcedUserId=null)=>{
+  const uidv=forcedUserId||r?.userId; if(userFilter && uidv!==userFilter)return;
+  const u=state.users?.[uidv]||{};
+  rows.push({timestamp:parseSendwayoDate(r?.reviewedAt||r?.balanceSettledAt||r?.createdAt||r?.date),time:reportTime(r),type,operationId:r?.id||'—',userId:uidv||'',staffId:u.staffId||(uidv==='admin'?'ADMIN':''),name:u.name||r?.username||'',username:u.username||r?.username||'',detail:String(detail||''),amount:Number(amount||0),commission:Number(commission||0),status:String(status||r?.status||'Registrado')});
+ };
+ const transactionCols=[
+  ['envios','Envío',r=>{const b=r.beneficiarioNombre||r.beneficiario||'Beneficiario';return String(r.type||'Envío')+' → '+b}],
+  ['recargas','Recarga',r=>String(r.company||'Recarga')+' · '+String(r.phone||'')],
+  ['paqueticos','Paquetico',r=>String(r.company||'Paquetico')+' · '+String(r.plan||'')+' · '+String(r.phone||'')],
+  ['pagos','Factura / servicio',r=>String(r.company||'Servicio')+' · Contrato '+String(r.contract||'')],
+  ['paquetes','Paquete',r=>String(r.type||'Paquete')+' · '+String(r.description||'')]
+ ];
+ for(const [col,label,detailFn] of transactionCols){
+  for(const r of Object.values(state[col]||{})){
+   if(reportRecordDay(r)!==dateKey)continue;
+   const share=r.status==='Aprobado'?(userFilter==='admin'?Number(r.commissionAdmin??(Number(r.commission||0)*0.5)):(Number(r.commissionUser??(Number(r.commission||0)*0.5)))):0;
+   add(r,label,detailFn(r),r.amount,share,r.status);
+  }
+ }
+ for(const r of Object.values(state.deposits||{})){
+  if(reportRecordDay(r)!==dateKey)continue;
+  add(r,'Depósito',String(r.voucher||'Depósito de capital'),r.amount,0,r.status);
+ }
+ for(const r of Object.values(state.accountWithdrawals||{})){
+  if(reportRecordDay(r)!==dateKey)continue;
+  add(r,'Retiro de cuenta',String(r.note||r.reason||'Retiro'),r.amount,0,r.status);
+ }
+ for(const r of Object.values(state.commissions||{})){
+  if(commissionDateKey(r.date)!==dateKey)continue;
+  add(r,'Pago / retiro de comisión','Aplicación inmediata de comisión al balance',r.amount,0,r.status);
+ }
+ for(const a of Object.values(state.audit||{})){
+  if(commissionDateKey(a.createdAt)!==dateKey)continue;
+  if(!/^Acreditar|^Ajuste administrativo/.test(String(a.action||'')))continue;
+  const uidv=a.targetUserId||'admin'; if(userFilter&&uidv!==userFilter)continue;
+  const u=state.users?.[uidv]||{};const type=String(a.action).includes('Bono')?'Bono':String(a.action).includes('Comisiones')?'Acreditación de comisión':'Acreditación de balance';
+  rows.push({timestamp:parseSendwayoDate(a.createdAt),time:reportTime(a),type,operationId:a.id||'—',userId:uidv,staffId:u.staffId||(uidv==='admin'?'ADMIN':''),name:u.name||'',username:u.username||'',detail:String(a.action||'Actividad administrativa'),amount:Number(a.amount||0),commission:0,status:'Aplicado'});
+ }
+ rows.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+ return rows;
+}
+function dailyReportSummary(rows){
+ return {
+  count:rows.length,
+  amount:Number(rows.reduce((s,x)=>s+Number(x.amount||0),0).toFixed(2)),
+  commission:Number(rows.reduce((s,x)=>s+Number(x.commission||0),0).toFixed(2)),
+  deposits:Number(rows.filter(x=>x.type==='Depósito'&&x.status==='Aprobado').reduce((s,x)=>s+Number(x.amount||0),0).toFixed(2))
+ };
+}
+function buildDailyReportSnapshot(dateKey){
+ const rows=buildDailyReportRows(dateKey,'');
+ return {id:dateKey,dateKey,status:'Cerrado oficialmente',closedAt:now(),closedBy:currentUser?.username||'admin',generatedAt:now(),summary:dailyReportSummary(rows),rows};
+}
+async function closeDailyReportIfEligible(){
+ if(!isAdmin()||!firebaseReady)return false;
+ const nowD=new Date();
+ if(nowD.getHours()<22)return false;
+ const key=todayDateKey();
+ try{
+  const ref=firebase.database().ref(DB_PATH+'/dailyReports/'+key),snap=await ref.once('value');
+  if(snap.exists())return true;
+  const report=buildDailyReportSnapshot(key);
+  const tx=await ref.transaction(v=>v||report);
+  if(tx.committed&&tx.snapshot.exists()){
+   state.dailyReports=state.dailyReports||{};state.dailyReports[key]=tx.snapshot.val();markSynced(['dailyReports',key],tx.snapshot.val());localSave();
+   return true;
+  }
+ }catch(e){console.warn('Cierre diario:',e)}
+ return false;
+}
+function refreshDailyReportSelectors(){
+ const dateEl=document.getElementById('daily-report-date'),sel=document.getElementById('daily-report-user');
+ if(dateEl&&!dateEl.value)dateEl.value=todayDateKey();
+ if(!sel)return;
+ const target=sel.value||'';
+ const users=[state.users?.admin,...Object.values(state.users||{}).filter(u=>u?.role==='Remitente'&&u.active!==false)].filter(Boolean);
+ const allowed=isAdmin()?users.filter((u,i,a)=>a.findIndex(x=>x.id===u.id)===i):users.filter(u=>u.id===currentUser?.id);
+ sel.innerHTML=(isAdmin()?'<option value="">Todos — Actividad Global</option>':'')+allowed.map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.id==='admin'?'Administración':(u.name||u.username||u.id))+' — '+escapeHtml(u.staffId||u.username||u.id)+'</option>').join('');
+ if(target&&allowed.some(u=>u.id===target))sel.value=target;else if(!isAdmin()&&currentUser)sel.value=currentUser.id;
+}
+function renderDailyReports(showMessage=false){
+ if(!currentUser)return;
+ refreshDailyReportSelectors();
+ const dateEl=document.getElementById('daily-report-date'),sel=document.getElementById('daily-report-user');if(!dateEl||!sel)return;
+ const dateKey=dateEl.value||todayDateKey(),userId=sel.value||'';
+ const frozen=state.dailyReports?.[dateKey];
+ const rows=frozen?.rows?((userId)?frozen.rows.filter(x=>x.userId===userId):frozen.rows):buildDailyReportRows(dateKey,userId);
+ const summary=dailyReportSummary(rows);
+ document.getElementById('daily-report-count').textContent=String(summary.count);
+ document.getElementById('daily-report-amount').textContent=money(summary.amount);
+ document.getElementById('daily-report-commission').textContent=money(summary.commission);
+ document.getElementById('daily-report-deposits').textContent=money(summary.deposits);
+ const status=document.getElementById('daily-report-status');
+ const closed=!!frozen?.status;
+ if(status)status.innerHTML=(closed?'🔒 <b>Cierre oficial realizado a las 10:00 p. m. o después.</b>':'🕘 <b>Informe en curso.</b> El cierre y consolidación oficial se realiza automáticamente desde las 10:00 p. m. mientras una sesión administrativa esté activa.')+(dateKey===todayDateKey()?'':' La fecha consultada es histórica.');
+ const person=document.getElementById('daily-report-person');
+ if(userId){
+  const u=state.users?.[userId]||{};
+  person.classList.add('show');
+  person.innerHTML='<div class="report-person-grid"><div><b>ID</b>'+escapeHtml(u.staffId||(userId==='admin'?'ADMIN':userId))+'</div><div><b>Nombre</b>'+escapeHtml(u.name||'')+'</div><div><b>Usuario</b>'+escapeHtml(u.username||'')+'</div><div><b>Rol</b>'+escapeHtml(u.role||'Remitente')+'</div></div>';
+ }else{person.classList.remove('show');person.innerHTML=''}
+ const tbody=document.querySelector('#dailyReportTable tbody');
+ tbody.innerHTML=rows.map(x=>'<tr><td>'+escapeHtml(x.time)+'</td><td>'+escapeHtml(x.type)+'</td><td><b>'+escapeHtml(x.operationId)+'</b></td><td>'+escapeHtml(x.name)+'<br><small>'+escapeHtml(x.staffId||x.username)+'</small></td><td>'+escapeHtml(x.detail)+'</td><td>'+money(x.amount)+'</td><td>'+money(x.commission)+'</td><td><span class="status '+statusClass(x.status)+'">'+escapeHtml(x.status)+'</span></td></tr>').join('')||'<tr><td colspan="8" class="muted">No hay actividad registrada para esta fecha.</td></tr>';
+ if(showMessage)toast('Informe actualizado directamente desde los datos actuales de Firebase.','success');
+}
+
 async function ensureAllRemittersStartAtZero(){return false;}
 async function ensureAdminStartAtZero(){return false;}
 function openAdminBalanceModal(targetId='admin',mode='set'){
@@ -1574,7 +1739,7 @@ function openAdminCreditModal(type='balance'){
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
   bonus:'El bono es dinero externo a las operaciones y se acredita directamente al balance de la Administración. No genera ni modifica comisión.',
-  commission:'Permite acreditar las comisiones disponibles de los Remitentes. En Administración, la comisión de cada operación ya fue acreditada automáticamente al balance y no se vuelve a sumar.'
+  commission:'En Remitentes, mueve al balance la comisión disponible. En Administración, permite registrar una acreditación manual de comisión y sumarla directamente al balance administrativo; las comisiones operativas ya generadas siguen acreditándose automáticamente.'
  };
  window.__adminCreditType=['balance','bonus','commission'].includes(type)?type:'balance';
  const users=financeCreditTargets(window.__adminCreditType);
@@ -1611,7 +1776,10 @@ function refreshAdminCreditModal(){
  const btn=document.getElementById('admin-credit-save-btn');
  if(btn)btn.textContent=window.__adminCreditType==='bonus'?'Acreditar Bono':window.__adminCreditType==='commission'?'Acreditar Comisiones':'Acreditar Balance';
  const amt=document.getElementById('admin-credit-amount');
- if(amt&&window.__adminCreditType==='commission')amt.setAttribute('max',String(commission));
+ if(amt&&window.__adminCreditType==='commission'&&id!=='admin')amt.setAttribute('max',String(commission));
+ else if(amt)amt.removeAttribute('max');
+ const box=document.getElementById('admin-credit-current-box');
+ if(box&&window.__adminCreditType==='commission'&&id==='admin')box.innerHTML='Balance actual: <b id="admin-credit-current">'+money(u.balance)+'</b><br>Comisión manual histórica: <b id="admin-credit-commission">'+money(Number(u.commissionAccrued||0))+'</b>';
 }
 async function saveAdminCredit(){
  if(!isAdmin())return;
@@ -1623,18 +1791,19 @@ async function saveAdminCredit(){
  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
  if(type==='commission'&&amount>availableCommission)return toast('El monto no puede superar la comisión disponible.','warn');
  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
- if(type==='commission'&&id==='admin')return toast('La comisión de la Administración ya está acreditada directamente en el balance. No se vuelve a sumar.','warn');
  const ref=firebase.database().ref(DB_PATH+'/users/'+id);
  try{
   const tx=await ref.transaction(v=>{
    if(!v)return undefined;
    const balance=Number(v.balance||0),commission=Number(v.commission||0);
-   if(type==='commission'&&commission<amount)return undefined;
+   if(type==='commission'&&id!=='admin'&&commission<amount)return undefined;
    const next={...v,balance:balance+amount};
-   if(type==='commission')next.commission=commission-amount;
+   if(type==='commission'&&id!=='admin')next.commission=commission-amount;
+   if(type==='commission'&&id==='admin')next.commissionAccrued=Number(v.commissionAccrued||0)+amount;
    if(type==='bonus'){
     const bonusCredits={...(v.bonusCredits||{})};
     const bid=uid('bon');
+    next.bonusAccrued=Number(v.bonusAccrued||0)+amount;
     next.bonusCredits={...bonusCredits,[bid]:{id:bid,amount,creditedAt:now(),creditedBy:currentUser.username}};
    }
    if(type==='balance'){
@@ -1645,7 +1814,12 @@ async function saveAdminCredit(){
    if(type==='commission'){
     const credits={...(v.commissionCredits||{})};
     const cid=uid('acm');
-    next.commissionCredits={...credits,[cid]:{id:cid,amount,creditedAt:now(),creditedBy:currentUser.username}};
+    next.commissionCredits={...credits,[cid]:{id:cid,amount,creditedAt:now(),creditedBy:currentUser.username,type:'COMISION_ACREDITADA'}};
+    if(id==='admin'){
+      const manual={...(v.manualCommissionCredits||{})};
+      const mid=uid('mac');
+      next.manualCommissionCredits={...manual,[mid]:{id:mid,amount,creditedAt:now(),creditedBy:currentUser.username}};
+    }
    }
    return next;
   });
@@ -1696,14 +1870,16 @@ function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
  const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
- document.getElementById('kpi-commission').textContent=money(isAdmin()?Number(u.commissionAccrued??u.commission??0):Number(u.commission||0));
- const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id)); const ka=document.getElementById('kpi-admin-commission-today');if(ka)ka.textContent=money(commissionTodayFor('admin'));
+ document.getElementById('kpi-commission').textContent=money(commissionTotalFor(isAdmin()?'admin':u.id));
+ const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id));
+ const ka=document.getElementById('kpi-admin-commission-today');if(ka)ka.textContent=money(commissionTodayFor('admin'));
+ const kb=document.getElementById('kpi-admin-bonus');if(kb)kb.textContent=money(adminBonusTotal());
  const af=document.getElementById('admin-finance-balance');if(af)af.textContent=money(state.users?.admin?.balance||0);
  const sa=document.getElementById('secret-admin-balance');if(sa)sa.textContent=money(state.users?.admin?.balance||0);
  const remKpi=document.getElementById('kpi-remitters')?.closest('.kpi');if(remKpi)remKpi.style.display=isAdmin()?'':'none';
  document.getElementById('kpi-remitters').textContent=isAdmin()?Object.values(state.users).filter(x=>x.role==='Remitente').length:0;
  let count=newestFirst(state.envios).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.recargas).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paqueticos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.pagos).filter(x=>isAdmin()||x.userId===currentUser.id).length+newestFirst(state.paquetes).filter(x=>isAdmin()||x.userId===currentUser.id).length;
- document.getElementById('kpi-transactions').textContent=count;renderDashboardNotifications();
+ document.getElementById('kpi-transactions').textContent=count;renderDashboardNotifications();renderDailyReports();
 }
 function renderEnvios(){
  let rows=newestFirst(state.envios).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>statusFilter==='Todos'||r.status===statusFilter);
@@ -1779,8 +1955,11 @@ function renderSecrets(){
  const rows=[...(adminUser?[adminUser]:[]),...Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente')];
  document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>{
    const admin=u.id==='admin';
-   return `<tr style="${admin?'background:#fff8e1;font-weight:600':''}"><td>${i+1}</td><td>${admin?'ADMINISTRACIÓN':'Remitente'}</td><td><b>${escapeHtml(admin?'ADMIN':(u.staffId||''))}</b></td><td>${escapeHtml(u.name||'Administración SENDWAYO EXPRESS')}</td><td>${escapeHtml(u.phone||'')}</td><td>${escapeHtml(u.username||'admin')}</td><td>${escapeHtml(u.authEmail||authEmailFor(u))}</td><td><span class="status ${u.active?'st-Activo':'st-Inactivo'}">${u.active?'Activo':'Inactivo'}</span></td><td>Firebase Auth</td><td><b>${money(u.balance)}</b></td><td><div class="actions">${admin?'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\'admin\',\'set\')">Acreditar Admin</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\'admin\',\'adjust\')">Ajustar balance</button>':'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'set\')">Acreditar</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'adjust\')">Ajustar balance</button><button class="btn btn-light btn-sm" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser(\''+u.id+'\')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser(\''+u.id+'\')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset(\''+u.id+'\')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users[\''+u.id+'\'],INITIAL_PASSWORD)">Enviar WhatsApp</button>'}</div></td></tr>`;
- }).join('')||'<tr><td colspan="11" class="muted">No hay cuentas registradas.</td></tr>';
+   const actions=admin
+     ?'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\'admin\',\'set\')">Acreditar Admin</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\'admin\',\'adjust\')">Ajustar balance</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal(\'commission\')">Acreditar comisión</button>'
+     :'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'set\')">Acreditar</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'adjust\')">Ajustar balance</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal(\'commission\');setTimeout(()=>{const x=document.getElementById(\'admin-credit-target\');if(x){x.value=\''+u.id+'\';refreshAdminCreditModal()}},50)">Acreditar comisión</button><button class="btn btn-light btn-sm" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser(\''+u.id+'\')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser(\''+u.id+'\')">Eliminar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset(\''+u.id+'\')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users[\''+u.id+'\'],INITIAL_PASSWORD)">Enviar WhatsApp</button>';
+   return '<tr style="'+(admin?'background:#fff8e1;font-weight:600':'')+'"><td>'+(i+1)+'</td><td>'+ (admin?'ADMINISTRACIÓN':'Remitente') +'</td><td><b>'+escapeHtml(admin?'ADMIN':(u.staffId||''))+'</b></td><td>'+escapeHtml(u.name||'Administración SENDWAYO EXPRESS')+'</td><td>'+escapeHtml(u.phone||'')+'</td><td>'+escapeHtml(u.username||'admin')+'</td><td>'+escapeHtml(u.authEmail||authEmailFor(u))+'</td><td><span class="status '+(u.active?'st-Activo':'st-Inactivo')+'">'+(u.active?'Activo':'Inactivo')+'</span></td><td>Firebase Auth</td><td><b>'+money(u.balance)+'</b></td><td><b>'+money(u.commission)+'</b></td><td><div class="actions">'+actions+'</div></td></tr>';
+ }).join('')||'<tr><td colspan="12" class="muted">No hay cuentas registradas.</td></tr>';
 }
 
 async function sendPasswordReset(id){
@@ -1915,6 +2094,12 @@ async function refreshFromFirebaseNow(){
  if(typeof manualRefresh==='function')return manualRefresh(true);
  return false;
 }
+function startDailyReportAutomation(){
+ try{if(window.__sendwayoDailyReportTimer)clearInterval(window.__sendwayoDailyReportTimer);
+  window.__sendwayoDailyReportTimer=setInterval(()=>{if(currentUser&&isAdmin()&&firebaseReady)closeDailyReportIfEligible()},30000);
+  closeDailyReportIfEligible();
+ }catch(e){console.warn('Daily report automation',e)}
+}
 function startProductionRealtimeRefresh(){
  try{if(window.__sendwayoRefreshTimer)clearInterval(window.__sendwayoRefreshTimer);
   window.__sendwayoRefreshTimer=setInterval(()=>{if(currentUser&&firebaseReady&&firebase.auth().currentUser&&!document.hidden)manualRefresh(false)},10000);
@@ -1922,7 +2107,7 @@ function startProductionRealtimeRefresh(){
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady)manualRefresh(false)});
 window.addEventListener('online',()=>{if(currentUser&&firebaseReady)manualRefresh(false)});
-window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='function')startProductionRealtimeRefresh()});
+window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='function')startProductionRealtimeRefresh();if(typeof startDailyReportAutomation==='function')startDailyReportAutomation()});
 
 /* POLITICA FINANCIERA SENDWAYO EXPRESS — DEPÓSITOS Y COMISIONES 2026-09-21 */
 /* DEPÓSITOS: 100% al balance/capital del Remitente; comisión = RD$0.00; nunca pasan por el reparto 50/50. */
