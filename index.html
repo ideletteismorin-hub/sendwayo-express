@@ -1602,7 +1602,14 @@ function renderDashboard(){
 }
 function renderEnvios(){
  let rows=newestFirst(state.envios).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>statusFilter==='Todos'||r.status===statusFilter);
- document.querySelector('#enviosTable tbody').innerHTML=rows.map((r,i)=>{let u=userById(r.remitenteId),b=state.beneficiaries[r.beneficiarioId];return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td>${escapeHtml(u.name||r.username)}</td><td>${money(r.amount)}</td><td>${escapeHtml(b?.name||r.beneficiario||'')}</td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)}</td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No hay registros.</td></tr>';
+ document.querySelector('#enviosTable tbody').innerHTML=rows.map((r,i)=>{
+   let u=userById(r.remitenteId),b=state.beneficiaries[r.beneficiarioId];
+   const remName=r.remitenteNombre||r.remitente||u.name||r.username||'';
+   const remPhone=r.remitentePhone||u.phone||'';
+   const benName=r.beneficiarioNombre||r.beneficiario||b?.name||'';
+   const benPhone=r.beneficiarioPhone||b?.phone||'';
+   return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td><b>${escapeHtml(remName)}</b><br><small>${escapeHtml(remPhone)}</small></td><td>${money(r.amount)}</td><td><b>${escapeHtml(benName)}</b><br><small>${escapeHtml(benPhone)}</small></td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)}</td></tr>`
+ }).join('')||'<tr><td colspan="10" class="muted">No hay registros.</td></tr>';
 }
 function renderPeople(){
  let rms=Object.values(state.users).filter(x=>x.role==='Remitente'&&(isAdmin()||x.id===currentUser.id));
