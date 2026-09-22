@@ -884,7 +884,7 @@ function switchView(id){
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
 }
-function openModal(id){document.getElementById(id).style.display='flex';if(id==='depositoModal'&&currentUser){let rw=document.getElementById('dep-remitente-wrap'),sel=document.getElementById('dep-remitente');if(rw)rw.style.display=isAdmin()?'block':'none';if(sel)sel.innerHTML='<option value="">Seleccione un remitente</option>'+Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.name||u.username||u.id)+' — '+escapeHtml(u.username||'')+'</option>').join('');const ds=document.getElementById('dep-remitente-search');if(ds)ds.value='';const db=document.getElementById('dep-remitente-suggestions');if(db)db.style.display='none';let ac=document.getElementById('dep-cuenta');if(ac){let accounts=Object.values(state.accounts||{});if(!accounts.length){accounts=BANKS.map(x=>({...x}));state.accounts=Object.fromEntries(accounts.map(x=>[x.id,x]))}ac.innerHTML='<option value="">Seleccione una cuenta bancaria oficial</option>'+accounts.filter(a=>a.active!==false).map(a=>'<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.bank||'')+' — '+escapeHtml(a.number||'')+'</option>').join('')}}if(id==='comisionModal'&&currentUser){let wrap=document.getElementById('com-target-wrap');if(wrap)wrap.style.display=isAdmin()?'block':'none';updateCommissionTarget();document.getElementById('com-disp').value=money(currentUser.commission)}if(id==='retiroCuentaModal'&&currentUser)document.getElementById('cuenta-disp').value=money(currentUser.balance)}
+function openModal(id){document.getElementById(id).style.display='flex';if(id==='depositoModal'&&currentUser){let rw=document.getElementById('dep-remitente-wrap'),sel=document.getElementById('dep-remitente');if(rw)rw.style.display=isAdmin()?'block':'none';if(sel)sel.innerHTML='<option value="">Seleccione un remitente</option>'+Object.values(state.users||{}).filter(u=>u.role==='Remitente'&&u.active!==false).map(u=>'<option value="'+escapeHtml(u.id)+'">'+escapeHtml(u.name||u.username||u.id)+' — '+escapeHtml(u.username||'')+'</option>').join('');const ds=document.getElementById('dep-remitente-search');if(ds)ds.value='';const db=document.getElementById('dep-remitente-suggestions');if(db)db.style.display='none';setTimeout(()=>{if(isAdmin()&&typeof updateDepositSuggestions==='function')updateDepositSuggestions()},80);let ac=document.getElementById('dep-cuenta');if(ac){let accounts=Object.values(state.accounts||{});if(!accounts.length){accounts=BANKS.map(x=>({...x}));state.accounts=Object.fromEntries(accounts.map(x=>[x.id,x]))}ac.innerHTML='<option value="">Seleccione una cuenta bancaria oficial</option>'+accounts.filter(a=>a.active!==false).map(a=>'<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.bank||'')+' — '+escapeHtml(a.number||'')+'</option>').join('')}}if(id==='comisionModal'&&currentUser){let wrap=document.getElementById('com-target-wrap');if(wrap)wrap.style.display=isAdmin()?'block':'none';updateCommissionTarget();document.getElementById('com-disp').value=money(currentUser.commission)}if(id==='retiroCuentaModal'&&currentUser)document.getElementById('cuenta-disp').value=money(currentUser.balance)}
 document.addEventListener('click',function(ev){
  const m=ev.target?.closest?.('.modal');
  if(m&&ev.target===m){closeModal(m.id)}
@@ -1251,9 +1251,9 @@ async function creditAdminCommission(amount){
  if(!firebaseReady)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/admin');
  try{
-   // Incremento atómico en Firebase: conserva cualquier comisión existente y suma exactamente el 50%.
-   await ref.update({commission:firebase.database.ServerValue.increment(n)});
-   const snap=await ref.once('value');
+   const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+n,commissionAccrued:Number(u.commissionAccrued||0)+n}):undefined);
+   if(!tx.committed)return false;
+   const snap=tx.snapshot;
    if(!snap.exists())return false;
    state.users.admin=snap.val();
    if(currentUser?.id==='admin')currentUser=state.users.admin;
@@ -1411,8 +1411,8 @@ function transactionConcept(collection,r){
 function generateReceipt(collection,id){
  let r=state[collection]?.[id];if(!r||r.status!=='Aprobado')return;
  let u=state.users[r.userId]||state.users.admin;
- let benName=collection==='deposits'?'No aplica — Depósito de capital':(r.beneficiario||r.beneficiary||'Según operación');
- let benPhone=collection==='deposits'?'—':(r.beneficiarioPhone||r.beneficiaryPhone||'');
+ let benName=collection==='deposits'?(u.name||r.username||'Remitente'):(r.beneficiario||r.beneficiary||'Según operación');
+ let benPhone=collection==='deposits'?(u.phone||''):(r.beneficiarioPhone||r.beneficiaryPhone||'');
  let d=new Date(),receiptId=r.receipt?.id||('SW-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0'));
  r.receipt={id:receiptId,date:d.toLocaleDateString('es-DO'),time:d.toLocaleTimeString('es-DO'),business:'SENDWAYO EXPRESS',user:u.name,username:u.username,staffId:u.staffId,role:'Remitente',concept:transactionConcept(collection,r),type:r.type||transactionConcept(collection,r),route:r.route||r.type||'Según operación',amount:Number(r.amount||0),net:Number(r.net||r.amount||0),remitente:r.remitenteNombre||r.remitente||u.name||'',remitentePhone:r.remitentePhone||u.phone||'',beneficiario:benName,beneficiarioPhone:benPhone,collection,status:'Aprobado',original:true,contactPhone:'8298573043',contactEmail:'sendwayoexpress@gmail.com'};
  state[collection][id]=r;
@@ -1432,8 +1432,14 @@ function showReceipt(collection,id){
    if(firebaseReady)firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt}).catch(e=>console.warn('Guardado de recibo:',e));
    else localSave();
  }
- const rec=r.receipt;
  const u=state.users?.[r.userId]||state.users?.admin||{};
+ if(collection==='deposits'&&r.receipt){
+   r.receipt.beneficiario=u.name||r.username||'Remitente';
+   r.receipt.beneficiarioPhone=u.phone||'';
+   r.receipt.staffId=u.staffId||r.receipt.staffId||'';
+   if(firebaseReady)firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt}).catch(e=>console.warn('Actualización de recibo de depósito:',e));
+ }
+ const rec=r.receipt;
  const idRem=rec.staffId||u.staffId||'XXX-[ID-REMITENTE]';
  const benName=rec.beneficiario||r.beneficiario||r.beneficiarioNombre||'Según operación';
  const benPhone=rec.beneficiarioPhone||r.beneficiarioPhone||'';
@@ -1567,7 +1573,7 @@ function openAdminCreditModal(type='balance'){
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
   bonus:'El bono se acredita directamente al balance de la cuenta seleccionada. No genera ni modifica comisión.',
-  commission:'El monto se mueve desde la comisión disponible de la cuenta hacia su balance. Si se acredita toda la comisión disponible, la comisión queda en RD$ 0.00.'
+  commission:'El monto se mueve desde la comisión disponible de la cuenta hacia su balance. En Administración, las comisiones de transacciones ya se acreditan automáticamente al balance y no se vuelven a sumar aquí.'
  };
  window.__adminCreditType=['balance','bonus','commission'].includes(type)?type:'balance';
  const users=[state.users?.admin,...Object.values(state.users||{}).filter(u=>u&&u.role==='Remitente')].filter(Boolean);
@@ -1675,7 +1681,7 @@ function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
  const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
- document.getElementById('kpi-commission').textContent=money(u.commission);
+ document.getElementById('kpi-commission').textContent=money(isAdmin()?Number(u.commissionAccrued??u.commission??0):Number(u.commission||0));
  const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id)); const ka=document.getElementById('kpi-admin-commission-today');if(ka)ka.textContent=money(commissionTodayFor('admin'));
  const af=document.getElementById('admin-finance-balance');if(af)af.textContent=money(state.users?.admin?.balance||0);
  const sa=document.getElementById('secret-admin-balance');if(sa)sa.textContent=money(state.users?.admin?.balance||0);
