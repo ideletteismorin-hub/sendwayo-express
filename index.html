@@ -974,7 +974,7 @@ async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
  const id=uid(collection),rate=collection==='envios'?.05:.05;
- const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50'};
+ const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50',adminVisible:true,adminInbox:true};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
  try{
@@ -1014,27 +1014,24 @@ function personMatchesQuery(x,q){
  const name=normalizeSearchText(personName(x)),user=normalizeSearchText(x.username),phone=phoneDigits(personPhone(x));
  return name.includes(nq)||user.includes(nq)||(qd&&phone.includes(qd));
 }
-function chooseEnvioPerson(kind,id){
- const x=(kind==='remitente'?state.users:state.beneficiaries)[id];if(!x)return;
- const input=document.getElementById('env-'+kind+'-input'),hidden=document.getElementById('env-'+kind+'-select');if(!input||!hidden)return;
- const phone=personPhone(x)||'Sin número',name=personName(x);
- input.value=phone+' ('+name+')';hidden.value=id;
- const box=document.getElementById('env-'+kind+'-suggestions');if(box)box.style.display='none';
- if(kind==='remitente'){
-   const ph=document.getElementById('env-remitente-phone'),doc=document.getElementById('env-remitente-doc');
-   if(ph)ph.value=phone==='Sin número'?'':phone;
-   if(doc)doc.value=x.doc||x.document||'';
- }else{
-   const ph=document.getElementById('env-beneficiario-phone');if(ph)ph.value=phone==='Sin número'?'':phone;
- }
+function setEnvioPersonFields(kind,x,id){
+ const input=document.getElementById('env-'+kind+'-input'),hidden=document.getElementById('env-'+kind+'-select');if(!input||!hidden||!x)return;
+ const phone=personPhone(x)||'Sin número',name=personName(x)||'Sin nombre';
+ hidden.value=id;input.value=phone+' ('+name+')';input.dataset.personId=id;input.dataset.personPhone=phone;input.dataset.personName=name;
+ const box=document.getElementById('env-'+kind+'-suggestions');if(box){box.innerHTML='';box.style.display='none'}
+ if(kind==='remitente'){const ph=document.getElementById('env-remitente-phone'),doc=document.getElementById('env-remitente-doc');if(ph)ph.value=phone==='Sin número'?'':phone;if(doc)doc.value=x.doc||x.document||''}
+ else{const ph=document.getElementById('env-beneficiario-phone');if(ph)ph.value=phone==='Sin número'?'':phone}
 }
+function chooseEnvioPerson(kind,id){const x=(kind==='remitente'?state.users:state.beneficiaries)[id];if(!x)return;setEnvioPersonFields(kind,x,id)}
 function updateEnvioSuggestions(kind){
  const input=document.getElementById('env-'+kind+'-input'),box=document.getElementById('env-'+kind+'-suggestions');if(!input||!box)return;
- const q=String(input.value||'').trim(),col=kind==='remitente'?state.users:state.beneficiaries;
- const list=Object.values(col||{}).filter(x=>x&&x.active!==false&&(kind==='remitente'?x.role==='Remitente':true))
-   .filter(x=>isAdmin()||kind!=='remitente'||x.id===currentUser?.id)
-   .filter(x=>personMatchesQuery(x,q))
-   .sort((a,b)=>personName(a).localeCompare(personName(b))).slice(0,10);
+ const raw=String(input.value||'').trim(),q=raw.replace(/\s*\([^)]*\)\s*$/,'').trim(),col=kind==='remitente'?state.users:state.beneficiaries;
+ const list=Object.values(col||{}).filter(x=>x&&x.active!==false&&(kind==='remitente'?x.role==='Remitente':true)).filter(x=>isAdmin()||kind!=='remitente'||x.id===currentUser?.id).filter(x=>personMatchesQuery(x,q)).sort((a,b)=>{
+   const qa=normalizeSearchText(q),da=phoneDigits(q);
+   const ae=normalizeSearchText(personName(a))===qa||normalizeSearchText(a.username)===qa||(da&&phoneDigits(personPhone(a))===da);
+   const be=normalizeSearchText(personName(b))===qa||normalizeSearchText(b.username)===qa||(da&&phoneDigits(personPhone(b))===da);
+   return Number(be)-Number(ae)||personName(a).localeCompare(personName(b));
+ }).slice(0,10);
  box.innerHTML=list.map(x=>`<button type="button" class="env-suggestion" onclick="chooseEnvioPerson('${escapeHtml(kind)}','${escapeHtml(x.id)}')"><b>${escapeHtml(personPhone(x)||'Sin número')}</b> <span>(${escapeHtml(personName(x)||'Sin nombre')})</span></button>`).join('');
  box.style.display=list.length?'block':'none';
 }
@@ -1060,27 +1057,27 @@ function chooseAdminDepositRemitente(id){
 }
 function resolveEnvioPerson(kind){
  const input=document.getElementById('env-'+kind+'-input'),hidden=document.getElementById('env-'+kind+'-select');if(!input||!hidden)return;
- if(hidden.value&&(input.value.includes('(')||input.value.trim()===''))return;
- const col=kind==='remitente'?state.users:state.beneficiaries;
- const clean=input.value.replace(/\\s*\\([^)]*\\)\\s*$/,'').trim(),qd=phoneDigits(clean),qn=normalizeSearchText(clean);
- let id=Object.values(col||{}).find(x=>{const p=phoneDigits(personPhone(x)),n=normalizeSearchText(personName(x)),u=normalizeSearchText(x.username);return (qd&&p===qd)||n===qn||u===qn})?.id||'';
- if(kind==='remitente'&&!id&&!isAdmin()&&currentUser)id=currentUser.id;
- hidden.value=id;
- if(kind==='remitente'&&id){const u=state.users[id],ph=document.getElementById('env-remitente-phone'),doc=document.getElementById('env-remitente-doc');if(ph)ph.value=personPhone(u);if(doc)doc.value=u?.doc||u?.document||''}
- if(kind==='beneficiario'&&id){const b=state.beneficiaries[id],ph=document.getElementById('env-beneficiario-phone');if(ph)ph.value=personPhone(b)}
+ if(hidden.value&&(input.value.includes('(')||input.dataset.personId===hidden.value))return;
+ const col=kind==='remitente'?state.users:state.beneficiaries,q=String(input.value||'').replace(/\s*\([^)]*\)\s*$/,'').trim(),qd=phoneDigits(q),qn=normalizeSearchText(q);
+ const found=Object.values(col||{}).find(x=>{const p=phoneDigits(personPhone(x)),n=normalizeSearchText(personName(x)),u=normalizeSearchText(x.username);return (qd&&p===qd)||(qn&&(n===qn||u===qn))});
+ if(found)return setEnvioPersonFields(kind,found,found.id);
+ if(kind==='remitente'&&!isAdmin()&&currentUser){const me=state.users?.[currentUser.id];if(me)return setEnvioPersonFields(kind,me,me.id)}
+ hidden.value='';
 }
 async function guardarEnvio(){
  if(!canTransact())return;
- let amount=Number(document.getElementById('env-monto').value);resolveEnvioPerson('remitente');resolveEnvioPerson('beneficiario');let remId=document.getElementById('env-remitente-select').value,benId=document.getElementById('env-beneficiario-select').value;
+ resolveEnvioPerson('remitente');resolveEnvioPerson('beneficiario');
+ const amount=Number(document.getElementById('env-monto').value),remId=document.getElementById('env-remitente-select').value,benId=document.getElementById('env-beneficiario-select').value;
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
- if(!remId)return toast('Escriba y seleccione un remitente válido por nombre, usuario o número.','warn');
- if(!benId)return toast('Escriba y seleccione un beneficiario válido por nombre o número.','warn');
+ if(!remId)return toast('Escriba el nombre o número del remitente y seleccione la sugerencia.','warn');
+ if(!benId)return toast('Escriba el nombre o número del beneficiario y seleccione la sugerencia.','warn');
  if(!isAdmin()&&remId!==currentUser.id)return toast('Un usuario solo puede registrar sus propios envíos.','warn');
  if(!await guardBalance(amount))return;
- let c=calcEnvio(amount),type=document.getElementById('env-tipo-trans').value,ben=state.beneficiaries[benId],rem=userById(remId);
- let id=await createTransaction('envios',{type,remitenteId:remId,remitentePhone:rem.phone||'',remitenteDoc:rem.doc||'',beneficiarioId:benId,beneficiario:ben?.name||'',beneficiarioPhone:ben?.phone||'',net:c.net,commission:c.commission,destination:c.total,route:type},amount);
+ const c=calcEnvio(amount),type=document.getElementById('env-tipo-trans').value,ben=state.beneficiaries[benId],rem=userById(remId);
+ const remName=personName(rem),remPhone=personPhone(rem),benName=personName(ben),benPhone=personPhone(ben);
+ const id=await createTransaction('envios',{type,route:type,remitenteId:remId,remitente:remName,remitenteNombre:remName,remitentePhone:remPhone,remitenteDoc:rem.doc||rem.document||'',beneficiarioId:benId,beneficiario:benName,beneficiarioNombre:benName,beneficiarioPhone:benPhone,net:c.net,commission:c.commission,destination:c.total},amount);
  if(!id)return;
- closeModal('envioModal');toast('Envío guardado como PENDIENTE y notificado en tiempo real.')
+ closeModal('envioModal');toast('Envío guardado como PENDIENTE y enviado a la página del Administrador.','success');
 }
 async function guardarBeneficiario(){
  let name=document.getElementById('ben-nombre').value.trim(),phone=fullPhone('ben-country',document.getElementById('ben-cel').value.trim());
