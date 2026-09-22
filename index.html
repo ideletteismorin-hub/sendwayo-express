@@ -974,7 +974,7 @@ function isAdmin(){return currentUser?.role==='Administrador'}
 async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
- const id=uid(collection),rate=collection==='envios'?.05:.05;
+ const id=uid(collection),rate=collection==='envios'?0.05:0.05;
  const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:Number(amount||0),commissionRate:rate,commission:Number(amount||0)*rate,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50',adminVisible:true,adminInbox:true};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
@@ -1253,7 +1253,7 @@ async function editRecord(collection,id){
    const newAmount=Number(val);if(!Number.isFinite(newAmount)||newAmount<=0)return toast('Ingrese un monto válido.','warn');
    const delta=newAmount-old;
    if(r.balanceDebited&&r.status!=='Aprobado'&&delta!==0){if(!await adjustReservedBalance(r.userId,delta))return toast('Balance insuficiente para aumentar ese monto.','warn');}
-   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate||(collection==='envios'?.05:.05));
+   r.amount=newAmount;r.commission=newAmount*Number(r.commissionRate||(collection==='envios'?0.05:0.05));
    if(collection==='envios'){r.net=newAmount-r.commission;r.destination=r.net*2.10;}
  }else if(['cost','weight'].includes(key)){
    const n=Number(val);if(!Number.isFinite(n)||n<0)return toast('Ingrese un valor válido.','warn');r[key]=n;
@@ -1301,7 +1301,7 @@ async function setTransactionStatus(collection,id,status){
    r=tx.snapshot.val();state[collection][id]=r;
  }else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state[collection][id]=r}
  const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
- const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?.05:.05));
+ const commission=Number(r.commission||Number(r.amount||0)*(collection==='envios'?0.05:0.05));
  if(status==='Aprobado'){
    // REGLA CONTABLE: 50% de la comisión al Remitente y 50% al Administrador.
    const userShare=commission*0.50,adminShare=commission*0.50;
@@ -1311,7 +1311,7 @@ async function setTransactionStatus(collection,id,status){
    r.commissionUser=userShare;
    r.commissionAdmin=adminShare;
    r.commissionTotal=commission;
-   r.commissionRate=(collection==='envios'?.05:.05);
+   r.commissionRate=(collection==='envios'?0.05:0.05);
    r.commissionAccount='50% REMITENTE / 50% ADMINISTRADOR';
    r.balanceDebited=!!r.balanceDebited;
    r.balanceSettledAt=now();
