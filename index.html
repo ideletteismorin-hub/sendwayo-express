@@ -204,11 +204,10 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       </div>
       <div id="credit-summary-kpis" class="kpis" style="margin-bottom:14px"></div>
       <div class="info-box" style="margin-bottom:14px"><b>Funcionamiento:</b> si un Remitente tiene RD$20 y necesita RD$100, se usan RD$20 de su balance y RD$80 de crédito. Cuando llegue un depósito aprobado, primero se abona la deuda de crédito y solamente el sobrante aumenta el balance.</div>
-      <div class="status-bar" id="credit-statusbar"><button class="btn btn-light btn-sm active">TODOS</button><button class="btn btn-warning btn-sm">PENDIENTE</button><button class="btn btn-success btn-sm">DISPONIBLE</button><button class="btn btn-danger btn-sm">SIN CRÉDITO</button></div><div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','creditTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','creditTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','creditTable')">CSV</button></div><input class="search-box" placeholder="Buscar por nombre, ID o usuario..." oninput="filterTable(this,'creditTable')"></div><div class="table-wrap"><table id="creditTable"><thead><tr><th>ID</th><th>Remitente</th><th>Cupo</th><th>Deuda utilizada</th><th>Disponible</th><th>Estado</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="table-wrap"><table id="creditTable"><thead><tr><th>ID</th><th>Remitente</th><th>Cupo</th><th>Deuda utilizada</th><th>Disponible</th><th>Estado</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
   </section>
 
-  <section id="view-conciliacion" class="view-section admin-only"><div class="card"><div class="card-header"><h2>Conciliación Financiera</h2><button class="btn btn-primary" onclick="renderConciliacion()">Actualizar</button></div><p class="muted">Balance, comisión disponible, comisión histórica y crédito pendiente.</p><div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','conciliacionTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','conciliacionTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','conciliacionTable')">CSV</button></div><input class="search-box" placeholder="Buscar persona..." oninput="filterTable(this,'conciliacionTable')"></div><div class="table-wrap"><table id="conciliacionTable"><thead><tr><th>ID</th><th>Persona</th><th>Balance</th><th>Comisión disponible</th><th>Comisión histórica</th><th>Crédito pendiente</th><th>Control</th></tr></thead><tbody></tbody></table></div></div></section>
   <section id="view-envios" class="view-section">
     <div class="card">
       <div class="card-header"><h3>Gestión de Envíos y Transacciones Globales</h3><button class="btn btn-primary" onclick="openModal('envioModal')"><i class="fa-solid fa-plus"></i> Agregar Nuevo</button></div>
@@ -1275,17 +1274,17 @@ async function saveCreditGrant(){
  if(!isAdmin())return;
  const id=document.getElementById('credit-target')?.value,amount=Number(document.getElementById('credit-amount')?.value||0),note=document.getElementById('credit-note')?.value.trim()||'';
  if(!id||!Number.isFinite(amount)||amount<=0)return toast('Indique un remitente y un monto mayor que cero.','warn');
- if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
- const cid=uid('crd'),ref=firebase.database().ref(DB_PATH+'/users/'+id);
+ const ref=firebase.database().ref(DB_PATH+'/users/'+id);
  try{
-  const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;const grants={...(u.creditGrants||{})};return {...u,creditLimit:Number(u.creditLimit||0)+amount,creditGrantedTotal:Number(u.creditGrantedTotal||0)+amount,creditGrants:{...grants,[cid]:{id:cid,amount,note,createdAt:now(),createdBy:currentUser.username,status:'Aplicado',type:'CREDITO_OTORGADO'}}}});
-  if(!tx.committed)return toast('No se pudo guardar el crédito. Verifique que el remitente exista y vuelva a intentarlo.','error');
-  const updated=tx.snapshot.val(),record={id:cid,userId:id,amount,note,createdAt:now(),createdBy:currentUser.username,status:'Aplicado',type:'CREDITO_OTORGADO'};
+  const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;return {...u,creditLimit:Number(u.creditLimit||0)+amount,creditGrantedTotal:Number(u.creditGrantedTotal||0)+amount}});
+  if(!tx.committed)return toast('No se pudo otorgar el crédito.','error');
+  const updated=tx.snapshot.val(),cid=uid('crd'),record={id:cid,userId:id,amount,note,createdAt:now(),createdBy:currentUser.username,status:'Aplicado',type:'CREDITO_OTORGADO'};
   state.users[id]=updated;state.credits=state.credits||{};state.credits[cid]=record;
-  try{await firebase.database().ref(DB_PATH+'/credits/'+cid).set(record)}catch(e){console.warn('Índice /credits no disponible:',e)}
+  await firebase.database().ref(DB_PATH+'/credits/'+cid).set(record);
   if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);
-  localSave();closeModal('creditGrantModal');renderAll();try{await addNotification(id,'Administración le otorgó '+money(amount)+' de crédito. Cupo disponible: '+money(creditInfo(updated).available)+'.','credits',cid)}catch(e){}
-  toast('Crédito otorgado y guardado correctamente en Firebase.','success');
+  localSave();closeModal('creditGrantModal');renderAll();
+  try{await addNotification(id,'Administración le otorgó '+money(amount)+' de crédito. Cupo disponible: '+money(creditInfo(updated).available)+'.','credits',cid)}catch(e){}
+  toast('Crédito otorgado correctamente.','success');
  }catch(e){console.warn('saveCreditGrant:',e);toast('No se pudo guardar el crédito en Firebase.','error')}
 }
 async function guardBalance(amount){
@@ -1433,17 +1432,21 @@ async function guardarPersona(){const role=document.getElementById('personaModal
 async function creditDepositToRemitente(depositId,remitenteId,amount){
  const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');
  if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
- const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);let result={creditRepaid:0,balanceAdded:0};
+ const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);
  const tx=await ref.transaction(u=>{
   if(!u||u.role!=='Remitente')return undefined;
-  const deposits={...(u.depositCredits||{})};
-  if(deposits[depositId]!==undefined){if(Math.abs(Number(deposits[depositId])-n)<0.000001){result={creditRepaid:Number(u.creditRepayments?.[depositId]||0),balanceAdded:Number(u.depositBalanceAdded?.[depositId]||0)};return u}return undefined}
-  const outstanding=Math.max(0,Number(u.creditOutstanding||0)),creditRepaid=Math.min(n,outstanding),balanceAdded=n-creditRepaid;result={creditRepaid,balanceAdded};
-  return {...u,balance:Number(u.balance||0)+balanceAdded,creditOutstanding:Math.max(0,outstanding-creditRepaid),creditRepaidTotal:Number(u.creditRepaidTotal||0)+creditRepaid,depositCredits:{...deposits,[depositId]:n},creditRepayments:{...(u.creditRepayments||{}),[depositId]:creditRepaid},depositBalanceAdded:{...(u.depositBalanceAdded||{}),[depositId]:balanceAdded}};
+  // REGLA FINANCIERA: un depósito aprobado acredita el 100% del monto
+  // directamente al balance/capital del Remitente. Nunca se descuenta
+  // crédito pendiente ni se genera comisión.
+  const credits={...(u.depositCredits||{})};
+  if(credits[depositId]!==undefined){
+    return Math.abs(Number(credits[depositId])-n)<0.000001?u:undefined;
+  }
+  return {...u,balance:Number(u.balance||0)+n,depositCredits:{...credits,[depositId]:n}};
  });
  if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');
  const updated=tx.snapshot.val();state.users[remitenteId]=updated;if(currentUser?.id===remitenteId)currentUser=updated;if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(updated);localSave();
- return {user:updated,creditRepaid:result.creditRepaid,balanceAdded:result.balanceAdded};
+ return {user:updated,creditRepaid:0,balanceAdded:n};
 }
 
 async function guardarDeposito(){
@@ -2250,7 +2253,6 @@ async function saveAdminBalanceAdjustment(){
  }catch(e){console.warn('Ajuste administrativo:',e);toast('No se pudo actualizar el balance en Firebase.','error')}
 }
 
-function renderConciliacion(){const body=document.querySelector('#conciliacionTable tbody');if(!body||!isAdmin())return;const rows=Object.values(state.users||{}).filter(u=>u&&(u.id==='admin'||u.role==='Remitente'));body.innerHTML=rows.map(u=>{const balance=Number(u.balance||0),commission=Number(u.commission||0),historical=commissionTotalFor(u.id),credit=Math.max(0,Number(u.creditOutstanding||0)),control=commission>balance+0.005?'REVISAR: comisión disponible > balance':'CUADRADO';return '<tr><td>'+escapeHtml(u.id==='admin'?'ADMIN':(u.staffId||u.id))+'</td><td>'+escapeHtml(u.name||u.username||u.id)+'</td><td>'+money(balance)+'</td><td>'+money(commission)+'</td><td>'+money(historical)+'</td><td>'+money(credit)+'</td><td>'+control+'</td></tr>'}).join('')||'<tr><td colspan="7" class="muted">No hay personas.</td></tr>'}
 function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
