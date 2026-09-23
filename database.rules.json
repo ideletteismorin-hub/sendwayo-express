@@ -21,7 +21,7 @@
     "notifications": {
       "$id": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'sendwayoexpress@gmail.com' || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('targetUserId').val() === root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('id').val() && root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('authUid').val() === auth.uid) || (data.exists() && root.child('sendwayo_express_v2/users').child(data.child('targetUserId').val()).child('authUid').val() === auth.uid && (!newData.exists() || newData.child('targetUserId').val() === data.child('targetUserId').val())))"
+        ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'sendwayoexpress@gmail.com' || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && ((newData.child('targetUserId').val() === 'admin' && newData.child('createdByAuthUid').val() === auth.uid) || (newData.child('targetUserId').val() === root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('id').val() && root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('authUid').val() === auth.uid))) || (data.exists() && root.child('sendwayo_express_v2/users').child(data.child('targetUserId').val()).child('authUid').val() === auth.uid && (!newData.exists() || newData.child('targetUserId').val() === data.child('targetUserId').val())))"
       }
     },
     "settings": {
@@ -61,7 +61,8 @@
     "deposits": {
       "$id": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))"
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').val() === 0 && newData.child('accountingType').val() === 'DEPOSITO_CAPITAL' && newData.child('userId').exists())"
       }
     },
     "accountWithdrawals": {
