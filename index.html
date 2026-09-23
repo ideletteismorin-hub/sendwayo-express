@@ -1209,6 +1209,7 @@ async function guardarPaquete(){
 function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
 async function guardarComision(){
  if(!currentUser)return;
+ // Retiro/pago: descuenta comisión disponible y acredita el mismo monto al balance inmediatamente.
  const targetId=isAdmin()?document.getElementById('com-target').value:currentUser.id;
  const target=state.users[targetId]||currentUser;
  if(!isAdmin()&&targetId!==currentUser.id)return toast('Solo puede aplicar su propia comisión.','warn');
@@ -1231,7 +1232,7 @@ async function guardarComision(){
    state.users[target.id]=updated;
    if(currentUser?.id===target.id)currentUser=updated;
    const id=uid('com');
-   const record={id,userId:target.id,username:target.username,availableBefore:available,amount,date:now(),status:'Pagado',processedBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountingType:'COMISION_PAGADA'};
+   const record={id,userId:target.id,username:target.username,availableBefore:available,amount,date:now(),status:'Pagado',processedBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,accountingType:'COMISION_PAGADA',appliedImmediately:true,approvalRequired:false};
    state.commissions[id]=record;
    await firebase.database().ref(DB_PATH+'/commissions/'+id).set(record);
    markSynced(['commissions',id],record);
@@ -1335,6 +1336,8 @@ async function creditAdminCommission(amount){
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>u?({...u,balance:Number(u.balance||0)+Number(deltaBalance||0),commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}):u);if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;u.balance=Number(u.balance||0)+Number(deltaBalance||0);u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
  if(!isAdmin())return;
+ // Depósitos: flujo separado; aprobación = 100% al balance del Remitente, comisión RD$0.
+ if(collection==='deposits')return approveDeposit(id,status);
  let r=state[collection]?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
  if(status!=='Aprobado'){
@@ -1617,10 +1620,9 @@ function commissionTodayFor(userId){
  return Number(total.toFixed(2));
 }
 function commissionTotalFor(userId){
- if(userId==='admin'){
-   const stored=Number(state.users?.admin?.commissionAccrued||0);
-   if(stored>0)return Number(stored.toFixed(2));
- }
+ // commissionAccrued = histórico generado; commission = disponible para retiro/pago.
+ const stored=Number(state.users?.[userId]?.commissionAccrued||0);
+ if(Number.isFinite(stored)&&stored>0)return Number(stored.toFixed(2));
  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
  let total=0;
  for(const col of cols){
@@ -1847,8 +1849,15 @@ async function saveAdminCredit(){
    const balance=Number(v.balance||0),commission=Number(v.commission||0);
    if(type==='commission'&&id!=='admin'&&commission<amount)return undefined;
    const next={...v,balance:balance+amount};
-   if(type==='commission'&&id!=='admin')next.commission=commission-amount;
-   if(type==='commission'&&id==='admin')next.commissionAccrued=Number(v.commissionAccrued||0)+amount;
+   if(type==='commission'&&id!=='admin'){
+     // Acreditar comisión a un Remitente NO toca su balance.
+     next.commission=commission+amount;
+     next.commissionAccrued=Number(v.commissionAccrued||0)+amount;
+   }
+   if(type==='commission'&&id==='admin'){
+     // La comisión de Administración sí se refleja directamente en su balance.
+     next.commissionAccrued=Number(v.commissionAccrued||0)+amount;
+   }
    if(type==='bonus'){
     const bonusCredits={...(v.bonusCredits||{})};
     const bid=uid('bon');
