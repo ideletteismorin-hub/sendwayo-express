@@ -23,6 +23,7 @@ jobs:
             const browser=await chromium.launch({headless:true});
             const page=await browser.newPage();
             const errors=[];
+            await page.addInitScript(()=>{window.addEventListener('error',e=>console.error('GLOBALERR: '+e.message+' | '+e.filename+' | line '+e.lineno+' col '+e.colno));window.addEventListener('unhandledrejection',e=>console.error('GLOBALREJECTION: '+(e.reason?.message||e.reason)));});
             page.on('console',m=>{if(m.type()==='error') errors.push('CONSOLE: '+m.text())});
             page.on('pageerror',e=>errors.push('PAGEERROR: '+e.message+' | STACK: '+e.stack));
             await page.goto('https://sendwayo-oficial.github.io/sendwayo-express/?diag='+Date.now(),{waitUntil:'networkidle',timeout:30000});
