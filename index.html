@@ -1083,7 +1083,8 @@ async function loadAuthorizedState(authUser){
    mergeFinancialLedgerIntoState();
    lastSyncedState=cloneState(state);
    attachRealtimeListeners();
-   await updateHistoricalReceipts();
+   // No actualizar recibos históricos automáticamente al iniciar sesión.
+   // Esa escritura masiva podía bloquear la interfaz cuando había muchos registros.
    lastSyncedState=cloneState(state);
    return;
  }
