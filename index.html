@@ -2255,7 +2255,7 @@ window.addEventListener('online',()=>{if(currentUser&&firebaseReady)manualRefres
  document.addEventListener('touchend',function(e){
    if(!pulling||!e.changedTouches||!e.changedTouches.length)return;
    const t=e.changedTouches[0],dy=t.clientY-startY,dx=Math.abs(t.clientX-startX);pulling=false;
-   if(dy>=threshold&&dy>dx*1.25&&currentUser&&firebaseReady)manualRefresh(true);
+   if(dy>=threshold&&dy>dx*1.25){if(currentUser&&firebaseReady)manualRefresh(true);else window.location.reload();}
  },{passive:true});
 })();
 window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='function')startProductionRealtimeRefresh();if(typeof startDailyReportAutomation==='function')startDailyReportAutomation()});
