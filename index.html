@@ -524,7 +524,7 @@ function toast(msg,type='success'){let t=document.getElementById('toast');t.text
 function saveSession(){if(!currentUser)return;localStorage.setItem(SESSION_KEY,JSON.stringify({userId:currentUser.id,lastActivity}));lastSessionWrite=Date.now()}
 function touch(){if(!currentUser)return;lastActivity=Date.now();if(Date.now()-lastSessionWrite>8000)saveSession()}
 ['mousemove','keypress','click','touchstart'].forEach(e=>window.addEventListener(e,touch,{passive:true}))
-async function restoreSession(){
+async async function restoreSession(){
   try{
     const saved=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
     if(!saved?.userId||!saved?.lastActivity)return false;
