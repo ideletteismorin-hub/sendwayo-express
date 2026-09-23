@@ -421,7 +421,11 @@ function translateInterface(){
 function setLanguage(lang){
  if(!LANG[lang])lang='es'; localStorage.setItem('sendwayo_language',lang);
  const s=document.getElementById('language-selector');if(s)s.value=lang;const ws=document.getElementById('welcome-language-selector');if(ws)ws.value=lang;
- document.documentElement.lang=lang==='ht'?'ht':lang; translateInterface(); try{if(typeof renderAll==='function')renderAll()}catch(e){} setTimeout(()=>translateInterface(),0);
+ document.documentElement.lang=lang==='ht'?'ht':lang;
+ translateInterface();
+ // En bienvenida/login no hay datos de usuario que renderizar.
+ if(currentUser){try{if(typeof renderAll==='function')renderAll()}catch(e){}}
+ setTimeout(()=>translateInterface(),0);
 }
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
 const FINANCIAL_COLLECTIONS=['envios','recargas','paqueticos','pagos','paquetes','deposits'];
@@ -904,48 +908,24 @@ async function boot(){
   // Las librerías de exportación no participan en el arranque.
   setTimeout(()=>loadExportLibraries().catch(()=>{}),5000);
 
-  // Firebase arranca después de que el usuario ya puede tocar/deslizar la bienvenida.
-  setTimeout(()=>{Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_BOOT_TIMEOUT')),10000))])
-    .then(ok=>{if(!ok){console.warn('Firebase no disponible al iniciar.');return}
-      firebase.auth().onAuthStateChanged(async authUser=>{
-        if(!authUser||window.__sendwayoLoginInProgress)return;
-        try{
-          let savedSession=null;
-          try{savedSession=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(_){}
-          // Firebase mantiene la sesión al recargar la página. No volver a pedir usuario/contraseña
-          // mientras la sesión no lleve 30 minutos sin actividad. Si no existe el registro local,
-          // usamos la sesión persistente de Firebase y arrancamos un nuevo contador de actividad.
-          const sessionAge=savedSession?.lastActivity?Date.now()-Number(savedSession.lastActivity):0;
-          if(savedSession?.userId&&sessionAge>=SESSION_TTL){
-            await firebase.auth().signOut().catch(()=>{});
-            localStorage.removeItem(SESSION_KEY);
-            currentUser=null;
-            showWelcome();
-            return;
-          }
-          // Restaurar la sesión local primero. Una recarga nunca debe expulsar al usuario
-          // por una demora temporal de Firebase; la sincronización se realiza después.
-          let found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
-          // Una sola sincronización autorizada por sesión. Evita descargar la base dos veces.
-          try{
-            await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
-          }catch(syncError){console.warn('SENDWAYO sincronización inicial:',syncError)}
-          found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
-          if(found&&found.active!==false){
-            found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;
-            lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
-            showAppForUser(found);applyRoleVisibility();renderAll();
-          }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;localStorage.removeItem(SESSION_KEY);showWelcome()}
-        }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
-      });
-    }).catch(e=>console.warn('SENDWAYO Firebase boot:',e));
-  },800);
-}
+  // Firebase NO se inicia en la bienvenida.
+  // Se inicializa únicamente al entrar al formulario de acceso. Esto elimina
+  // cualquier posibilidad de que una red lenta, Auth o RTDB bloquee la bienvenida.
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
 
 function showWelcome(){document.getElementById('welcome-screen').classList.remove('hidden');document.getElementById('login-screen').classList.add('hidden');document.body.style.overflow=''}
-function showLogin(){document.getElementById('welcome-screen').classList.add('hidden');document.getElementById('login-screen').classList.remove('hidden');setTimeout(()=>document.getElementById('login-user').focus(),100)}
+function showLogin(){
+ document.getElementById('welcome-screen').classList.add('hidden');
+ document.getElementById('login-screen').classList.remove('hidden');
+ setTimeout(()=>document.getElementById('login-user').focus(),100);
+ // La conexión externa comienza aquí, no antes. No bloquea la bienvenida.
+ setTimeout(()=>{
+   if(firebaseReady||window.__sendwayoFirebaseStarting)return;
+   window.__sendwayoFirebaseStarting=true;
+   initFirebase().catch(()=>{}).finally(()=>{window.__sendwayoFirebaseStarting=false});
+ },0);
+}
 function openRequest(type){
  const modal=document.getElementById('requestModal');
  if(!modal){toast('No se pudo abrir el formulario.','error');return}
