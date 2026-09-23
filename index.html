@@ -743,14 +743,23 @@ function attachRealtimeListeners(){
  window.__sendwayoRealtimeRefs=[];
  let renderTimer=null;
  let renderQueued=false;
- const scheduleRender=()=>{
+ const syncRealtimeSnapshot=(key,id,value,removed=false)=>{
+   try{
+     if(!lastSyncedState)lastSyncedState={};
+     if(id==null){lastSyncedState[key]=cloneState(value||{});return;}
+     lastSyncedState[key]=lastSyncedState[key]||{};
+     if(removed)delete lastSyncedState[key][id];
+     else lastSyncedState[key][id]=cloneState(value);
+   }catch(e){console.warn('SENDWAYO snapshot:',e)}
+ };
+ const scheduleRender=(key,id,value,removed=false)=>{
+   syncRealtimeSnapshot(key,id,value,removed);
    if(renderQueued)return;
    renderQueued=true;
    clearTimeout(renderTimer);
    renderTimer=setTimeout(()=>{
      renderTimer=null;renderQueued=false;
      try{
-       lastSyncedState=cloneState(state);
        if(currentUser){
          const fresh=state.users?.[currentUser.id];
          if(fresh&&fresh.active!==false)currentUser=fresh;
@@ -768,17 +777,17 @@ function attachRealtimeListeners(){
      if(s.key==null)return;
      state[key]=state[key]||{};
      state[key][s.key]=s.val();
-     scheduleRender();
+     scheduleRender(key,s.key,state[key][s.key]);
    };
    const onChanged=s=>{
      if(s.key==null)return;
      state[key]=state[key]||{};
      state[key][s.key]=s.val();
-     scheduleRender();
+     scheduleRender(key,s.key,state[key][s.key]);
    };
    const onRemoved=s=>{
      if(state[key])delete state[key][s.key];
-     scheduleRender();
+     scheduleRender(key,s.key,null,true);
    };
    ref.on('child_added',onAdded);
    ref.on('child_changed',onChanged);
@@ -798,20 +807,20 @@ function attachRealtimeListeners(){
      if(snap.exists()){
        state.users=state.users||{};
        state.users[currentUser.id]=snap.val();
-       scheduleRender();
+       scheduleRender('users',currentUser.id,state.users[currentUser.id]);
      }
    });
    window.__sendwayoRealtimeRefs.push(userRef);
    // Beneficiarios propios; cuentas bancarias oficiales son pequeñas y se leen completas.
    bindCollection('beneficiaries',true);
    root.child('accounts').off();
-   root.child('accounts').on('value',s=>{state.accounts=s.val()||{};scheduleRender()});
+   root.child('accounts').on('value',s=>{state.accounts=s.val()||{};scheduleRender('accounts',null,state.accounts)});
    window.__sendwayoRealtimeRefs.push(root.child('accounts'));
  }
  ['settings'].forEach(key=>{
    const ref=root.child(key);
    ref.off();
-   ref.on('value',s=>{if(s.exists())state[key]=s.val()||{};scheduleRender()});
+   ref.on('value',s=>{if(s.exists()){state[key]=s.val()||{};scheduleRender(key,null,state[key])}});
    window.__sendwayoRealtimeRefs.push(ref);
  });
  const connRef=firebase.database().ref('.info/connected');
@@ -890,18 +899,15 @@ async function boot(){
           // Restaurar la sesión local primero. Una recarga nunca debe expulsar al usuario
           // por una demora temporal de Firebase; la sincronización se realiza después.
           let found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
-          if(!found){
-            try{await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);}
-            catch(syncError){console.warn('SENDWAYO sincronización inicial:',syncError)}
-            found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
-          }
+          // Una sola sincronización autorizada por sesión. Evita descargar la base dos veces.
+          try{
+            await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
+          }catch(syncError){console.warn('SENDWAYO sincronización inicial:',syncError)}
+          found=Object.values(state.users||{}).find(u=>u.authUid===authUser.uid||u.authEmail===authUser.email||(u.id==='admin'&&authUser.email===state.users.admin.authEmail));
           if(found&&found.active!==false){
             found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;
             lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
             showAppForUser(found);applyRoleVisibility();renderAll();
-            Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_SYNC_TIMEOUT')),15000))])
-              .then(()=>{const fresh=state.users?.[found.id];if(fresh&&fresh.active!==false){currentUser=fresh;lastActivity=Date.now();saveSession();showAppForUser(fresh);applyRoleVisibility();renderAll()}})
-              .catch(syncError=>console.warn('SENDWAYO sincronización posterior:',syncError));
           }else{await firebase.auth().signOut().catch(()=>{});currentUser=null;localStorage.removeItem(SESSION_KEY);showWelcome()}
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
@@ -2378,7 +2384,7 @@ const _renderAll=renderAll;renderAll=function(){updateSelectors();_renderAll()}
 setInterval(()=>{document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');updateSessionUI();if(currentUser&&Date.now()-lastActivity>=SESSION_TTL)cerrarSesion()},1000);
 let autoFirebaseRefreshTimer=null;
 function startAutoFirebaseRefresh(){if(autoFirebaseRefreshTimer)clearInterval(autoFirebaseRefreshTimer);autoFirebaseRefreshTimer=null;}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady)manualRefresh(false)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady){touch();}});
 
 window.addEventListener('load',()=>{let access=new URLSearchParams(location.search).get('access');if(access&&!currentUser){showLogin();document.getElementById('login-user').value=access}updateSessionUI()});
 window.addEventListener('error',e=>{console.error('SENDWAYO JS ERROR',e.error||e.message);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error del sistema: '+(e.message||'Error JavaScript');el.className='login-status error'}});window.addEventListener('unhandledrejection',e=>{console.error('SENDWAYO PROMISE ERROR',e.reason);const el=document.getElementById('login-status');if(el&&!currentUser){el.textContent='Error de conexión: '+(e.reason?.message||e.reason||'Error desconocido');el.className='login-status error'}});window.addEventListener('beforeunload',()=>{if(currentUser)saveSession()});
