@@ -1693,8 +1693,8 @@ async function setTransactionStatus(collection,id,status){
 }
    r=state[collection][id];r.balanceRefunded=true;r.balanceRefundedAt=now();state[collection][id]=r;
  }
- const msg=collection==='deposits'&&status==='Aprobado'?('Balance de '+u.name+' actualizado: el depósito de '+money(Number(r.amount||0))+' fue acreditado directamente a su balance. Comisión: RD$0.00.'):(status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason);
- await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast(collection==='deposits'&&status==='Aprobado'?'Balance de '+u.name+' actualizado: depósito acreditado directamente.':'Estado actualizado: '+status)
+ const msg=collection==='deposits'&&status==='Aprobado'?('Depósito de '+money(Number(r.amount||0))+' aprobado. Crédito cobrado: '+money(Number(r.creditRepaid||0))+'. Balance aumentado: '+money(Number(r.balanceAdded||0))+'. Comisión: RD$0.00.'):(status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason);
+ await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast(collection==='deposits'&&status==='Aprobado'?'Depósito aprobado: crédito cobrado '+money(Number(r?.creditRepaid||0))+' y balance aumentado '+money(Number(r?.balanceAdded||0))+'.':'Estado actualizado: '+status)
 }
 
 function enforceDepositCapital(r){
@@ -2571,8 +2571,8 @@ const adminAuditId=uid('a');const adminAudit={id:adminAuditId,user:currentUser?.
 await firebase.database().ref(DB_PATH+'/deposits/'+id).set(deposit);
 if(lastSyncedState){lastSyncedState.users=lastSyncedState.users||{};lastSyncedState.users[u.id]=cloneState(state.users[u.id]);lastSyncedState.deposits=lastSyncedState.deposits||{};lastSyncedState.deposits[id]=cloneState(deposit);}
 localSave();
-await addNotification(u.id,'El Administrador acreditó '+money(amount)+' directamente a su balance/capital. Este depósito no genera comisión.','deposits',id);
+await addNotification(u.id,'Depósito administrativo de '+money(amount)+' procesado. Crédito cobrado: '+money(deposit.creditRepaid)+'. Balance aumentado: '+money(deposit.balanceAdded)+'. Comisión: RD$0.00.','deposits',id);
 closeModal('adminDepositModal');renderAll();
-toast('Balance de '+u.name+' actualizado: '+money(amount)+' acreditado directamente. Comisión: RD$0.00.','success')}
+toast('Depósito administrativo procesado: crédito cobrado '+money(deposit.creditRepaid)+' y balance aumentado '+money(deposit.balanceAdded)+'. Comisión: RD$0.00.','success')}
 </script></body>
 </html>
