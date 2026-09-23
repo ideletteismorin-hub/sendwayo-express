@@ -798,25 +798,35 @@ function attachRealtimeListeners(){
    const ownOnly=!isAdmin()&&queryUser;
    if(ownOnly)ref=ref.orderByChild('userId').equalTo(currentUser.id);
    ref.off();
+   // child_added se dispara para todos los registros existentes al conectar.
+   // Durante esa hidratación no clonamos cada registro individualmente: el
+   // snapshot final establece lastSyncedState una sola vez y evita picos de CPU/RAM.
+   let hydrating=true;
    const onAdded=s=>{
      if(s.key==null)return;
      state[key]=state[key]||{};
      state[key][s.key]=s.val();
-     scheduleRender(key,s.key,state[key][s.key]);
+     if(!hydrating)scheduleRender(key,s.key,state[key][s.key]);
    };
    const onChanged=s=>{
      if(s.key==null)return;
      state[key]=state[key]||{};
      state[key][s.key]=s.val();
-     scheduleRender(key,s.key,state[key][s.key]);
+     if(!hydrating)scheduleRender(key,s.key,state[key][s.key]);
    };
    const onRemoved=s=>{
      if(state[key])delete state[key][s.key];
-     scheduleRender(key,s.key,null,true);
+     if(!hydrating)scheduleRender(key,s.key,null,true);
    };
    ref.on('child_added',onAdded);
    ref.on('child_changed',onChanged);
    ref.on('child_removed',onRemoved);
+   ref.once('value').then(s=>{
+     state[key]=s.val()||{};
+     if(lastSyncedState)lastSyncedState[key]=cloneState(state[key]);
+     hydrating=false;
+     if(currentUser)renderRealtimeView();
+   }).catch(()=>{hydrating=false});
    window.__sendwayoRealtimeRefs.push(ref);
  };
  // Colecciones financieras: el Remitente recibe solamente sus operaciones.
@@ -2016,7 +2026,17 @@ const SENDWAYO_STATUS_CONFIG={beneficiarios:{table:'benefTable',column:4,items:[
 function setGenericTableStatus(tableId,column,status,button){SENDWAYO_STATUS_ACTIVE[tableId]=status;const bar=document.querySelector('[data-sendwayo-status-for="'+tableId+'"]');if(bar)bar.querySelectorAll('button').forEach(b=>b.classList.remove('active'));if(button)button.classList.add('active');document.querySelectorAll('#'+tableId+' tbody tr').forEach(tr=>{const value=String(tr.cells[column]?.innerText||'').trim();tr.style.display=!status||value.toLowerCase().includes(status.toLowerCase())?'':'none'})}
 function ensureStandardStatusBars(){Object.entries(SENDWAYO_STATUS_CONFIG).forEach(([view,cfg])=>{const root=document.getElementById('view-'+view),table=document.getElementById(cfg.table);if(!root||!table)return;let bar=root.querySelector('[data-sendwayo-status-for="'+cfg.table+'"]');if(!bar){bar=document.createElement('div');bar.className='status-bar';bar.setAttribute('data-sendwayo-status-for',cfg.table);bar.innerHTML=cfg.items.map((it,i)=>'<button class="btn btn-light btn-sm '+(i===0?'active':'')+'" type="button">'+escapeHtml(it[0])+'</button>').join('');const buttons=[...bar.querySelectorAll('button')];buttons.forEach((b,i)=>b.addEventListener('click',()=>setGenericTableStatus(cfg.table,cfg.column,cfg.items[i][1],b)));const toolbar=root.querySelector('.table-toolbar');if(toolbar)root.querySelector('.card-header')?.after(bar)}const active=SENDWAYO_STATUS_ACTIVE[cfg.table];if(active!==undefined){const idx=Math.max(0,cfg.items.findIndex(it=>it[1]===active));setGenericTableStatus(cfg.table,cfg.column,active,bar.querySelectorAll('button')[idx]||bar.querySelector('button'))}})}
 function renderAll(){
- setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderCredit();renderBonuses();renderAccounting();renderProfile();renderMiCuenta();ensureStandardStatusBars();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');ensureDownloadActions()}
+ if(!currentUser)return;
+ setTimeout(()=>{
+   try{translateInterface()}catch(e){}
+   try{updateSelectors()}catch(e){}
+   try{renderRealtimeView()}catch(e){console.warn('SENDWAYO renderAll:',e)}
+   try{ensureStandardStatusBars()}catch(e){}
+   try{renderNotifications()}catch(e){}
+   const dt=document.getElementById('header-datetime');if(dt)dt.textContent=new Date().toLocaleString('es-DO');
+   if(typeof ensureDownloadActions==='function')setTimeout(()=>ensureDownloadActions(),0);
+ },0);
+}
 function renderDashboardNotifications(){
  const box=document.getElementById('dashboard-notifications');if(!box||!currentUser)return;
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -2460,9 +2480,10 @@ function sendWhatsAppCredentials(u,password=INITIAL_PASSWORD,targetWindow=null){
 function sendWhatsApp(id){const u=state.users[id];if(!u)return;const email=u.authEmail||authEmailFor(u),link=generateLink(u.username),msg='SENDWAYO EXPRESS\nID: '+(u.staffId||'')+'\nUsuario: '+u.username+'\nCorreo de acceso: '+email+'\nLink: '+link+'\nLa contraseña se configura o recupera mediante Firebase Authentication.';window.open('https://wa.me/'+String(u.phone||'').replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank')}
 
 function renderProfile(){document.getElementById('profile-name').value=currentUser.name||'';document.getElementById('profile-username').value=currentUser.username||'';document.getElementById('profile-phone').value=currentUser.phone||'';document.getElementById('profile-staff-id').value=currentUser.staffId||'';document.getElementById('profile-pass').value='';document.getElementById('profile-preview').src=currentUser.avatar||LOGO_DATA}
-function exportData(format,tableId){
+async function exportData(format,tableId){
  let table=document.getElementById(tableId);if(!table)return;
  if(format==='CSV'){let rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(c=>`"${c.innerText.replace(/"/g,'""')}"`).join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows],{type:'text/csv;charset=utf-8'}));a.download=tableId+'.csv';a.click();return}
+ if((format==='Excel'&&!window.XLSX)||(format==='PDF'&&!window.jspdf)){const ok=await loadExportLibraries();if(!ok)return toast('No se pudo cargar la biblioteca de exportación. Revise Internet e inténtelo nuevamente.','error')}
  if(format==='Excel'&&window.XLSX){let wb=XLSX.utils.table_to_book(table,{sheet:'SENDWAYO'});XLSX.writeFile(wb,tableId+'.xlsx');return}
  if(format==='PDF'&&window.jspdf){let {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape'});doc.text('SENDWAYO EXPRESS',12,12);doc.text(new Date().toLocaleString('es-DO'),12,19);let y=30;[...table.rows].forEach((tr,ri)=>{let cells=[...tr.cells].map(c=>c.innerText).join(' | ');doc.setFontSize(ri===0?8:7);let lines=doc.splitTextToSize(cells,270);doc.text(lines,10,y);y+=lines.length*4+2;if(y>195){doc.addPage();y=15}});doc.save(tableId+'.pdf');return}
  toast('Exportación '+format+' disponible cuando la biblioteca esté cargada.','warn')
