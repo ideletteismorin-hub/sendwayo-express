@@ -1258,6 +1258,11 @@ async function loadAuthorizedState(authUser){
    ]);
    for(const [k,v] of snaps)state[k]={...(state[k]||{}),...(v||{})};
    mergeFinancialLedgerIntoState();
+   const officialBankPatch={};
+   for(const a of OFFICIAL_BANK_ACCOUNTS){
+     if(!state.accounts?.[a.id])officialBankPatch['accounts/'+a.id]={...a,active:true,official:true};
+   }
+   if(Object.keys(officialBankPatch).length)try{await root.update(officialBankPatch);Object.entries(officialBankPatch).forEach(([p,v])=>{const id=p.split('/')[1];state.accounts[id]=v})}catch(e){console.warn('No se pudieron restaurar las cuentas bancarias oficiales:',e)}
    ensureSeedData();
    mergeFinancialLedgerIntoState();
    lastSyncedState=cloneState(state);
