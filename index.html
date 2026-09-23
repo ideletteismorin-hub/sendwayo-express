@@ -1597,6 +1597,7 @@ async function editRecord(collection,id){
  const allowed=Object.keys(r).filter(k=>!protectedFields.includes(k)&&k!=='username');
  const key=prompt('Campo a editar: '+allowed.join(', '),allowed[0]||'');
  if(!key||!allowed.includes(key))return toast('Ese campo no se puede editar aquí.','warn');
+ if((key==='amount'||key==='cost')&&(!firebaseReady||!firebase.auth().currentUser))return toast('Firebase no está conectado. No se puede modificar un monto financiero offline.','error');
  let old=Number(r.amount||0);
  let val=prompt('Nuevo valor:',String(r[key]??''));if(val===null)return;
  if(key==='amount'){if(r.status==='Aprobado')return toast('El monto de una operación aprobada no se puede editar.','warn');
