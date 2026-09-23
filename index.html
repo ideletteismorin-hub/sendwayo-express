@@ -682,7 +682,7 @@ function ensureSeedData(){
   ensureStaffDirectory();
 }
 async function loadScript(src,timeout=8000){return new Promise((resolve,reject)=>{if(document.querySelector('script[data-src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.async=true;s.dataset.src=src;let done=false;const finish=(err)=>{if(done)return;done=true;clearTimeout(timer);s.onload=s.onerror=null;err?reject(err):resolve()};const timer=setTimeout(()=>finish(new Error('SCRIPT_TIMEOUT: '+src)),timeout);s.onload=()=>finish();s.onerror=()=>finish(new Error('SCRIPT_LOAD_ERROR: '+src));document.head.appendChild(s)})}
-async function initFirebase(){try{
+async async function initFirebase(){try{
   if(typeof firebase==='undefined'||!firebase.initializeApp){
     const base='https://www.gstatic.com/firebasejs/9.23.0/';
     await loadScript(base+'firebase-app-compat.js',7000);
