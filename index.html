@@ -1467,7 +1467,7 @@ async function guardarDeposito(){
    generateReceipt('deposits',id);
    await firebase.database().ref(DB_PATH+'/deposits/'+id).set(record);
    state.deposits[id]=record;markSynced(['deposits',id],record);
-   try{await addNotification(target.id,'El Administrador acreditó '+money(amount)+' directamente a su balance. Comisión: RD$0.00.','deposits',id)}catch(e){console.warn('Notificación al Remitente:',e)}
+   try{await addNotification(target.id,'Depósito procesado por Administración: '+money(amount)+'. Crédito cobrado: '+money(Number(record.creditRepaid||0))+'. Balance aumentado: '+money(Number(record.balanceAdded||0))+'. Comisión: RD$0.00.','deposits',id)}catch(e){console.warn('Notificación al Remitente:',e)}
    localSave();renderAll();closeModal('depositoModal');
    if(record.receipt)setTimeout(()=>showReceipt('deposits',id),180);
    toast('Depósito procesado: crédito cobrado '+money(Number(record.creditRepaid||0))+' y balance aumentado '+money(Number(record.balanceAdded||0))+'. Comisión: RD$0.00.','success');
