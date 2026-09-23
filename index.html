@@ -1410,7 +1410,22 @@ function openPerson(role){if(!isAdmin())return toast('Solo el Administrador pued
 const ip=document.getElementById('pers-initial-pass');if(ip)ip.value=INITIAL_PASSWORD;document.getElementById('pers-active').value='true';openModal('personaModal')}
 document.querySelectorAll('[data-role]').forEach(x=>x.addEventListener('click',e=>openPerson(e.currentTarget.dataset.role)));document.getElementById('pers-nombre')?.addEventListener('input',e=>{const v=normalizeUsername(e.target.value);const user=document.getElementById('pers-user'),el=document.getElementById('pers-auth-email');if(user)user.value=v;if(el)el.value=v?'Se asigna automáticamente al guardar el ID':''})
 function generateLink(username){return location.href.split('?')[0]+'?access='+encodeURIComponent(username)}
-async function guardarPersona(){if(!isAdmin())return toast('Solo el Administrador puede crear remitentes.','warn');const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=fullPhone('pers-country',document.getElementById('pers-wsp').value.trim()),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid('rm'),staffId=makePermanentId();const u={id,staffId,role:'Remitente',name,phone,doc,username:user,authEmail:authEmailFor({id,name,username:user,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
+async function guardarPersona(){
+ if(!isAdmin())return toast('Solo el Administrador puede crear remitentes.','warn');
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
+ const role='Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=fullPhone('pers-country',document.getElementById('pers-wsp').value.trim()),doc=document.getElementById('pers-doc').value.trim(),user=normalizeUsername(name);
+ if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');
+ if(Object.values(state.users||{}).some(x=>String(x.username||'').toLowerCase()===user.toLowerCase()))return toast('Ese usuario ya existe.','warn');
+ const id=uid('rm'),staffId=makePermanentId(),u={id,staffId,role,name,phone,doc,username:user,authEmail:authEmailFor({id,name,username:user,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
+ try{
+  const cr=await createFirebaseAccountForUser(u);
+  if(cr.status!=='created'&&cr.status!=='exists')return toast('Firebase no confirmó la cuenta de acceso. No se guardó ningún remitente.','error');
+  await firebase.database().ref(DB_PATH+'/users/'+id).set(u);
+  state.users[id]=u;markSynced(['users',id],u);
+  const auditId=uid('usr');try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set({id:auditId,action:'Crear Remitente',targetUserId:id,processedBy:currentUser.username,createdAt:now()})}catch(_){}
+  localSave();closeModal('personaModal');renderAll();toast('Remitente creado por Administración. ID: '+staffId+'.','success');sendWhatsAppCredentials(u,INITIAL_PASSWORD);
+ }catch(e){console.warn('guardarPersona:',e);delete state.users[id];renderAll();toast('No se creó el remitente porque Firebase no confirmó el registro.','error')}
+}
 function guardarCuenta(){if(!isAdmin())return toast('Solo el Administrador puede agregar cuentas bancarias.','warn');const bank=document.getElementById('cta-banco')?.value.trim(),holder=document.getElementById('cta-titular')?.value.trim(),number=document.getElementById('cta-numero')?.value.trim();if(!bank||!holder||!number)return toast('Complete banco, titular y número de cuenta.','warn');if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');const id=uid('cta'),record={id,bank,holder,number,active:true,createdAt:now(),createdBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid};return firebase.database().ref(DB_PATH+'/accounts/'+id).set(record).then(()=>{state.accounts[id]=record;markSynced(['accounts',id],record);localSave();closeModal('cuentaModal');renderAll();toast('Cuenta bancaria agregada por Administración.','success')}).catch(e=>{console.warn('guardarCuenta:',e);toast('No se pudo guardar la cuenta bancaria en Firebase.','error')})}
 async function creditDepositToRemitente(depositId,remitenteId,amount){
  const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
@@ -1526,14 +1541,18 @@ async function guardarComision(){
 
 async function guardarCredencial(){
  if(!isAdmin())return toast('Solo el Administrador puede crear usuarios.','warn');
- const role='Remitente',name=document.getElementById('sec-name').value.trim(),phone=document.getElementById('sec-phone').value.trim();
- const user=normalizeUsername(name),pass=INITIAL_PASSWORD;
- if(!name||!phone||!user)return toast('Complete rol, nombre y WhatsApp.','warn');
- if(Object.values(state.users).some(x=>x.username===user))return toast('Usuario existente.','warn');
- const id=uid('rm'),staffId=makePermanentId();
- const u={id,staffId,role,name,phone,username:user,authEmail:authEmailFor({id,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
- state.users[id]=u;const cr=await createFirebaseAccountForUser(u);u.accountStatus=cr.status==='error'?'Error de activación':'Activo';
- await persist();closeModal('secretaModal');renderAll();toast('Usuario creado. '+staffId+'. Contraseña inicial: '+pass+'.')
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
+ const role='Remitente',name=document.getElementById('sec-name').value.trim(),phone=document.getElementById('sec-phone').value.trim(),user=normalizeUsername(name),pass=INITIAL_PASSWORD;
+ if(!name||!phone||!user)return toast('Complete nombre, WhatsApp y usuario.','warn');
+ if(Object.values(state.users||{}).some(x=>String(x.username||'').toLowerCase()===user.toLowerCase()))return toast('Usuario existente.','warn');
+ const id=uid('rm'),staffId=makePermanentId(),u={id,staffId,role,name,phone,username:user,authEmail:authEmailFor({id,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
+ try{
+  const cr=await createFirebaseAccountForUser(u);
+  if(cr.status!=='created'&&cr.status!=='exists')return toast('Firebase no confirmó la creación del acceso. No se guardó ningún usuario.','error');
+  await firebase.database().ref(DB_PATH+'/users/'+id).set(u);state.users[id]=u;markSynced(['users',id],u);
+  const auditId=uid('usr');try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set({id:auditId,action:'Crear Remitente',targetUserId:id,processedBy:currentUser.username,createdAt:now()})}catch(_){}
+  localSave();closeModal('secretaModal');renderAll();toast('Usuario creado. '+staffId+'. Contraseña inicial: '+pass+'.','success');
+ }catch(e){console.warn('guardarCredencial:',e);delete state.users[id];renderAll();toast('No se pudo crear el usuario en Firebase.','error')}
 }
 async function saveProfile(){
  const name=document.getElementById('profile-name').value.trim(),pass=document.getElementById('profile-pass').value;
