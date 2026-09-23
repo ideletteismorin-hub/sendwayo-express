@@ -858,7 +858,7 @@ function attachRealtimeListeners(){
    }
  });
  startAutoFirebaseRefresh();
- const nref=root.child('notifications');
+ let nref=root.child('notifications');
  nref.off();
  if(!isAdmin())nref=nref.orderByChild('targetUserId').equalTo(currentUser.id);
  nref.on('child_added',snap=>{
