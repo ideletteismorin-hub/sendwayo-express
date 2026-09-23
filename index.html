@@ -1672,10 +1672,10 @@ async function guardarDeposito(){
    generateReceipt('deposits',id);
    await firebase.database().ref(DB_PATH+'/deposits/'+id).set(record);
    state.deposits[id]=record;markSynced(['deposits',id],record);
-   try{await addNotification(target.id,'Depósito procesado por Administración: '+money(amount)+'. Crédito cobrado: '+money(Number(record.creditRepaid||0))+'. Balance aumentado: '+money(Number(record.balanceAdded||0))+'. Comisión: RD$0.00.','deposits',id)}catch(e){console.warn('Notificación al Remitente:',e)}
+   try{await addNotification(target.id,'Depósito procesado por Administración: '+money(amount)+' acreditado directamente al balance del Remitente. Comisión: RD$0.00.','deposits',id)}catch(e){console.warn('Notificación al Remitente:',e)}
    localSave();renderAll();closeModal('depositoModal');
    if(record.receipt)setTimeout(()=>showReceipt('deposits',id),180);
-   toast('Depósito procesado: crédito cobrado '+money(Number(record.creditRepaid||0))+' y balance aumentado '+money(Number(record.balanceAdded||0))+'. Comisión: RD$0.00.','success');
+   toast('Depósito procesado: '+money(amount)+' acreditado directamente al balance del Remitente. Comisión: RD$0.00.','success');
  }catch(e){
    console.warn('guardarDeposito:',e);
    toast(e?.code==='PERMISSION_DENIED'?'Firebase rechazó el depósito por permisos.':'No se pudo guardar el depósito en Firebase.','error');
@@ -2827,8 +2827,8 @@ async function guardarDepositoAdministrativo(){
    await firebase.database().ref(DB_PATH+'/deposits/'+id).set(deposit);
    if(lastSyncedState){lastSyncedState.users=lastSyncedState.users||{};lastSyncedState.users[u.id]=cloneState(state.users[u.id]);lastSyncedState.deposits=lastSyncedState.deposits||{};lastSyncedState.deposits[id]=cloneState(deposit)}
    localSave();
-   await addNotification(u.id,'Depósito administrativo de '+money(amount)+' procesado. Crédito cobrado: '+money(deposit.creditRepaid)+'. Balance aumentado: '+money(deposit.balanceAdded)+'. Comisión: RD$0.00.','deposits',id);
-   closeModal('adminDepositModal');renderAll();toast('Depósito administrativo procesado: crédito cobrado '+money(deposit.creditRepaid)+' y balance aumentado '+money(deposit.balanceAdded)+'. Comisión: RD$0.00.','success');
+   await addNotification(u.id,'Depósito administrativo de '+money(amount)+' acreditado directamente al balance del Remitente. Comisión: RD$0.00.','deposits',id);
+   closeModal('adminDepositModal');renderAll();toast('Depósito administrativo procesado: '+money(amount)+' acreditado directamente al balance del Remitente. Comisión: RD$0.00.','success');
  }catch(e){console.warn('Depósito administrativo:',e);toast('No se pudo procesar el depósito administrativo en Firebase.','error')}
 }
 
