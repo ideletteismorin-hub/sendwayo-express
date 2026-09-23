@@ -1432,21 +1432,17 @@ async function guardarPersona(){const role=document.getElementById('personaModal
 async function creditDepositToRemitente(depositId,remitenteId,amount){
  const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');
  if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
- const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);
+ const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);let result={creditRepaid:0,balanceAdded:0};
  const tx=await ref.transaction(u=>{
   if(!u||u.role!=='Remitente')return undefined;
-  // REGLA FINANCIERA: un depósito aprobado acredita el 100% del monto
-  // directamente al balance/capital del Remitente. Nunca se descuenta
-  // crédito pendiente ni se genera comisión.
   const credits={...(u.depositCredits||{})};
-  if(credits[depositId]!==undefined){
-    return Math.abs(Number(credits[depositId])-n)<0.000001?u:undefined;
-  }
-  return {...u,balance:Number(u.balance||0)+n,depositCredits:{...credits,[depositId]:n}};
+  if(credits[depositId]!==undefined){if(Math.abs(Number(credits[depositId])-n)<0.000001){result={creditRepaid:Number(u.creditRepayments?.[depositId]||0),balanceAdded:Number(u.depositBalanceAdded?.[depositId]||0)};return u}return undefined}
+  const outstanding=Math.max(0,Number(u.creditOutstanding||0)),creditRepaid=Math.min(n,outstanding),balanceAdded=n-creditRepaid;result={creditRepaid,balanceAdded};
+  return {...u,balance:Number(u.balance||0)+balanceAdded,creditOutstanding:Math.max(0,outstanding-creditRepaid),depositCredits:{...credits,[depositId]:n},creditRepayments:{...(u.creditRepayments||{}),[depositId]:creditRepaid},depositBalanceAdded:{...(u.depositBalanceAdded||{}),[depositId]:balanceAdded}};
  });
  if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');
  const updated=tx.snapshot.val();state.users[remitenteId]=updated;if(currentUser?.id===remitenteId)currentUser=updated;if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(updated);localSave();
- return {user:updated,creditRepaid:0,balanceAdded:n};
+ return {user:updated,creditRepaid:result.creditRepaid,balanceAdded:result.balanceAdded};
 }
 
 async function guardarDeposito(){
