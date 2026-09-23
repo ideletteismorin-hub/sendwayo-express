@@ -1735,7 +1735,7 @@ async function reviewAccountWithdrawal(id,status){
 }
 
 function renderAll(){
- setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
+ setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderCredit();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
 function renderDashboardNotifications(){
  const box=document.getElementById('dashboard-notifications');if(!box||!currentUser)return;
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
