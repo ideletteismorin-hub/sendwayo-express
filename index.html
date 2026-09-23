@@ -924,11 +924,24 @@ async function repairLegacyDepositCommissions(){
   return false;
 }
 
+async function updateHistoricalReceipts(){
+ if(!isAdmin()||!firebaseReady)return;
+ const collections=['recargas','paqueticos','pagos'];
+ for(const collection of collections){
+   const records=Object.values(state[collection]||{}).filter(r=>r&&r.status==='Aprobado'&&r.receipt);
+   for(const r of records){
+     try{
+       enrichReceipt(collection,r.id);
+       await firebase.database().ref(DB_PATH+'/'+collection+'/'+r.id+'/receipt').update(r.receipt);
+     }catch(e){console.warn('Actualización de recibo histórico:',collection,r.id,e)}
+   }
+ }
+}
 async function loadAuthorizedState(authUser){
  const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
  if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
  // PRODUCCIÓN: nunca se borran ni se ponen a cero operaciones/balances automáticamente.
-mergeFinancialLedgerIntoState();const before=JSON.stringify(state);ensureSeedData();mergeFinancialLedgerIntoState();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();
+mergeFinancialLedgerIntoState();const before=JSON.stringify(state);ensureSeedData();mergeFinancialLedgerIntoState();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();await updateHistoricalReceipts();
 }
 
 async function resetProductionFinancialsIfNeeded(){return false;}
