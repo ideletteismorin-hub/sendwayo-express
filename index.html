@@ -604,17 +604,9 @@ async function manualRefresh(showMessage=true){
 let __sendwayoLocalSaveTimer=null;
 let __sendwayoLocalSavePending=false;
 function localSave(){
-  // Agrupar escrituras locales para no bloquear el hilo principal con varios
-  // JSON.stringify/localStorage.setItem consecutivos durante una sola operación.
-  __sendwayoLocalSavePending=true;
-  if(__sendwayoLocalSaveTimer)return;
-  __sendwayoLocalSaveTimer=setTimeout(()=>{
-    __sendwayoLocalSaveTimer=null;
-    if(!__sendwayoLocalSavePending)return;
-    __sendwayoLocalSavePending=false;
-    try{localStorage.setItem(DB_PATH,JSON.stringify(state))}
-    catch(e){console.warn('SENDWAYO localSave:',e)}
-  },180);
+  // Producción: no serializar toda la base financiera en localStorage.
+  // Firebase conserva los datos y evita bloqueos por JSON.stringify/setItem.
+  return true;
 }
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
 function markSynced(pathParts,value){if(!lastSyncedState)return;let cur=lastSyncedState;for(let i=0;i<pathParts.length-1;i++){const k=pathParts[i];if(!cur[k]||typeof cur[k]!=='object')cur[k]={};cur=cur[k]}if(pathParts.length)cur[pathParts.length-1]=cloneState(value)}
@@ -907,21 +899,11 @@ async function boot(){
   try{ensureSeedData()}catch(e){console.warn('SENDWAYO seed:',e)}
   try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}
 
-  // Restauración local diferida: nunca bloquea el primer pintado ni el gesto táctil.
-  setTimeout(()=>{
-    try{
-      let saved=localStorage.getItem(DB_PATH);
-      if(saved){
-        const local=JSON.parse(saved);
-        state={...state,...local};
-        state.users={...state.users,...(local.users||{})};
-        state.beneficiaries={...state.beneficiaries,...(local.beneficiaries||{})};
-        state.accounts={...state.accounts,...(local.accounts||{})};
-      }
-      ensureSeedData();
-    }catch(e){console.warn('SENDWAYO local state:',e)}
-  },1200);
-
+  // IMPORTANTE: Firebase es la fuente de verdad en producción.
+  // No restauramos aquí un JSON completo desde localStorage: si el navegador
+  // acumuló miles de movimientos, JSON.parse() puede congelar el hilo principal
+  // justo después de mostrar la bienvenida. El estado se hidrata desde Firebase
+  // después de autenticarse.
   // Las librerías pesadas de Excel/PDF se cargan únicamente cuando el usuario exporta.
   // Nunca se descargan automáticamente a los 5 segundos: eso podía bloquear tablets/celulares.
 
