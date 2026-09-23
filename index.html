@@ -1788,7 +1788,7 @@ function openAdminCreditModal(type='balance'){
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
   bonus:'El bono es una acreditación manual exclusiva de Administración; no proviene de depósitos, donaciones ni comisiones y se acredita directamente al balance administrativo.',
-  commission:'En Remitentes, mueve al balance la comisión disponible. En Administración, permite registrar una acreditación manual de comisión y sumarla directamente al balance administrativo; las comisiones operativas ya generadas siguen acreditándose automáticamente.'
+  commission:'En Remitentes, acredita el monto a la bolsa de comisión disponible y NO toca el balance. El Remitente decide cuándo cobrarla en Retiro / Pago de Comisiones. En Administración, la comisión se acredita directamente al balance administrativo.'
  };
  window.__adminCreditType=['balance','bonus','commission'].includes(type)?type:'balance';
  const users=financeCreditTargets(window.__adminCreditType);
