@@ -1421,7 +1421,7 @@ async function guardarPersona(){
  }catch(e){console.warn('guardarPersona:',e);delete state.users[id];renderAll();toast('No se creó el remitente porque Firebase no confirmó el registro.','error')}
 }
 function guardarCuenta(){if(!isAdmin())return toast('Solo el Administrador puede agregar cuentas bancarias.','warn');const bank=document.getElementById('cta-banco')?.value.trim(),holder=document.getElementById('cta-titular')?.value.trim(),number=document.getElementById('cta-numero')?.value.trim();if(!bank||!holder||!number)return toast('Complete banco, titular y número de cuenta.','warn');if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');const id=uid('cta'),record={id,bank,holder,number,active:true,createdAt:now(),createdBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid};return firebase.database().ref(DB_PATH+'/accounts/'+id).set(record).then(()=>{state.accounts[id]=record;markSynced(['accounts',id],record);localSave();closeModal('cuentaModal');renderAll();toast('Cuenta bancaria agregada por Administración.','success')}).catch(e=>{console.warn('guardarCuenta:',e);toast('No se pudo guardar la cuenta bancaria en Firebase.','error')})}
-async function creditDepositToRemitente(depositId,remitenteId,amount){
+async function creditDepositToRemitente(depositId,remitenteId,amount){ if(!isAdmin())throw new Error('ADMIN_REQUIRED');
  const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
  const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);let result={creditRepaid:0,balanceAdded:0};
  const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;const deposits={...(u.depositCredits||{})};
@@ -1610,7 +1610,7 @@ async function resubmitTransaction(collection,id){
  state[collection][id]=r;await addNotification('Administrador','Operación reenviada para revisión: '+id,collection,id);await persist();renderAll();toast('Operación reenviada al Administrador.');
 }
 
-async function creditAdminCommission(amount){
+async function creditAdminCommission(amount){ if(!isAdmin())return false;
  const n=Number(amount||0);if(!Number.isFinite(n)||n<=0)return true;
  if(!firebaseReady)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/admin');
@@ -1631,8 +1631,8 @@ async function creditAdminCommission(amount){
 }
 function adminCommissionFloor(u){return commissionTotalFor('admin')}
 function adminBalanceAllowed(u,nextBalance){return u?.id!=='admin'||Number(nextBalance)+0.000001>=adminCommissionFloor(u)}
-async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0),dBal=Number(deltaBalance||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>{if(!u)return u;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return undefined;return {...u,balance:nextBalance,commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}});if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return null;u.balance=nextBalance;u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
-async function applyTransactionCommissionShare(userId,transactionId,amount){
+async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0),dBal=Number(deltaBalance||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>{if(!u)return u;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return undefined;return {...u,balance:nextBalance,commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}});if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return null;u.balance=nextBalance;u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u} if(!isAdmin())return null;
+async function applyTransactionCommissionShare(userId,transactionId,amount){ if(!isAdmin())return false;
  const n=Number(amount||0);if(n<=0)return true;if(!firebaseReady||!firebase.auth().currentUser)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
  try{
@@ -1646,7 +1646,7 @@ async function applyTransactionCommissionShare(userId,transactionId,amount){
   if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true;
  }catch(e){console.warn('Aplicar comisión idempotente:',e);return false}
 }
-async function refundTransactionReservation(userId,transactionId,amount,creditUsed){
+async function refundTransactionReservation(userId,transactionId,amount,creditUsed){ if(!isAdmin())return false;
  const n=Number(amount||0),used=Math.max(0,Number(creditUsed||0)),balanceUsed=Math.max(0,n-used);if(balanceUsed<=0&&used<=0)return true;if(!firebaseReady||!firebase.auth().currentUser)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
  try{
@@ -1902,7 +1902,7 @@ function guardarRetiroCuenta(){
  addNotification('Administrador','Solicitud de retiro de cuenta de '+currentUser.name+' por '+money(amount),'accountWithdrawals',id);addAudit('Solicitar retiro de cuenta',id);persist();closeModal('retiroCuentaModal');renderAll();toast('Solicitud de retiro enviada al Administrador.')
 }
 function renderContact(){let c=state.settings?.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
-async function applyAccountWithdrawalSettlement(userId,withdrawalId,amount){
+async function applyAccountWithdrawalSettlement(userId,withdrawalId,amount){ if(!isAdmin())return false;
  const n=Number(amount||0);if(n<=0||!firebaseReady||!firebase.auth().currentUser)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
  try{
