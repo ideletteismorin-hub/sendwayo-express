@@ -718,6 +718,33 @@ async function crearAccesosIniciales(){
   await persist();renderAll();
   toast('Accesos: '+created+' creados, '+exists+' ya existentes'+(errors?', '+errors+' con error.':''),errors?'warn':'success');
 }
+function renderRealtimeView(){
+ if(!currentUser)return;
+ try{renderDashboard()}catch(e){console.warn('SENDWAYO realtime dashboard:',e)}
+ const id=document.querySelector('.view-section.active')?.id||'view-dashboard';
+ try{
+  switch(id){
+   case 'view-informes':renderDailyReports();break;
+   case 'view-contabilidad':renderAccounting();break;
+   case 'view-credito':renderCredit();break;
+   case 'view-envios':renderEnvios();break;
+   case 'view-beneficiarios':renderBeneficiaries();break;
+   case 'view-paquetes':renderSimple('paquetes','paqTable',['type','weight','description','cost']);break;
+   case 'view-remitentes':renderPeople();break;
+   case 'view-recargas':renderSimple('recargas','recTable',['company','phone','amount']);break;
+   case 'view-paqueticos':renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);break;
+   case 'view-pagos':renderSimple('pagos','pagoTable',['company','contract','amount']);break;
+   case 'view-cuentas_depositos':renderAccounts();renderDeposits();break;
+   case 'view-mi_cuenta':renderMiCuenta();break;
+   case 'view-contacto':renderContact();break;
+   case 'view-comisiones':renderCommissions();break;
+   case 'view-solicitudes':renderRequests();break;
+   case 'view-secretas':renderSecrets();break;
+   case 'view-perfil':renderProfile();break;
+  }
+ }catch(e){console.warn('SENDWAYO realtime view:',e)}
+ if(typeof ensureDownloadActions==='function')setTimeout(()=>ensureDownloadActions(),0);
+}
 function attachRealtimeListeners(){
  if(!firebaseReady||!firebase.auth().currentUser)return;
  // PRODUCCIÓN / ANTI-CONGELAMIENTO:
@@ -751,7 +778,7 @@ function attachRealtimeListeners(){
          const fresh=state.users?.[currentUser.id];
          if(fresh&&fresh.active!==false)currentUser=fresh;
        }
-       renderAll();
+       renderRealtimeView();
      }catch(e){console.warn('SENDWAYO render realtime:',e)}
    },220);
  };
