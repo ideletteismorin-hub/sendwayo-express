@@ -1,16 +1,17 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'sendwayoexpress@gmail.com' || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)",
+    ".read": false,
+    ".write": false,
     "users": {
       "$uid": {
         ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || data.child('authUid').val() === auth.uid)",
-        ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'sendwayoexpress@gmail.com' || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || ((data.child('authUid').val() === auth.uid || data.child('authEmail').val() === auth.token.email) && newData.child('authUid').val() === auth.uid && newData.child('id').val() === data.child('id').val() && newData.child('role').val() === data.child('role').val() && newData.child('staffId').val() === data.child('staffId').val() && newData.child('active').val() === data.child('active').val() && newData.child('authEmail').val() === data.child('authEmail').val() && newData.child('commissionAccrued').val() === data.child('commissionAccrued').val() && newData.child('bonusAccrued').val() === data.child('bonusAccrued').val() && newData.child('referrals').val() === data.child('referrals').val() && ((newData.child('balance').val() === data.child('balance').val() && newData.child('commission').val() === data.child('commission').val()) || (newData.child('commission').val() >= 0 && newData.child('commission').val() <= data.child('commission').val() && newData.child('balance').val() === data.child('balance').val() + data.child('commission').val() - newData.child('commission').val())))"
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || ((data.child('authUid').val() === auth.uid || data.child('authEmail').val() === auth.token.email) && newData.child('authUid').val() === auth.uid && newData.child('id').val() === data.child('id').val() && newData.child('role').val() === data.child('role').val() && newData.child('staffId').val() === data.child('staffId').val() && newData.child('active').val() === data.child('active').val() && newData.child('authEmail').val() === data.child('authEmail').val() && newData.child('commissionAccrued').val() === data.child('commissionAccrued').val() && newData.child('bonusAccrued').val() === data.child('bonusAccrued').val() && newData.child('referrals').val() === data.child('referrals').val() && ((newData.child('balance').val() === data.child('balance').val() && newData.child('commission').val() === data.child('commission').val()) || (newData.child('commission').val() >= 0 && newData.child('commission').val() <= data.child('commission').val() && newData.child('balance').val() === data.child('balance').val() + data.child('commission').val() - newData.child('commission').val()))))",
+        ".validate": "!newData.exists() || (newData.child('id').val() === $uid && newData.child('balance').isNumber() && newData.child('balance').val() >= 0 && newData.child('commission').isNumber() && newData.child('commission').val() >= 0 && (newData.child('role').val() !== 'Administrador' || newData.child('balance').val() + 0.000001 >= newData.child('commissionAccrued').val()))"
       }
     },
     "beneficiaries": {
       "$id": {
-        ".read": "auth != null",
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === root.child('sendwayo_express_v2/users').child($uid).child('id').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
         ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('ownerAuthUid').val() === auth.uid) || (data.child('ownerAuthUid').val() === auth.uid && newData.child('ownerAuthUid').val() === data.child('ownerAuthUid').val()))"
       }
     },
@@ -18,80 +19,96 @@
       ".read": "auth != null",
       ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
     },
-    "notifications": {
-      "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'sendwayoexpress@gmail.com' || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && ((newData.child('targetUserId').val() === 'admin' && newData.child('createdByAuthUid').val() === auth.uid) || (newData.child('targetUserId').val() === root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('id').val() && root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('authUid').val() === auth.uid))) || (data.exists() && root.child('sendwayo_express_v2/users').child(data.child('targetUserId').val()).child('authUid').val() === auth.uid && (!newData.exists() || newData.child('targetUserId').val() === data.child('targetUserId').val())))"
-      }
-    },
     "settings": {
       ".read": "auth != null",
       ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
     },
+    "notifications": {
+      "$id": {
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'targetUserId' && query.equalTo === 'admin' && root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid) || (query.orderByChild === 'targetUserId' && query.equalTo === root.child('sendwayo_express_v2/users').child(query.equalTo).child('id').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && ((newData.child('targetUserId').val() === 'admin' && newData.child('createdByAuthUid').val() === auth.uid) || root.child('sendwayo_express_v2/users').child(newData.child('targetUserId').val()).child('authUid').val() === auth.uid)) || (data.exists() && root.child('sendwayo_express_v2/users').child(data.child('targetUserId').val()).child('authUid').val() === auth.uid && (!newData.exists() || newData.child('targetUserId').val() === data.child('targetUserId').val())))"
+      }
+    },
+    "requests": {
+      "$id": {
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'createdByAuthUid' && query.equalTo === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))"
+      }
+    },
+    "audit": {
+      "$id": {
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))"
+      }
+    },
+    "dailyReports": {
+      "$date": {
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
+      }
+    },
+    "ledger": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)",
+      ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
+    },
     "envios": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))"
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').isNumber() && newData.child('commission').val() >= 0 && newData.child('userId').exists())"
       }
     },
     "recargas": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))"
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').isNumber() && newData.child('commission').val() >= 0 && newData.child('userId').exists())"
       }
     },
     "paqueticos": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))"
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').isNumber() && newData.child('commission').val() >= 0 && newData.child('userId').exists())"
       }
     },
     "pagos": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))"
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').isNumber() && newData.child('commission').val() >= 0 && newData.child('userId').exists())"
       }
     },
     "paquetes": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))"
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) || (data.child('createdByAuthUid').val() === auth.uid && (data.child('status').val() === 'Rechazado' || data.child('status').val() === 'No coincide')))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').isNumber() && newData.child('commission').val() >= 0 && newData.child('userId').exists())"
       }
     },
     "deposits": {
       "$id": {
-        ".read": "auth != null",
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
         ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))",
         ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('commission').val() === 0 && newData.child('accountingType').val() === 'DEPOSITO_CAPITAL' && newData.child('userId').exists())"
       }
     },
     "accountWithdrawals": {
       "$id": {
-        ".read": "auth != null",
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
         ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))"
       }
     },
     "commissions": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && root.child('sendwayo_express_v2/users').child(newData.child('userId').val()).child('authUid').val() === auth.uid && newData.child('createdByAuthUid').val() === auth.uid && newData.child('accountingType').val() === 'COMISION_PAGADA'))"
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
+        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && root.child('sendwayo_express_v2/users').child(newData.child('userId').val()).child('authUid').val() === auth.uid && newData.child('createdByAuthUid').val() === auth.uid && newData.child('accountingType').val() === 'COMISION_PAGADA'))",
+        ".validate": "!newData.exists() || (newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('accountingType').val() === 'COMISION_PAGADA' && newData.child('userId').exists())"
       }
     },
-    "requests": {
+    "credits": {
       "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid))"
-      }
-    },
-    "audit": {
-      "$id": {
-        ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (!data.exists() && newData.child('createdByAuthUid').val() === auth.uid) )"
-      }
-    },
-    "dailyReports": {
-      "$date": {
-        ".read": "auth != null",
+        ".read": "auth != null && (auth.token.admin === true || (query.orderByChild === 'userId' && query.equalTo === data.child('userId').val() && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))",
         ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
       }
     }
