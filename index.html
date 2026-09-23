@@ -1801,7 +1801,11 @@ function receiptSpecificData(collection,r){
 }
 function receiptServiceHtml(collection,r,t,benName,benPhone){
  const d=receiptSpecificData(collection,r);
- const exact=Number(d.amount||0).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2})+' RD
+ if(d.kind==='recarga')return '<div class="receipt-concept"><b>RECARGA</b><br>Compañía: '+escapeHtml(d.company)+(d.phone?' — Número: '+escapeHtml(d.phone):'')+'</div>';
+ if(d.kind==='paquetico')return '<div class="receipt-concept"><b>PAQUETICO</b><br>Compañía: '+escapeHtml(d.company)+(d.phone?' — Número: '+escapeHtml(d.phone):'')+(d.plan?' — Plan: '+escapeHtml(d.plan):'')+'</div>';
+ if(d.kind==='pago')return '<div class="receipt-concept"><b>FACTURA / SERVICIO</b><br>Empresa: '+escapeHtml(d.company)+(d.contract?' — NIS/Contrato: '+escapeHtml(d.contract):'')+'<br>Concepto: '+escapeHtml(d.concept||'Pago de servicio')+'</div>';
+ return '<div class="receipt-concept"><b>'+t.beneficiary+'</b><br>'+escapeHtml(benName)+(benPhone?' — '+escapeHtml(benPhone):'')+'</div>';
+}
 function generateReceipt(collection,id){
  let r=state[collection]?.[id];if(!r||r.status!=='Aprobado')return;
  let u=state.users[r.userId]||state.users.admin||{};
