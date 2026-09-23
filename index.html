@@ -373,6 +373,9 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
 <div class="modal" id="detailModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('detailModal')">×</button><div id="detail-content"></div></div></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 window.sendwayoOpenLogin=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(w)w.classList.add('hidden');if(l)l.classList.remove('hidden');var u=document.getElementById('login-user');if(u)setTimeout(function(){u.focus()},50)};
 window.sendwayoOpenWelcome=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(l)l.classList.add('hidden');if(w)w.classList.remove('hidden')};
