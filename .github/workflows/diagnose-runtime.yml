@@ -1,0 +1,42 @@
+name: Diagnose SENDWAYO runtime
+on:
+  push:
+    branches: [main]
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright@1.52.0
+          npx playwright install --with-deps chromium
+      - name: Run browser diagnostic
+        run: |
+          cat > /tmp/check.js <<'JS'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage();
+            const errors=[];
+            page.on('console',m=>{if(m.type()==='error') errors.push('CONSOLE: '+m.text())});
+            page.on('pageerror',e=>errors.push('PAGEERROR: '+e.message));
+            await page.goto('https://sendwayo-oficial.github.io/sendwayo-express/?diag='+Date.now(),{waitUntil:'networkidle',timeout:30000});
+            await page.waitForTimeout(2000);
+            const result=await page.evaluate(()=>({
+              loginType:typeof window.realizarLogin,
+              bridgeType:typeof window.sendwayoLogin,
+              welcomeVisible:!document.getElementById('welcome-screen')?.classList.contains('hidden'),
+              loginVisible:!document.getElementById('login-screen')?.classList.contains('hidden'),
+              status:document.getElementById('login-status')?.textContent||''
+            }));
+            console.log(JSON.stringify({result,errors},null,2));
+            await browser.close();
+            if(errors.length) process.exit(2);
+          })();
+          JS
+          node /tmp/check.js
