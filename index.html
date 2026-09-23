@@ -1908,7 +1908,7 @@ async function reviewAccountWithdrawal(id,status){
  }
  if(firebaseReady){const opRef=firebase.database().ref(DB_PATH+'/accountWithdrawals/'+id);const tx=await opRef.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,reviewReason});if(!tx.committed)return toast('El retiro ya fue procesado o cambió en otro dispositivo.','warn');r=tx.snapshot.val();state.accountWithdrawals[id]=r}
  else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.reviewReason=reviewReason;state.accountWithdrawals[id]=r}
- const u=state.users?.[r.userId];if(!u)return;
+ const u=state.users?.[r.userId];if(!u)return;if(status==='Aprobado'&&u.id==='admin'&&!adminBalanceAllowed(u,Number(u.balance||0)-Number(r.amount||0)))return toast('No se puede aprobar este retiro: el balance de Administración quedaría por debajo de su comisión contable.','warn');
  if(status==='Aprobado'){if(!await updateUserFinancials(u.id,-Number(r.amount||0),0))return toast('No se pudo descontar el retiro del balance.','error');r=state.accountWithdrawals[id];generateReceipt('accountWithdrawals',id);state.accountWithdrawals[id]=r}
  await addNotification(u.id,'Su retiro de cuenta fue '+status.toUpperCase()+'. '+reviewReason,'accountWithdrawals',id);await persist();renderAll();if(status==='Aprobado'&&state.accountWithdrawals[id]?.receipt)setTimeout(()=>showReceipt('accountWithdrawals',id),180);toast('Retiro '+status+'.')
 }
@@ -2230,24 +2230,9 @@ function refreshAdminBalanceModal(){
 async function saveAdminBalanceAdjustment(){
  if(!isAdmin())return;
  const id=document.getElementById('admin-balance-target')?.value,mode=document.getElementById('admin-balance-mode')?.value,amount=Number(document.getElementById('admin-balance-amount')?.value);
- if(!id||!['set','add','subtract'].includes(mode)||!Number.isFinite(amount)||amount<0)return toast('Indique un monto válido.','warn');
- if(!firebaseReady)return toast('Firebase no está conectado.','error');
+ if(!id||!['set','add','subtract'].includes(mode)||!Number.isFinite(amount)||amount<0)return toast('Indique un monto válido.','warn');if(!firebaseReady)return toast('Firebase no está conectado.','error');
  const ref=firebase.database().ref(DB_PATH+'/users/'+id);
- try{
-   const tx=await ref.transaction(u=>{
-     if(!u)return undefined;
-     const current=Number(u.balance||0);
-     let next=mode==='set'?amount:mode==='add'?current+amount:current-amount;
-     if(next<0)return undefined;
-     return {...u,balance:next};
-   });
-   if(!tx.committed)return toast('No se pudo actualizar el balance. El valor cambió o no está disponible.','warn');
-   const updated=tx.snapshot.val();state.users[id]=updated;if(currentUser?.id===id)currentUser=updated;
-   lastSyncedState=cloneState(state);localSave();
-   addAudit('Ajuste administrativo de balance',id);
-   try{await firebase.database().ref(DB_PATH+'/audit/'+uid('bal')).set({id:uid('bal'),action:'Ajuste administrativo de balance',targetUserId:id,mode,amount,processedBy:currentUser.username,createdAt:now()})}catch(_){}
-   closeModal('adminBalanceModal');renderAll();toast('Balance actualizado directamente en Firebase.','success');
- }catch(e){console.warn('Ajuste administrativo:',e);toast('No se pudo actualizar el balance en Firebase.','error')}
+ try{const tx=await ref.transaction(u=>{if(!u)return undefined;const current=Number(u.balance||0),next=mode==='set'?amount:mode==='add'?current+amount:current-amount;if(next<0||!adminBalanceAllowed(u,next))return undefined;return {...u,balance:next}});if(!tx.committed)return toast(id==='admin'?'No se puede dejar el balance de Administración por debajo de su comisión contable acumulada.':'No se pudo actualizar el balance.','warn');const updated=tx.snapshot.val();state.users[id]=updated;if(currentUser?.id===id)currentUser=updated;if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);localSave();const auditId=uid('bal'),audit={id:auditId,action:'Ajuste administrativo de balance',targetUserId:id,mode,amount,processedBy:currentUser.username,createdAt:now(),balanceBefore:Number(u?.balance||0),balanceAfter:Number(updated.balance||0),commissionBefore:Number(u?.commission||0),commissionAfter:Number(updated.commission||0)};try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set(audit)}catch(_){}closeModal('adminBalanceModal');renderAll();toast('Balance actualizado directamente en Firebase.','success')}catch(e){console.warn('Ajuste administrativo:',e);toast('No se pudo actualizar el balance en Firebase.','error')}
 }
 
 function renderDashboard(){
