@@ -1539,6 +1539,13 @@ function receiptSpecificData(collection,r){
  if(collection==='pagos')return {kind:'pago',company:r.company||'No especificada',contract:r.contract||'',concept:r.concepto||r.concept||r.description||('Pago de servicio '+(r.company||''))};
  return {kind:'general'};
 }
+function receiptServiceHtml(collection,r,t,benName,benPhone){
+ const d=receiptSpecificData(collection,r);
+ if(d.kind==='recarga')return '<div class="receipt-concept"><b>RECARGA</b><br>Compañía: '+escapeHtml(d.company)+(d.phone?' — Número: '+escapeHtml(d.phone):'')+'</div>';
+ if(d.kind==='paquetico')return '<div class="receipt-concept"><b>PAQUETICO</b><br>Compañía: '+escapeHtml(d.company)+(d.phone?' — Número: '+escapeHtml(d.phone):'')+(d.plan?' — Plan: '+escapeHtml(d.plan):'')+'</div>';
+ if(d.kind==='pago')return '<div class="receipt-concept"><b>FACTURA / SERVICIO</b><br>Empresa: '+escapeHtml(d.company)+(d.contract?' — NIS/Contrato: '+escapeHtml(d.contract):'')+'<br>Concepto: '+escapeHtml(d.concept||'Pago de servicio')+'</div>';
+ return '<div class="receipt-concept"><b>'+t.beneficiary+'</b><br>'+escapeHtml(benName)+(benPhone?' — '+escapeHtml(benPhone):'')+'</div>';
+}
 function enrichReceipt(collection,id){
  const r=state[collection]?.[id];if(!r||r.status!=='Aprobado')return null;
  if(!r.receipt)generateReceipt(collection,id);
@@ -1616,7 +1623,7 @@ function showReceipt(collection,id){
    <div><b>${t.transaction}</b><span>${escapeHtml(tipo)}</span></div>
    <div><b>${t.senderId}</b><span>${escapeHtml(idRem)}</span></div>
  </div>
- <div class="receipt-concept"><b>${t.beneficiary}</b><br>${escapeHtml(benName)}${benPhone?' — '+escapeHtml(benPhone):''}</div>
+ ${receiptServiceHtml(collection,r,t,benName,benPhone)}
  <div class="receipt-amount-main" style="margin:8px 0 6px;padding:10px 12px">
    <div class="receipt-amount-label" style="font-size:.86rem">${t.received}</div>
    <div class="receipt-amount-value" style="font-size:1.55rem;margin-top:4px">${amountText}</div>
