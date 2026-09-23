@@ -700,7 +700,7 @@ async function initFirebase(){try{
   }
   if(typeof firebase==='undefined'||!firebase.initializeApp)throw new Error('FIREBASE_SDK_NOT_LOADED');
   if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-  await Promise.race([firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL),new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_PERSISTENCE_TIMEOUT')),5000))]);
+  try{firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e=>console.warn('Persistencia Firebase:',e))}catch(e){console.warn('Persistencia Firebase:',e)}
   firebaseReady=true;return true
 }catch(e){firebaseReady=false;console.warn('Firebase no disponible.',e);return false}}
 async function loadExportLibraries(){try{const base='https://cdnjs.cloudflare.com/ajax/libs/';await Promise.all([loadScript(base+'xlsx/0.18.5/xlsx.full.min.js',8000),loadScript(base+'jspdf/2.5.1/jspdf.umd.min.js',8000)]);return true}catch(e){console.warn('Librerías de exportación:',e);return false}}
