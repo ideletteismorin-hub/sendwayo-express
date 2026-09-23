@@ -119,7 +119,7 @@
     },
     "credits": {
       "$id": {
-        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid) || (data.child('userId').val() != null && root.child('sendwayo_express_v2/users').child(data.child('userId').val()).child('authUid').val() === auth.uid)",
+        ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (data.child('userId').val() != null && root.child('sendwayo_express_v2/users').child(data.child('userId').val()).child('authUid').val() === auth.uid))",
         ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
       },
       ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))"
