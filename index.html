@@ -1064,7 +1064,7 @@ async function realizarLogin(){
  const password=document.getElementById('login-pass')?.value||'';
  const ADMIN_EMAIL='sendwayoexpress@gmail.com';
  if(!identifier||!password){setStatus('Escriba usuario y contraseña.','warn');return}
- const isAdmin=identifier.toLowerCase()==='admin'||identifier.toLowerCase()===ADMIN_EMAIL;
+ const isAdmin=identifier.toLowerCase()==='admin'||identifier.toLowerCase()===ADMIN_EMAIL; if(!isAdmin()){ try{ const loginEmail=identifier.includes('@')?(identifier):(normalized+'@sendwayoexpress.com'); const snap=await firebase.database().ref(DB_PATH+'/users').orderByChild('authEmail').equalTo(loginEmail.toLowerCase()).once('value'); const vals=snap.val()||{}; const remote=Object.values(vals).find(u=>u); if(remote){ state.users=state.users||{}; state.users[remote.id]=remote; } }catch(e){ console.warn('Prelogin profile lookup:',e); } }
  if(!isAdmin)return realizarLoginOriginal();
  const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
  if(btn){btn.disabled=true;btn.textContent='Entrando…'}
