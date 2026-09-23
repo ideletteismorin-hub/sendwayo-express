@@ -696,7 +696,8 @@ async function initFirebase(){try{
     await loadScript(base+'firebase-app-compat.js',7000);
     await loadScript(base+'firebase-auth-compat.js',7000);
     await loadScript(base+'firebase-database-compat.js',7000);
-    await loadScript(base+'firebase-functions-compat.js',7000);
+    // Firebase Functions no es necesaria para el acceso ni para RTDB.
+    // No debe bloquear Authentication si ese CDN no responde.
   }
   if(typeof firebase==='undefined'||!firebase.initializeApp)throw new Error('FIREBASE_SDK_NOT_LOADED');
   if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
