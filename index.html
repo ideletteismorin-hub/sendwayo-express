@@ -821,12 +821,12 @@ function attachRealtimeListeners(){
    ref.on('child_added',onAdded);
    ref.on('child_changed',onChanged);
    ref.on('child_removed',onRemoved);
-   ref.once('value').then(s=>{
-     state[key]=s.val()||{};
-     if(lastSyncedState)lastSyncedState[key]=cloneState(state[key]);
+   // loadAuthorizedState ya obtuvo este mismo conjunto de datos antes de
+   // conectar los listeners. No hacemos una segunda lectura completa aquí.
+   setTimeout(()=>{
+     if(lastSyncedState)lastSyncedState[key]=cloneState(state[key]||{});
      hydrating=false;
-     if(currentUser)renderRealtimeView();
-   }).catch(()=>{hydrating=false});
+   },0);
    window.__sendwayoRealtimeRefs.push(ref);
  };
  // Colecciones financieras: el Remitente recibe solamente sus operaciones.
