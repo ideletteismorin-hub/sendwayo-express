@@ -146,7 +146,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 
 <div class="main-container hidden" id="app-shell">
 <header>
-  <div style="display:flex;align-items:center;gap:10px"><button class="mobile-toggle-btn" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></button><div class="header-title" id="page-title">Tablero Principal</div><div class="header-date-box"><span>Fecha y hora</span><b id="header-datetime"></b></div><div class="header-balance-box"><span>Balance disponible</span><b id="header-balance">RD$ 0.00</b></div><button class="refresh-btn" onclick="refreshFromFirebaseNow()" title="Actualizar directamente desde Firebase"><i class="fa-solid fa-rotate"></i></button><select id="language-selector" class="language-selector" onchange="setLanguage(this.value)" title="Idioma"><option value="es">Español</option><option value="fr">Français</option><option value="en">English</option><option value="ht">Kreyòl ayisyen</option></select><span class="session-pill" id="session-pill">Restante: <b id="session-countdown">30:00</b> · En sesión: <b id="session-elapsed">00:00</b></span></div>
+  <div style="display:flex;align-items:center;gap:10px"><button class="mobile-toggle-btn" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></button><div class="header-title" id="page-title">Tablero Principal</div><div class="header-date-box"><span>Fecha y hora</span><b id="header-datetime"></b></div><div class="header-balance-box"><span>Balance disponible</span><b id="header-balance">RD$ 0.00</b></div><button type="button" class="refresh-btn" onclick="refreshFromFirebaseNow()" title="Actualizar directamente desde Firebase"><i class="fa-solid fa-rotate"></i></button><select id="language-selector" class="language-selector" onchange="setLanguage(this.value)" title="Idioma"><option value="es">Español</option><option value="fr">Français</option><option value="en">English</option><option value="ht">Kreyòl ayisyen</option></select><span class="session-pill" id="session-pill">Restante: <b id="session-countdown">30:00</b> · En sesión: <b id="session-elapsed">00:00</b></span></div>
   <div class="header-right">
     <div class="notification-bell" onclick="toggleNotifications()"><i class="fa-solid fa-bell"></i><span class="notification-badge" id="notif-count">0</span></div>
     <div><img id="header-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTAwIDUwMCI+CjxkZWZzPgogPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHgyPSIxIj48c3RvcCBzdG9wLWNvbG9yPSIjMDYxYTNhIi8+PHN0b3Agb2Zmc2V0PSIuNTgiIHN0b3AtY29sb3I9IiMwZDNjN2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNjI0NTEiLz48L2xpbmVhckdyYWRpZW50PgogPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkIiB4MT0iMCIgeDI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNmZmY1OGEiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZDQzYiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2U2OWIwMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8bGluZWFyR3JhZGllbnQgaWQ9ImJsdWUiIHgxPSIwIiB4Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU0ZTRmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA4N2NmMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI4IiByZXN1bHQ9ImIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+CjwvZGVmcz4KPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMTQ3NiIgaGVpZ2h0PSI0NzYiIHJ4PSI5MCIgZmlsbD0idXJsKCNiZykiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIxMCIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjE3NSIgZmlsbD0iIzA5MmM2MSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjEyIiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPHBhdGggZD0iTTgwIDM4NSBMMjIwIDc4IEwzNjAgMzg1IFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIyNSIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjgwIiBmaWxsPSJ1cmwoI2JsdWUpIiBzdHJva2U9IiNmZmY1OGEiIHN0cm9rZS13aWR0aD0iNyIvPgo8cGF0aCBkPSJNMTU1IDI1NWMzNS0yOCA5NS0yOCAxMzAgME0xNjUgMzAwYzMyIDIyIDc4IDIyIDExMCAwTTIyMCAxNzBjLTIyIDMwLTIyIDEyMCAwIDE2ME0yMjAgMTcwYzIyIDMwIDIyIDEyMCAwIDE2MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTlmYmZmIiBzdHJva2Utd2lkdGg9IjgiIG9wYWNpdHk9Ii45NSIvPgo8cmVjdCB4PSIxNzUiIHk9IjMwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjQyIiByeD0iOCIgZmlsbD0iIzEyM2I3OCIgc3Ryb2tlPSIjZmZmNThhIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIyMjAiIHk9IjMzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiNmZmYiPiQ8L3RleHQ+CjwhLS0gbW9uZXkgaWNvbiAtLT4gPGNpcmNsZSBjeD0iMzY1IiBjeT0iMTM1IiByPSIzOCIgZmlsbD0iIzE3Yjg2YSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIzNjUiIHk9IjE0OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIj4kPC90ZXh0Pgo8IS0tIHBhY2thZ2UgaWNvbiAtLT4gPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzQwIDM1MCkiPjxwYXRoIGQ9Ik0wIDIyIDU1IDAgMTEwIDIydjcwTDU1IDExNSAwIDkyWiIgZmlsbD0iI2Y1OWUwYiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMCAyMiA1NSA0NyAxMTAgMjJNNTUgNDd2NjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1IDE0aDQwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNSIvPjwvZz4KPHRleHQgeD0iNDMwIiB5PSIyMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTYiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSItNCIgZmlsbD0idXJsKCNnb2xkKSI+U0VORFdBWU88L3RleHQ+CjxyZWN0IHg9IjQzMCIgeT0iMjU1IiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjEwMCIgcng9IjUwIiBmaWxsPSIjZmZmIi8+Cjx0ZXh0IHg9IjcxMCIgeT0iMzI2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNzIiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSIxMCIgZmlsbD0iIzEyM2I3OCI+RVhQUkVTUzwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjEwIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNkZmY3ZmYiPkRJTkVSTyDigKIgUEFRVUVURVMg4oCiIENPTkVYScOTTjwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjUyIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY1OGEiPlNFUlZJQ0lPIOKAoiBDT05GSUFOWkEg4oCiIFNFR1VSSURBRDwvdGV4dD4KPHBhdGggZD0iTTEwMjAgMzAwaDM5MCIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCB4PSIxMDI1IiB5PSIzNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+wqFUdSBkaW5lcm8geSB0dXMgZW52w61vcyBlbiBidWVuYXMgbWFub3MhPC90ZXh0Pgo8L3N2Zz4=" style="border-radius:50%;width:36px;height:36px;object-fit:cover"></div>
@@ -160,12 +160,12 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión del Día (Hoy)</b><h2 id="kpi-commission-today">RD$ 0.00</h2><small class="muted">Comisiones generadas y aprobadas en la fecha de hoy</small></div>
       <div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2><small class="muted">Histórico global de comisiones generadas</small></div>
       <div class="kpi admin-only" style="border-top-color:#0f2c59"><b>Comisión Administración · Hoy</b><h2 id="kpi-admin-commission-today">RD$ 0.00</h2><small class="muted">Participación administrativa generada hoy y acreditada al balance</small></div>
-      <div class="kpi admin-only" style="border-top-color:#7c3aed"><b>Bono Administración</b><h2 id="kpi-admin-bonus">RD$ 0.00</h2><small class="muted">Bonos manuales acumulados y acreditados al balance administrativo</small></div>
+      <div class="kpi admin-only" style="border-top-color:#7c3aed"><b>Bono Administración</b><h2 id="kpi-admin-bonus">RD$ 0.00</h2><small class="muted">Bonos manuales definidos exclusivamente por Administración y acreditados al balance administrativo</small></div>
       <div class="kpi admin-only" id="kpi-remitters-card"><b>Total de Remitentes</b><h2 id="kpi-remitters">0</h2></div>
       <div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
     </div>
     <div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Ajustes financieros de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Permite acreditar un saldo exacto a la Administración o agregar/quitar dinero del balance administrativo. Los cambios se guardan directamente en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div></div>
-    <div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">Acreditaciones de Administración</h2><p class="muted" style="margin-top:4px">Solo Administración. Acreditar Balance y Acreditar Bono suman el monto directamente al balance de la cuenta seleccionada. Acreditar Comisiones pasa el monto desde la comisión disponible al balance.</p></div></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button></div></div>
+    <div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">Acreditaciones de Administración</h2><p class="muted" style="margin-top:4px">Solo Administración. Acreditar Balance y Acreditar Bono suman el monto directamente al balance. El Bono es manual y exclusivo de Administración. Acreditar Comisiones pasa el monto desde la comisión disponible al balance.</p></div></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button></div></div>
     <div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
   </section>
 
@@ -583,10 +583,50 @@ async function manualRefresh(showMessage=true){
 function localSave(){localStorage.setItem(DB_PATH,JSON.stringify(state))}
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
 function markSynced(pathParts,value){if(!lastSyncedState)return;let cur=lastSyncedState;for(let i=0;i<pathParts.length-1;i++){const k=pathParts[i];if(!cur[k]||typeof cur[k]!=='object')cur[k]={};cur=cur[k]}if(pathParts.length)cur[pathParts.length-1]=cloneState(value)}
+function canPersistOwnRecord(collection,record,prev){
+ const authUid=firebaseReady?firebase.auth().currentUser?.uid:null;
+ if(isAdmin())return true;
+ if(!record)return false;
+ if(collection==='users')return record.id===currentUser?.id;
+ const owner=record.userId===currentUser?.id||record.createdByAuthUid===authUid||record.ownerAuthUid===authUid;
+ if(collection==='beneficiaries')return owner;
+ if(FINANCIAL_COLLECTIONS.includes(collection)){
+   if(!owner)return false;
+   if(!prev)return true;
+   return prev.userId===currentUser?.id&&(record.status==='Rechazado'||record.status==='No coincide');
+ }
+ if(collection==='commissions')return !prev&&owner&&record.accountingType==='COMISION_PAGADA';
+ if(collection==='requests')return !prev&&owner;
+ return false;
+}
 function buildFirebaseUpdates(){const updates={};
- if(!lastSyncedState){Object.entries(state||{}).forEach(([k,v])=>{if(v&&typeof v==='object'&&!Array.isArray(v)){Object.entries(v).forEach(([id,record])=>{if(isAdmin()||k!=='users'||id===currentUser?.id)updates[k+'/'+id]=record})}else if(isAdmin())updates[k]=v});}
- const keys=new Set([...Object.keys(state||{}),...Object.keys(lastSyncedState||{})]);keys.forEach(k=>{const cur=state[k],prev=lastSyncedState?.[k],both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);if(both){const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);ids.forEach(id=>{if(JSON.stringify(cur[id]??null)!==JSON.stringify(prev[id]??null)){if(FINANCIAL_COLLECTIONS.includes(k)){if(id in cur){updates[k+'/'+id]=cur[id];if(isAdmin())updates['ledger/'+k+'/'+id]=cur[id]}}else{updates[k+'/'+id]=(id in cur)?cur[id]:null}}})}else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null)){if(isAdmin()||k==='users')updates[k]=cur??null}});
- if(isAdmin())FINANCIAL_COLLECTIONS.forEach(k=>Object.entries(state[k]||{}).forEach(([id,record])=>{if(record)updates['ledger/'+k+'/'+id]=record}));return updates}
+ const keys=new Set([...Object.keys(state||{}),...Object.keys(lastSyncedState||{})]);
+ keys.forEach(k=>{
+   const cur=state[k],prev=lastSyncedState?.[k];
+   const both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);
+   if(both){
+     const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);
+     ids.forEach(id=>{
+       const currentRecord=id in cur?cur[id]:null;
+       const previousRecord=id in prev?prev[id]:null;
+       if(JSON.stringify(currentRecord??null)!==JSON.stringify(previousRecord??null)){
+         if(canPersistOwnRecord(k,currentRecord,previousRecord)){
+           if(currentRecord===null){
+             if(isAdmin())updates[k+'/'+id]=null;
+           }else{
+             updates[k+'/'+id]=currentRecord;
+             if(isAdmin()&&FINANCIAL_COLLECTIONS.includes(k))updates['ledger/'+k+'/'+id]=currentRecord;
+           }
+         }
+       }
+     });
+   }else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null)){
+     if(isAdmin())updates[k]=cur??null;
+   }
+ });
+ if(isAdmin())FINANCIAL_COLLECTIONS.forEach(k=>Object.entries(state[k]||{}).forEach(([id,record])=>{if(record)updates['ledger/'+k+'/'+id]=record}));
+ return updates
+}
 async function persist(){localSave();if(!firebaseReady)return Promise.resolve(true);const updates=buildFirebaseUpdates();if(!Object.keys(updates).length)return Promise.resolve(true);persistQueue=persistQueue.then(async()=>{try{
    for(const [path,value] of Object.entries(updates)){await firebase.database().ref(DB_PATH+'/'+path).set(value);}
    for(const p of Object.keys(updates)){let v=state;for(const part of p.split('/')){if(v==null)break;v=v[part]}markSynced(p.split('/'),v===undefined?null:v)}
@@ -1630,8 +1670,12 @@ function buildDailyReportRows(dateKey,userFilter=''){
  }
  for(const r of Object.values(state.deposits||{})){
   if(reportRecordDay(r)!==dateKey)continue;
-  add(r,'Depósito',String(r.voucher||'Depósito de capital'),r.amount,0,r.status);
- }
+  if(userFilter==='admin'&&r.createdByAdmin){
+    add(r,'Depósito administrativo','Acreditación directa realizada por Administración al balance del Remitente '+String(r.username||''),r.amount,0,r.status,'admin');
+  }else{
+    add(r,'Depósito',String(r.voucher||'Depósito de capital'),r.amount,0,r.status);
+  }
+}
  for(const r of Object.values(state.accountWithdrawals||{})){
   if(reportRecordDay(r)!==dateKey)continue;
   add(r,'Retiro de cuenta',String(r.note||r.reason||'Retiro'),r.amount,0,r.status);
@@ -1743,7 +1787,7 @@ function openAdminCreditModal(type='balance'){
  const titles={balance:'Acreditar Balance',bonus:'Acreditar Bono',commission:'Acreditar Comisiones'};
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
-  bonus:'El bono es dinero externo a las operaciones y se acredita directamente al balance de la Administración. No genera ni modifica comisión.',
+  bonus:'El bono es una acreditación manual exclusiva de Administración; no proviene de depósitos, donaciones ni comisiones y se acredita directamente al balance administrativo.',
   commission:'En Remitentes, mueve al balance la comisión disponible. En Administración, permite registrar una acreditación manual de comisión y sumarla directamente al balance administrativo; las comisiones operativas ya generadas siguen acreditándose automáticamente.'
  };
  window.__adminCreditType=['balance','bonus','commission'].includes(type)?type:'balance';
@@ -2127,7 +2171,7 @@ deposit.accountingType='DEPOSITO_CAPITAL';
 delete deposit.commissionRate;delete deposit.commission;delete deposit.commissionUser;delete deposit.commissionAdmin;delete deposit.commissionSplit;
 state.deposits[id]=deposit;
 generateReceipt('deposits',id);
-addAudit('Depósito directo asignado por Administrador',id);
+const adminAuditId=uid('a');const adminAudit={id:adminAuditId,user:currentUser?.username||'admin',action:'Depósito directo asignado por Administrador',detail:id,targetUserId:u.id,amount,createdByAuthUid:firebase.auth().currentUser?.uid||null,createdAt:now()};state.audit=state.audit||{};state.audit[adminAuditId]=adminAudit;await firebase.database().ref(DB_PATH+'/audit/'+adminAuditId).set(adminAudit);
 await firebase.database().ref(DB_PATH+'/deposits/'+id).set(deposit);
 if(lastSyncedState){lastSyncedState.users=lastSyncedState.users||{};lastSyncedState.users[u.id]=cloneState(state.users[u.id]);lastSyncedState.deposits=lastSyncedState.deposits||{};lastSyncedState.deposits[id]=cloneState(deposit);}
 localSave();
