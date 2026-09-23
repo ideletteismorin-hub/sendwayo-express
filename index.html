@@ -1937,12 +1937,17 @@ function renderAccounting(){
  if(!isAdmin())return;
  const admin=state.users?.admin||{},balance=Number(admin.balance||0),commission=commissionTotalFor('admin'),today=commissionTodayFor('admin'),bonus=adminBonusTotal();
  let creditOut=0;Object.values(state.users||{}).filter(u=>u?.role==='Remitente').forEach(u=>creditOut+=Math.max(0,Number(u.creditOutstanding||0)));
- const control=document.getElementById('accounting-control');if(control)control.textContent=commission>balance+0.005?'REVISIÓN REQUERIDA: la comisión histórica de Administración supera el balance. El sistema no agregará dinero automáticamente.':'CUADRADO: Balance de Administración ≥ Comisión histórica.';
+ const control=document.getElementById('accounting-control');if(control)control.textContent=commission>balance+0.005?'REVISIÓN REQUERIDA: la comisión histórica de Administración supera el balance. No se agrega dinero automáticamente.':'CUADRADO: Balance de Administración ≥ Comisión histórica.';
  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=money(v)};set('acct-admin-balance',balance);set('acct-admin-commission',commission);set('acct-admin-today',today);set('acct-admin-bonus',bonus);set('acct-credit-out',creditOut);
  const q=normalizeSearchText(document.getElementById('accounting-search')?.value||'');
  const users=[admin,...Object.values(state.users||{}).filter(u=>u?.role==='Remitente')].filter((u,i,a)=>u&&a.findIndex(x=>x.id===u.id)===i).filter(u=>!q||normalizeSearchText(u.name).includes(q)||normalizeSearchText(u.username).includes(q)||normalizeSearchText(u.staffId).includes(q));
  const ab=document.querySelector('#accountingAccountsTable tbody');
- ab.innerHTML=users.map((u,i)=>{const bal=Number(u.balance||0),comm=Number(u.commission||0),hist=commissionTotalFor(u.id),cr=Math.max(0,Number(u.creditOutstanding||0)),ctrl=u.id==='admin'?(hist>bal+0.005?'REVISAR':'CUADRADO'):'SEPARADO';return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(u.id==='admin'?'ADMINISTRACIÓN':'REMITENTE')+'</td><td>'+escapeHtml(u.id==='admin'?'ADMIN':(u.staffId||u.id))+'</td><td>'+escapeHtml(u.name||u.username||u.id)+'</td><td>'+money(bal)+'</td><td>'+money(comm)+'</td><td>'+money(hist)+'</td><td>'+money(cr)+'</td><td>'+ctrl+'</td><td><button class="btn btn-light btn-sm" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadRecord(\'users\',\''+u.id+'\')">Descargar</button></td></tr>'}).join('')||'<tr><td colspan="10" class="muted">No hay cuentas financieras.</td></tr>';
+ ab.innerHTML=users.map((u,i)=>{
+   const bal=Number(u.balance||0),comm=Number(u.commission||0),hist=commissionTotalFor(u.id),cr=Math.max(0,Number(u.creditOutstanding||0)),ctrl=u.id==='admin'?(hist>bal+0.005?'REVISAR':'CUADRADO'):'SEPARADO';
+   const audits=Object.values(state.audit||{}).filter(x=>x&&x.targetUserId===u.id&&Number.isFinite(Number(x.balanceBefore))&&Number.isFinite(Number(x.balanceAfter))).sort((x,y)=>parseSendwayoDate(y.createdAt)-parseSendwayoDate(x.createdAt));
+   const last=audits[0],delta=last?Number(last.balanceAfter)-Number(last.balanceBefore):null,variation=delta===null?'SIN DATO':delta>0?'AUMENTÓ '+money(delta):delta<0?'DISMINUYÓ '+money(Math.abs(delta)):'SIN CAMBIO';
+   return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(u.id==='admin'?'ADMINISTRACIÓN':'REMITENTE')+'</td><td>'+escapeHtml(u.id==='admin'?'ADMIN':(u.staffId||u.id))+'</td><td>'+escapeHtml(u.name||u.username||u.id)+'</td><td>'+money(bal)+'</td><td>'+money(comm)+'</td><td>'+money(hist)+'</td><td>'+money(cr)+'</td><td>'+escapeHtml(variation)+'</td><td>'+ctrl+'</td><td><button class="btn btn-light btn-sm" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadRecord(\'users\',\''+u.id+'\')">Descargar</button></td></tr>';
+ }).join('')||'<tr><td colspan="11" class="muted">No hay cuentas financieras.</td></tr>';
  const q2=normalizeSearchText(document.getElementById('accounting-movement-search')?.value||''),rows=[];
  const add=(collection,r,type)=>{if(!r)return;const u=state.users?.[r.userId]||{};rows.push({id:r.id,date:r.reviewedAt||r.balanceSettledAt||r.createdAt||r.date||'',type,person:u.name||r.username||r.userId||'Administración',amount:Number(r.amount||0),commission:Number(r.commission||0),status:r.status||'Registrado',origin:collection})};
  ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>Object.values(state[col]||{}).forEach(r=>add(col,r,col.toUpperCase())));
@@ -1952,6 +1957,7 @@ function renderAccounting(){
  const mb=document.querySelector('#accountingMovementsTable tbody');
  mb.innerHTML=rows.filter(r=>!q2||normalizeSearchText(r.type).includes(q2)||normalizeSearchText(r.person).includes(q2)||normalizeSearchText(r.id).includes(q2)).slice(0,500).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.person)+'</td><td>'+money(r.amount)+'</td><td>'+money(r.commission)+'</td><td>'+escapeHtml(r.status)+'</td><td>'+escapeHtml(r.origin)+'</td><td><button class="btn btn-light btn-sm" onclick="viewRecord(\''+r.origin+'\',\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadRecord(\''+r.origin+'\',\''+r.id+'\')">Descargar</button></td></tr>').join('')||'<tr><td colspan="9" class="muted">No hay movimientos financieros.</td></tr>';
 }
+
 function ensureDownloadActions(){
  document.querySelectorAll('td .actions').forEach(box=>{
    if(box.querySelector('[data-sendwayo-download]'))return;
