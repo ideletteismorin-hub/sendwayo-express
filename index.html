@@ -891,26 +891,17 @@ function openBrandSite(){window.location.href='https://sendwayo-oficial.github.i
 async function boot(){
   if(window.__sendwayoBootStarted)return;
   window.__sendwayoBootStarted=true;
-  // PRIMERA PRIORIDAD: pintar y dejar interactiva la bienvenida antes de tocar
-  // localStorage, Firebase o librerías externas. JSON.parse/localStorage es síncrono
-  // y una base local grande puede congelar el hilo principal de móviles/tablets.
+  // PRIMERA PRIORIDAD: mostrar la bienvenida y dejar libre el hilo principal.
+  // No se inicializan datos, Firebase ni procesos de traducción pesados en este punto.
   try{showWelcome()}catch(e){console.error('SENDWAYO welcome:',e)}
-  try{initLanguage()}catch(e){console.warn('SENDWAYO language:',e)}
-  try{ensureSeedData()}catch(e){console.warn('SENDWAYO seed:',e)}
-  try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}
+  setTimeout(()=>{try{initLanguage()}catch(e){console.warn('SENDWAYO language:',e)}},0);
+  setTimeout(()=>{try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}},40);
+  // La preparación del estado se hace al iniciar sesión, no durante la apertura.
 
-  // IMPORTANTE: Firebase es la fuente de verdad en producción.
-  // No restauramos aquí un JSON completo desde localStorage: si el navegador
-  // acumuló miles de movimientos, JSON.parse() puede congelar el hilo principal
-  // justo después de mostrar la bienvenida. El estado se hidrata desde Firebase
-  // después de autenticarse.
-  // Las librerías pesadas de Excel/PDF se cargan únicamente cuando el usuario exporta.
-  // Nunca se descargan automáticamente a los 5 segundos: eso podía bloquear tablets/celulares.
-
-  // Firebase NO se inicia en la bienvenida.
-  // Se inicializa únicamente al entrar al formulario de acceso. Esto elimina
-  // cualquier posibilidad de que una red lenta, Auth o RTDB bloquee la bienvenida.
-}
+  // Firebase es la fuente de verdad en producción.
+  // No se restaura un JSON financiero completo desde localStorage.
+  // Las librerías de Excel/PDF se cargan únicamente cuando se exporta.
+  // Firebase se inicializa únicamente al entrar al acceso.
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
 
@@ -953,6 +944,7 @@ async function realizarLogin(){
    setStatus('Conectando con Firebase Authentication…');
    const ready=await Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_TIMEOUT')),10000))]);
    if(!ready)throw new Error('FIREBASE_UNAVAILABLE');
+   try{ensureSeedData()}catch(seedError){console.warn('SENDWAYO seed tras acceso:',seedError)}
 
    const users=Object.values(state.users||{});
    const normalizedIdentifier=normalizeUsername(identifier);
