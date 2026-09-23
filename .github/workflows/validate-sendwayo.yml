@@ -19,8 +19,15 @@ jobs:
           scripts=re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", html, re.S|re.I)
           if not scripts:
               raise SystemExit("No se encontró JavaScript inline")
-          Path("/tmp/sendwayo.js").write_text("\n\n".join(scripts),encoding="utf-8")
+          for i,s in enumerate(scripts,1):
+              p=Path(f"/tmp/sendwayo-{i}.js")
+              p.write_text(s,encoding="utf-8")
+              print(f"Script {i}: {len(s.splitlines())} líneas")
           print("Scripts encontrados:",len(scripts))
           PY
       - name: Comprobar sintaxis JavaScript
-        run: node --check /tmp/sendwayo.js
+        run: |
+          for f in /tmp/sendwayo-*.js; do
+            echo "=== $f ==="
+            node --check "$f"
+          done
