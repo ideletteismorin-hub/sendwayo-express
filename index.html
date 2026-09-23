@@ -941,8 +941,8 @@ async function realizarLogin(){
    setStatus('Conectando con Firebase Authentication…');
    const ready=await Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_TIMEOUT')),10000))]);
    if(!ready)throw new Error('FIREBASE_UNAVAILABLE');
-   try{ensureSeedData()}catch(seedError){console.warn('SENDWAYO seed tras acceso:',seedError)}
-
+   // El acceso no depende de datos iniciales ni de escrituras en RTDB.
+   // Primero autenticamos; la sincronización/seed ocurre después del acceso.
    const users=Object.values(state.users||{});
    const normalizedIdentifier=normalizeUsername(identifier);
    const isAdminLogin=identifier.toLowerCase()===ADMIN_EMAIL||identifier.toLowerCase()==='admin';
