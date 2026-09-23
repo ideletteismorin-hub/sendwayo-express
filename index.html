@@ -2655,5 +2655,160 @@ async function guardarDepositoAdministrativo(){
  }catch(e){console.warn('Depósito administrativo:',e);toast('No se pudo procesar el depósito administrativo en Firebase.','error')}
 }
 
+
+/* SENDWAYO EXPRESS — AUDITORÍA FINANCIERA Y CONTABLE FINAL — 2026-09-23 */
+(function(){
+  'use strict';
+
+  /* 1) Comisión administrativa: incluir correctamente su 50% histórico.
+     Remitentes mantienen comisión separada; Administración la integra en balance. */
+  window.commissionTotalFor = function(userId){
+    const stored=Number(state.users?.[userId]?.commissionAccrued||0);
+    const cols=['envios','recargas','paqueticos','pagos','paquetes'];
+    let derived=0;
+    for(const col of cols){
+      for(const r of Object.values(state[col]||{})){
+        if(!r || r.status!=='Aprobado') continue;
+        let share=0;
+        if(userId==='admin'){
+          share=Number(r.commissionAdmin ?? (Number(r.commission||0)*0.5));
+        }else if(r.userId===userId){
+          share=Number(r.commissionUser ?? (Number(r.commission||0)*0.5));
+        }
+        if(Number.isFinite(share) && share>0) derived+=share;
+      }
+    }
+    return Number(Math.max(0,stored,derived).toFixed(2));
+  };
+
+  window.adminBalanceAllowed = function(u,nextBalance){
+    if(!u || u.id!=='admin') return Number(nextBalance)>=-0.000001;
+    const floor=Number(window.commissionTotalFor('admin')||0);
+    return Number(nextBalance)+0.000001>=floor;
+  };
+
+  /* 2) Nunca corregir dinero automáticamente desde el software.
+     Si existe una inconsistencia real, se informa y queda para decisión administrativa. */
+  window.renderAccounting = function(){
+    if(!isAdmin()) return;
+    const admin=state.users?.admin||{};
+    const balance=Number(admin.balance||0);
+    const commission=Number(window.commissionTotalFor('admin')||0);
+    const today=Number(commissionTodayFor('admin')||0);
+    const bonus=Number(adminBonusTotal()||0);
+    let creditOut=0;
+    Object.values(state.users||{}).filter(u=>u?.role==='Remitente').forEach(u=>{
+      creditOut+=Math.max(0,Number(u.creditOutstanding||0));
+    });
+
+    const gap=Number((balance-commission).toFixed(2));
+    const control=document.getElementById('accounting-control');
+    if(control){
+      if(gap<0){
+        control.innerHTML='<b>REVISIÓN REQUERIDA:</b> el Balance de Administración ('+money(balance)+') está por debajo de la Comisión acumulada ('+money(commission)+') por '+money(Math.abs(gap))+'. <b>No se agrega ni se resta dinero automáticamente.</b> Debe existir una decisión administrativa antes de corregir cualquier saldo.';
+        control.style.background='#fff1f2';control.style.color='#991b1b';
+      }else{
+        control.innerHTML='<b>CUADRADO:</b> Balance de Administración ('+money(balance)+') ≥ Comisión acumulada ('+money(commission)+'). La Comisión de hoy ('+money(today)+') forma parte de la Comisión acumulada y las comisiones administrativas acreditadas están integradas en el balance.';
+        control.style.background='#ecfdf3';control.style.color='#166534';
+      }
+    }
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=money(v)};
+    set('acct-admin-balance',balance);set('acct-admin-commission',commission);set('acct-admin-today',today);set('acct-admin-bonus',bonus);set('acct-credit-out',creditOut);
+
+    const q=normalizeSearchText(document.getElementById('accounting-search')?.value||'');
+    const users=[admin,...Object.values(state.users||{}).filter(u=>u?.role==='Remitente')]
+      .filter((u,i,a)=>u&&a.findIndex(x=>x.id===u.id)===i)
+      .filter(u=>!q||normalizeSearchText(u.name).includes(q)||normalizeSearchText(u.username).includes(q)||normalizeSearchText(u.staffId).includes(q));
+    const ab=document.querySelector('#accountingAccountsTable tbody');
+    if(ab)ab.innerHTML=users.map((u,i)=>{
+      const bal=Number(u.balance||0),comm=Number(u.commission||0),hist=Number(window.commissionTotalFor(u.id)||0),cr=Math.max(0,Number(u.creditOutstanding||0));
+      const ctrl=u.id==='admin'?(hist>bal+0.005?'REVISAR':'CUADRADO'):'SEPARADO';
+      const audits=Object.values(state.audit||{}).filter(x=>x&&x.targetUserId===u.id&&Number.isFinite(Number(x.balanceBefore))&&Number.isFinite(Number(x.balanceAfter))).sort((x,y)=>parseSendwayoDate(y.createdAt)-parseSendwayoDate(x.createdAt));
+      const last=audits[0],delta=last?Number(last.balanceAfter)-Number(last.balanceBefore):null;
+      const variation=delta===null?'SIN DATO':delta>0?'AUMENTÓ '+money(delta):delta<0?'DISMINUYÓ '+money(Math.abs(delta)):'SIN CAMBIO';
+      const actions='<div class="actions">'+
+        '<button class="btn btn-light btn-sm" title="Ver" onclick="viewUser(\''+u.id+'\')">Ver</button>'+
+        '<button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\'users\',\''+u.id+'\')">Descargar</button>'+
+        (isAdmin()?'<button class="btn btn-warning btn-sm" title="Editar perfil" onclick="editUser(\''+u.id+'\')">Editar</button>':'')+
+        '</div>';
+      return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(u.id==='admin'?'ADMINISTRACIÓN':'REMITENTE')+'</td><td>'+escapeHtml(u.id==='admin'?'ADMIN':(u.staffId||u.id))+'</td><td>'+escapeHtml(u.name||u.username||u.id)+'</td><td>'+money(bal)+'</td><td>'+money(comm)+'</td><td>'+money(hist)+'</td><td>'+money(cr)+'</td><td>'+escapeHtml(variation)+'</td><td>'+ctrl+'</td><td>'+actions+'</td></tr>';
+    }).join('')||'<tr><td colspan="11" class="muted">No hay cuentas financieras.</td></tr>';
+
+    const q2=normalizeSearchText(document.getElementById('accounting-movement-search')?.value||''),rows=[];
+    const add=(collection,r,type)=>{
+      if(!r)return;
+      const u=state.users?.[r.userId]||{};
+      rows.push({id:r.id,date:r.reviewedAt||r.balanceSettledAt||r.createdAt||r.date||'',type,person:u.name||r.username||r.userId||'Administración',amount:Number(r.amount||0),commission:Number(r.commission||0),status:r.status||'Registrado',origin:collection});
+    };
+    ['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>Object.values(state[col]||{}).forEach(r=>add(col,r,col.toUpperCase())));
+    Object.values(state.deposits||{}).forEach(r=>add('deposits',r,'DEPÓSITO'));
+    Object.values(state.accountWithdrawals||{}).forEach(r=>add('accountWithdrawals',r,'RETIRO'));
+    Object.values(state.commissions||{}).forEach(r=>add('commissions',r,'PAGO COMISIÓN'));
+    Object.values(state.credits||{}).forEach(r=>add('credits',r,'CRÉDITO'));
+    Object.values(state.audit||{}).filter(r=>/^Acreditar |^Ajuste administrativo/.test(String(r.action||''))).forEach(r=>add('audit',r,'AJUSTE ADMINISTRATIVO'));
+    rows.sort((a,b)=>parseSendwayoDate(b.date)-parseSendwayoDate(a.date));
+    const mb=document.querySelector('#accountingMovementsTable tbody');
+    if(mb)mb.innerHTML=rows.filter(r=>!q2||normalizeSearchText(r.type).includes(q2)||normalizeSearchText(r.person).includes(q2)||normalizeSearchText(r.id).includes(q2)).slice(0,500).map((r,i)=>{
+      const locked=['Aprobado','Pagado'].includes(String(r.status));
+      const edit=(!locked&&isAdmin())?'<button class="btn btn-warning btn-sm" title="Modificar" onclick="editRecord(\''+r.origin+'\',\''+r.id+'\')">Editar</button>':'<button class="btn btn-warning btn-sm" disabled title="Movimiento cerrado">Editar</button>';
+      const del=(!locked&&isAdmin())?'<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\''+r.origin+'\',\''+r.id+'\')">Eliminar</button>':'<button class="btn btn-danger btn-sm" disabled title="Movimiento cerrado">Eliminar</button>';
+      return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.person)+'</td><td>'+money(r.amount)+'</td><td>'+money(r.commission)+'</td><td>'+escapeHtml(r.status)+'</td><td>'+escapeHtml(r.origin)+'</td><td><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+r.origin+'\',\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\''+r.origin+'\',\''+r.id+'\')">Descargar</button>'+edit+del+'</div></td></tr>';
+    }).join('')||'<tr><td colspan="9" class="muted">No hay movimientos financieros.</td></tr>';
+  };
+
+  /* 3) Estandarizar Acciones en las páginas que todavía no tenían Descargar. */
+  window.renderBeneficiaries=function(){
+    const rows=newestFirst(state.beneficiaries).filter(b=>isAdmin()||b.userId===currentUser?.id);
+    const body=document.querySelector('#benefTable tbody');if(!body)return;
+    body.innerHTML=rows.map((b,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(b.name)+'</td><td>'+escapeHtml(b.phone)+'</td><td>'+escapeHtml(b.address)+'</td><td><span class="status '+statusClass(b.active?'Activo':'Inactivo')+'">'+(b.active?'Activo':'Inactivo')+'</span></td><td><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\'beneficiaries\',\''+b.id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\'beneficiaries\',\''+b.id+'\')">Descargar</button><button class="btn btn-warning btn-sm" title="Editar" onclick="editBeneficiary(\''+b.id+'\')">Editar</button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'beneficiaries\',\''+b.id+'\')">Eliminar</button></div></td></tr>').join('')||'<tr><td colspan="6" class="muted">No hay beneficiarios.</td></tr>';
+  };
+
+  window.renderAccounts=function(){
+    const rows=Object.values(state.accounts||{});
+    const body=document.querySelector('#cuentaTable tbody');if(!body)return;
+    body.innerHTML=rows.map((a,i)=>{
+      const actions='<div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\'accounts\',\''+a.id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\'accounts\',\''+a.id+'\')">Descargar</button>'+
+        (isAdmin()?'<button class="btn btn-warning btn-sm" title="Editar" onclick="editAccount(\''+a.id+'\')">Editar</button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'accounts\',\''+a.id+'\')">Eliminar</button>':'')+'</div>';
+      return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(a.bank)+'</td><td>'+escapeHtml(a.holder)+'</td><td>'+escapeHtml(a.number)+'</td><td>'+actions+'</td></tr>';
+    }).join('')||'<tr><td colspan="5" class="muted">No hay cuentas bancarias oficiales.</td></tr>';
+    const depSelect=document.getElementById('dep-cuenta');if(depSelect)depSelect.innerHTML='<option value="">Seleccione una cuenta bancaria oficial</option>'+rows.filter(a=>a.active!==false).map(a=>'<option value="'+escapeHtml(a.id)+'">'+escapeHtml(a.bank)+' - '+escapeHtml(a.number)+' ('+escapeHtml(a.holder)+')</option>').join('');
+  };
+
+  window.personActions=function(u){
+    let a='<button class="btn btn-light btn-sm" title="Ver" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\'users\',\''+u.id+'\')">Descargar</button>';
+    if(isAdmin()||u.id===currentUser.id)a+='<button class="btn btn-warning btn-sm" title="Editar" onclick="editUser(\''+u.id+'\')">Editar</button>';
+    if(isAdmin())a+='<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteUser(\''+u.id+'\')">Eliminar</button>';
+    return '<div class="actions">'+a+'</div>';
+  };
+
+  window.renderCommissions=function(){
+    const rows=newestFirst(state.commissions).filter(r=>isAdmin()||r.userId===currentUser.id).filter(r=>commissionStatusFilter==='Todos'||String(r.status||'Pagado')===commissionStatusFilter);
+    const body=document.querySelector('#comTable tbody');if(!body)return;
+    body.innerHTML=rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.username)+'</td><td>'+money(r.availableBefore)+'</td><td>'+money(r.amount)+'</td><td>'+escapeHtml(r.date)+'</td><td><span class="status st-Pagado">PAGADO</span></td><td><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\'commissions\',\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\'commissions\',\''+r.id+'\')">Descargar</button>'+ (isAdmin()?'<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord(\'commissions\',\''+r.id+'\')">Editar</button><button class="btn btn-danger btn-sm" disabled title="Los pagos de comisión cerrados no se eliminan">Eliminar</button>':'')+'</div></td></tr>').join('')||'<tr><td colspan="7" class="muted">No hay pagos de comisión.</td></tr>';
+  };
+
+  window.renderRequests=function(){
+    const rows=newestFirst(state.requests).filter(r=>isAdmin()||r.createdByAuthUid===firebase.auth().currentUser?.uid).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
+    const body=document.querySelector('#reqTable tbody');if(!body)return;
+    body.innerHTML=rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.name)+'</td><td>'+escapeHtml(r.phone)+'</td><td>'+escapeHtml(r.doc)+'</td><td>'+escapeHtml(r.type)+'</td><td><span class="status '+statusClass(r.status||'Pendiente')+'">'+escapeHtml(r.status||'Pendiente')+'</span></td><td><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\'requests\',\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\'requests\',\''+r.id+'\')">Descargar</button>'+(isAdmin()?'<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord(\'requests\',\''+r.id+'\')">Editar</button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'requests\',\''+r.id+'\')">Eliminar</button>':'')+(isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\''+r.id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\''+r.id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\''+r.id+'\',\'No coincide\')">NO COINCIDE</button>':'')+'</div></td></tr>').join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>';
+  };
+
+  /* 4) Contabilidad de Bonos: la administración los registra; el código no inventa bonos. */
+  const originalSaveCreditGrant=window.saveCreditGrant;
+  window.saveCreditGrant=originalSaveCreditGrant;
+  window.downloadBonusRecord=function(id){
+    const r=bonusRecords().find(x=>x.id===id);if(!r)return toast('No se encontró el bono.','error');
+    downloadRecordFromObject('bonos',id,r);
+  };
+  window.downloadRecordFromObject=function(collection,id,r){
+    const blob=new Blob([JSON.stringify({sistema:'SENDWAYO EXPRESS',coleccion:collection,exportadoEn:now(),registro:r},null,2)],{type:'application/json;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SENDWAYO_'+collection+'_'+id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  };
+
+  /* 5) No se crean registros monetarios de prueba. */
+  window.ensureAllRemittersStartAtZero=async function(){return false};
+  window.ensureAdminStartAtZero=async function(){return false};
+})();
+
 </script></body>
 </html>
