@@ -134,7 +134,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       <li><a href="#" onclick="switchView('cuentas_depositos')"><i class="fa-solid fa-university"></i> Cuentas Bancarias y Depósitos</a></li>
       <li><a href="#" onclick="switchView('mi_cuenta')"><i class="fa-solid fa-wallet"></i> Mi Cuenta</a></li>
       <li><a href="#" onclick="switchView('contacto')"><i class="fa-solid fa-address-card"></i> Contactarnos</a></li>
-      <li><a href="#" onclick="switchView('comisiones')"><i class="fa-solid fa-hand-holding-dollar"></i> Retiro / Pago de Comisiones</a></li>
+      <li class="remitente-only"><a href="#" onclick="switchView('comisiones')"><i class="fa-solid fa-hand-holding-dollar"></i> Retiro / Pago de Comisiones</a></li>
       <li><a href="#" onclick="switchView('solicitudes')"><i class="fa-solid fa-inbox"></i> Solicitudes y Aprobaciones</a></li>
       <li><a href="#" onclick="switchView('secretas')"><i class="fa-solid fa-user-secret"></i> Información Secreta</a></li>
       <li><a href="#" onclick="switchView('perfil')"><i class="fa-solid fa-user"></i> Mi Perfil</a></li>
@@ -299,7 +299,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
   <div class="table-toolbar" style="margin-top:16px"><div class="actions"><button class="btn btn-primary btn-sm admin-only" onclick="editContact()">Agregar Nuevo</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','contactTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','contactTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','contactTable')">CSV</button></div><input class="search-box" placeholder="Buscar contacto..." oninput="filterTable(this,'contactTable')"></div>
   <div class="table-wrap"><table id="contactTable"><thead><tr><th>N°</th><th>Dato</th><th>Valor</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
 </section>
-<section id="view-comisiones" class="view-section">
+<section id="view-comisiones" class="view-section remitente-only">
     <div class="card"><div class="card-header"><h3>Retiro / Pago de Comisiones</h3><button class="btn btn-primary" onclick="openModal('comisionModal')">Agregar Nuevo</button></div>
     <div class="info-box">El monto solicitado debe ser menor o igual a la comisión disponible. Al guardar, el pago se aplica inmediatamente y aumenta el balance del remitente, mientras disminuye su comisión.</div>
     <div class="info-box" style="margin-top:10px;background:#fff7ed;border-left:5px solid #d97706"><strong>CONTROL DE SEGURIDAD:</strong> no existe entrada automática, no se usa autenticación anónima y las operaciones administrativas dependen de Firebase Authentication + Security Rules. Las cuentas bancarias, balances, comisiones, aprobaciones y credenciales no pueden ser modificados por un usuario no administrador desde Firebase.</div>
@@ -1142,7 +1142,9 @@ function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&f
 function applyRoleVisibility(){
  let admin=isAdmin();
  document.querySelectorAll('#sidebar-menu li').forEach(li=>{let txt=li.innerText;li.style.display=(!admin && (txt.includes('Solicitudes')||txt.includes('Información Secreta'))) ? 'none':''});
- let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display=admin?'flex':'none';document.querySelectorAll('.admin-only').forEach(e=>e.style.display=admin?'':'none');
+ let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display=admin?'flex':'none';
+ document.querySelectorAll('.admin-only').forEach(e=>e.style.display=admin?'':'none');
+ document.querySelectorAll('.remitente-only').forEach(e=>e.style.display=admin?'none':'');
  if(!admin)document.getElementById('sidebar-role-label').textContent=currentUser.role.toUpperCase();
 }
 function toggleMobileMenu(){document.getElementById('app-sidebar').classList.toggle('active')}
@@ -1536,6 +1538,7 @@ async function guardarPaquete(){
 function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
 async function guardarComision(){
  if(!currentUser)return;
+ if(isAdmin())return toast('La comisión de Administración ya está integrada en su balance. El retiro de comisión es exclusivo del Remitente.','warn');
  // Retiro/pago: descuenta comisión disponible y acredita el mismo monto al balance inmediatamente.
  const targetId=isAdmin()?document.getElementById('com-target').value:currentUser.id;
  const target=state.users[targetId]||currentUser;
