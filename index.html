@@ -703,12 +703,17 @@ async function firebaseRemove(path){
  try{await firebase.database().ref(DB_PATH+'/'+path).remove();return true}catch(e){console.warn('Firebase remove:',e);return false}
 }
 let notificationHydrated=false;let knownAdminNotifications=new Set();
+const OFFICIAL_BANK_ACCOUNTS=[
+ {id:'b1',bank:'Banco Popular',holder:'Herace Fleuranvil',number:'831434592'},
+ {id:'b2',bank:'Banreservas',holder:'Herace Fleuranvil',number:'9601783620'},
+ {id:'b3',bank:'BHD',holder:'Herace Fleuranvil',number:'36818900013'}
+];
 function ensureSeedData(){
   state.settings=state.settings||{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}};state.settings.contact=state.settings.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};
   productionResetState();
   state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};
   // Producción: no sembrar remitentes automáticamente.
- state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{};
+ state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{}; OFFICIAL_BANK_ACCOUNTS.forEach(a=>{if(!state.accounts[a.id])state.accounts[a.id]={...a,active:true,official:true};});
   ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','ledger'].forEach(k=>state[k]=state[k]||{});
   ensureStaffDirectory();
 }
