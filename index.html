@@ -795,7 +795,8 @@ const OFFICIAL_BANK_ACCOUNTS=[
 function ensureSeedData(){
   state.settings=state.settings||{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}};state.settings.contact=state.settings.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};
   productionResetState();
-  state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};\n  RESTORED_SECRET_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]={...x,staffId:x.staffId||('ID'+String(10000000+Number(x.id.replace('rm',''))).padStart(8,'0')),active:true,balance:Number(x.balance||0),commission:Number(x.commission||0),referrals:0,accountStatus:'Activo',accountSchemaV3:1,authEmail:authEmailFor(x)};});
+  state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};
+  RESTORED_SECRET_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]={...x,staffId:x.staffId||('ID'+String(10000000+Number(x.id.replace('rm',''))).padStart(8,'0')),active:true,balance:Number(x.balance||0),commission:Number(x.commission||0),referrals:0,accountStatus:'Activo',accountSchemaV3:1,authEmail:authEmailFor(x)};});
   // Producción: no sembrar remitentes automáticamente.
  state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{}; OFFICIAL_BANK_ACCOUNTS.forEach(a=>{if(!state.accounts[a.id])state.accounts[a.id]={...a,active:true,official:true};});
   ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','ledger'].forEach(k=>state[k]=state[k]||{});
