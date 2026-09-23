@@ -1272,27 +1272,21 @@ async function saveCreditGrant(){
 async function guardBalance(amount){
  if(isAdmin())return true;
  const needed=Number(amount||0);if(needed<=0)return true;
- if(firebaseReady){
-  try{
-   const ref=firebase.database().ref(DB_PATH+'/users/'+currentUser.id);
-   const tx=await ref.transaction(u=>{
-    if(!u||u.role!=='Remitente')return undefined;
-    const balance=Number(u.balance||0),limit=Number(u.creditLimit||0),out=Number(u.creditOutstanding||0),available=Math.max(0,limit-out);
-    const fromBalance=Math.min(balance,needed),creditNeeded=needed-fromBalance;
-    if(creditNeeded>available)return undefined;
-    return {...u,balance:balance-fromBalance,creditOutstanding:out+creditNeeded};
-   });
-   if(!tx.committed){toast('Balance insuficiente y el crédito disponible no cubre esta operación.','warn');return false}
-   const updated=tx.snapshot.val(),before=Number(currentUser.balance||0);
-   currentUser={...updated,__creditUsedForOperation:Math.max(0,needed-Math.min(before,needed))};
-   state.users[currentUser.id]=currentUser;
-   if(lastSyncedState?.users?.[currentUser.id])lastSyncedState.users[currentUser.id]=cloneState(updated);
-   localSave();return true;
-  }catch(e){console.warn('Balance/crédito:',e);toast('No se pudo actualizar balance/crédito en Firebase.','error');return false}
- }
- const x=creditInfo(currentUser),balance=Number(currentUser.balance||0),from=Math.min(balance,needed),creditNeeded=needed-from;
- if(creditNeeded>x.available)return toast('Balance insuficiente y crédito disponible insuficiente.','warn');
- currentUser.balance=balance-from;currentUser.creditOutstanding=x.out+creditNeeded;currentUser.__creditUsedForOperation=creditNeeded;state.users[currentUser.id]=currentUser;return true;
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. No se puede reservar dinero ni crédito offline.','error');
+ try{
+  const ref=firebase.database().ref(DB_PATH+'/users/'+currentUser.id);let actualCreditUsed=0;
+  const tx=await ref.transaction(u=>{
+   if(!u||u.role!=='Remitente')return undefined;
+   const balance=Number(u.balance||0),limit=Number(u.creditLimit||0),out=Number(u.creditOutstanding||0),available=Math.max(0,limit-out);
+   const fromBalance=Math.min(balance,needed),creditNeeded=needed-fromBalance;if(creditNeeded>available)return undefined;
+   actualCreditUsed=creditNeeded;
+   return {...u,balance:balance-fromBalance,creditOutstanding:out+creditNeeded};
+  });
+  if(!tx.committed){toast('Balance insuficiente y el crédito disponible no cubre esta operación.','warn');return false}
+  const updated=tx.snapshot.val();currentUser={...updated,__creditUsedForOperation:actualCreditUsed};state.users[currentUser.id]=updated;
+  if(lastSyncedState?.users?.[currentUser.id])lastSyncedState.users[currentUser.id]=cloneState(updated);
+  localSave();return true;
+ }catch(e){console.warn('Balance/crédito:',e);toast('No se pudo actualizar balance/crédito en Firebase.','error');return false}
 }
 function resolveByText(value,collection,fields){let v=String(value||'').trim().toLowerCase();if(!v)return null;return Object.values(collection).find(x=>fields.some(f=>String(x[f]||'').trim().toLowerCase()===v||String(x[f]||'').trim().toLowerCase().includes(v)))?.id||null}
 function normalizeSearchText(v){return String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim()}
