@@ -917,6 +917,7 @@ function attachRealtimeListeners(){
  window.__sendwayoRealtimeRefs.push(nref);
 }
 
+function isAdmin(){return !!currentUser && (currentUser.id==='admin' || String(currentUser.role||'').toLowerCase()==='administrador' || String(currentUser.username||'').toLowerCase()==='admin' || String(currentUser.authEmail||'').toLowerCase()==='sendwayoexpress@gmail.com');}
 function applyBrandLogo(){document.querySelectorAll('img.brand-logo, .sidebar-brand img, #login-screen img, #header-avatar, #profile-preview').forEach(img=>{if(!img.dataset.userAvatar)img.src=LOGO_DATA});}
 function openBrandSite(){window.location.href='https://sendwayo-oficial.github.io/sendwayo-express/';}
 async function boot(){
@@ -1074,8 +1075,29 @@ async function realizarLogin(){
  const password=document.getElementById('login-pass')?.value||'';
  const ADMIN_EMAIL='sendwayoexpress@gmail.com';
  if(!identifier||!password){setStatus('Escriba usuario y contraseña.','warn');return}
- const isAdmin=identifier.toLowerCase()==='admin'||identifier.toLowerCase()===ADMIN_EMAIL; if(!isAdmin){ try{ const loginEmail=identifier.includes('@')?(identifier):(normalized+'@sendwayoexpress.com'); const snap=await firebase.database().ref(DB_PATH+'/users').orderByChild('authEmail').equalTo(loginEmail.toLowerCase()).once('value'); const vals=snap.val()||{}; const remote=Object.values(vals).find(u=>u); if(remote){ state.users=state.users||{}; state.users[remote.id]=remote; } }catch(e){ console.warn('Prelogin profile lookup:',e); } }
- if(!isAdmin)return realizarLoginOriginal();
+ const isAdminLogin=identifier.toLowerCase()==='admin'||identifier.toLowerCase()===ADMIN_EMAIL;
+ if(!isAdminLogin){
+   try{
+     await initFirebase();
+     const normalized=normalizeUsername(identifier);
+     const usersRef=firebase.database().ref(DB_PATH+'/users');
+     let vals={};
+     if(identifier.includes('@')){
+       const snap=await usersRef.orderByChild('authEmail').equalTo(identifier.toLowerCase()).once('value');
+       vals=snap.val()||{};
+     }else{
+       const snap=await usersRef.orderByChild('username').equalTo(identifier).once('value');
+       vals=snap.val()||{};
+       if(!Object.keys(vals).length){
+         const snap2=await usersRef.orderByChild('username').equalTo(normalized).once('value');
+         vals=snap2.val()||{};
+       }
+     }
+     const remote=Object.values(vals).find(u=>u && u.active!==false);
+     if(remote){ state.users=state.users||{}; state.users[remote.id]=remote; }
+   }catch(e){ console.warn('Prelogin profile lookup:',e); }
+ }
+ if(!isAdminLogin)return realizarLoginOriginal();
  const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
  if(btn){btn.disabled=true;btn.textContent='Entrando…'}
  try{
