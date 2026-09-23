@@ -1462,7 +1462,7 @@ async function guardarDeposito(){
    try{await addNotification(target.id,'El Administrador acreditó '+money(amount)+' directamente a su balance. Comisión: RD$0.00.','deposits',id)}catch(e){console.warn('Notificación al Remitente:',e)}
    localSave();renderAll();closeModal('depositoModal');
    if(record.receipt)setTimeout(()=>showReceipt('deposits',id),180);
-   toast('Depósito acreditado al balance del remitente. Comisión: RD$0.00.','success');
+   toast('Depósito procesado: crédito cobrado '+money(Number(record.creditRepaid||0))+' y balance aumentado '+money(Number(record.balanceAdded||0))+'. Comisión: RD$0.00.','success');
  }catch(e){
    console.warn('guardarDeposito:',e);
    toast(e?.code==='PERMISSION_DENIED'?'Firebase rechazó el depósito por permisos.':'No se pudo guardar el depósito en Firebase.','error');
