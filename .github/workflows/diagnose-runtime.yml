@@ -17,7 +17,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run browser diagnostic
         run: |
-          cat > /tmp/check.js <<'JS'
+          cat > check-runtime.js <<'JS'
           const { chromium } = require('playwright');
           (async()=>{
             const browser=await chromium.launch({headless:true});
@@ -39,4 +39,4 @@ jobs:
             if(errors.length) process.exit(2);
           })();
           JS
-          node /tmp/check.js
+          node check-runtime.js
