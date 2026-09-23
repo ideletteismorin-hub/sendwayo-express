@@ -1902,20 +1902,36 @@ function guardarRetiroCuenta(){
  addNotification('Administrador','Solicitud de retiro de cuenta de '+currentUser.name+' por '+money(amount),'accountWithdrawals',id);addAudit('Solicitar retiro de cuenta',id);persist();closeModal('retiroCuentaModal');renderAll();toast('Solicitud de retiro enviada al Administrador.')
 }
 function renderContact(){let c=state.settings?.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
+async function applyAccountWithdrawalSettlement(userId,withdrawalId,amount){
+ const n=Number(amount||0);if(n<=0||!firebaseReady||!firebase.auth().currentUser)return false;
+ const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
+ try{
+  const tx=await ref.transaction(u=>{
+   if(!u)return undefined;const applied={...(u.accountWithdrawalSettlements||{})};
+   if(applied[withdrawalId]!==undefined)return u;
+   const current=Number(u.balance||0),next=current-n;
+   if(next<0||!adminBalanceAllowed(u,next))return undefined;
+   return {...u,balance:next,accountWithdrawalSettlements:{...applied,[withdrawalId]:{id:withdrawalId,amount:n,settledAt:now()}}};
+  });
+  if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true;
+ }catch(e){console.warn('Liquidación de retiro:',e);return false}
+}
 async function reviewAccountWithdrawal(id,status){
  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
  if(!isAdmin())return;let r=state.accountWithdrawals?.[id];if(!r||r.status!=='Pendiente')return;
- let reviewReason='';
- if(status!=='Aprobado'){
-   reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';
-   if(!reviewReason)return toast('Debe escribir un motivo.','warn');
+ let reviewReason='';if(status!=='Aprobado'){reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';if(!reviewReason)return toast('Debe escribir un motivo.','warn')}
+ const u=state.users?.[r.userId];if(!u)return toast('No se encontró el titular del retiro.','error');
+ if(status==='Aprobado'){
+   if(!await applyAccountWithdrawalSettlement(u.id,r.id,r.amount))return toast('No se pudo descontar el retiro del balance. La solicitud seguirá pendiente para reintento.','error');
  }
- if(firebaseReady){const opRef=firebase.database().ref(DB_PATH+'/accountWithdrawals/'+id);const tx=await opRef.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,reviewReason});if(!tx.committed)return toast('El retiro ya fue procesado o cambió en otro dispositivo.','warn');r=tx.snapshot.val();state.accountWithdrawals[id]=r}
- else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.reviewReason=reviewReason;state.accountWithdrawals[id]=r}
- const u=state.users?.[r.userId];if(!u)return;if(status==='Aprobado'&&u.id==='admin'&&!adminBalanceAllowed(u,Number(u.balance||0)-Number(r.amount||0)))return toast('No se puede aprobar este retiro: el balance de Administración quedaría por debajo de su comisión contable.','warn');
- if(status==='Aprobado'){if(!await updateUserFinancials(u.id,-Number(r.amount||0),0))return toast('No se pudo descontar el retiro del balance.','error');r=state.accountWithdrawals[id];generateReceipt('accountWithdrawals',id);state.accountWithdrawals[id]=r}
- await addNotification(u.id,'Su retiro de cuenta fue '+status.toUpperCase()+'. '+reviewReason,'accountWithdrawals',id);await persist();renderAll();if(status==='Aprobado'&&state.accountWithdrawals[id]?.receipt)setTimeout(()=>showReceipt('accountWithdrawals',id),180);toast('Retiro '+status+'.')
+ const opRef=firebase.database().ref(DB_PATH+'/accountWithdrawals/'+id);
+ const tx=await opRef.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,reviewReason,balanceSettled:status==='Aprobado',balanceSettledAt:status==='Aprobado'?now():null});
+ if(!tx.committed)return toast('Firebase no confirmó el estado. El descuento, si ocurrió, no se duplicará al reintentar.','warn');
+ r=tx.snapshot.val();state.accountWithdrawals[id]=r;
+ if(status==='Aprobado'){generateReceipt('accountWithdrawals',id);r=state.accountWithdrawals[id];if(r?.receipt)await firebase.database().ref(DB_PATH+'/accountWithdrawals/'+id).update({receipt:r.receipt})}
+ await addNotification(u.id,'Su retiro de cuenta fue '+status.toUpperCase()+'. '+reviewReason,'accountWithdrawals',id);await persist();renderAll();if(status==='Aprobado'&&r.receipt)setTimeout(()=>showReceipt('accountWithdrawals',id),180);toast('Retiro '+status+'.')
 }
+
 
 function renderAccounting(){
  if(!isAdmin())return;
