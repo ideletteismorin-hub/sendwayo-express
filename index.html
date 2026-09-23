@@ -707,31 +707,52 @@ async function crearAccesosIniciales(){
 }
 function attachRealtimeListeners(){
  if(!firebaseReady||!firebase.auth().currentUser)return;
- const db=firebase.database().ref(DB_PATH);
- db.off();
- db.on('value',snap=>{
-   if(!snap.exists())return;
-   const remote=snap.val()||{};
-   // RTDB es la fuente de verdad: sustituimos el estado visible completo,
-   // evitando que registros eliminados o antiguos sobrevivan en memoria.
-   state={...remote};
-   state.ledger=remote.ledger||{};
-   mergeFinancialLedgerIntoState();
-   state.users=remote.users||{};
-   state.beneficiaries=remote.beneficiaries||{};
-   state.accounts=(remote.accounts&&Object.keys(remote.accounts).length)?remote.accounts:Object.fromEntries(BANKS.map(x=>[x.id,{...x}]));
-   state.settings=remote.settings||{};
-   state.ledger=remote.ledger||{};
-   mergeFinancialLedgerIntoState();
-   lastSyncedState=cloneState(state);
-   if(currentUser){
-     const fresh=state.users?.[currentUser.id];
-     if(fresh&&fresh.active!==false)currentUser=fresh;
-   }
-   renderAll();
+ // PRODUCCIÓN: no escuchar toda la base con db.on('value'). Ese listener
+ // entrega un snapshot completo ante cualquier cambio y renderAll() puede
+ // congelar la interfaz en móviles/tablets cuando crecen los datos.
+ const root=firebase.database().ref(DB_PATH);
+ root.off();
+ if(window.__sendwayoRealtimeRefs)window.__sendwayoRealtimeRefs.forEach(r=>{try{r.off()}catch(_){}}); 
+ window.__sendwayoRealtimeRefs=[];
+ let renderTimer=null;
+ const scheduleRender=()=>{
+   clearTimeout(renderTimer);
+   renderTimer=setTimeout(()=>{
+     renderTimer=null;
+     try{lastSyncedState=cloneState(state);if(currentUser){const fresh=state.users?.[currentUser.id];if(fresh&&fresh.active!==false)currentUser=fresh;}renderAll()}catch(e){console.warn('SENDWAYO render realtime:',e)}
+   },120);
+ };
+ const bindCollection=(key)=>{
+   const ref=root.child(key);
+   ref.off();
+   const onAdded=s=>{if(s.key==null)return;state[key]=state[key]||{};state[key][s.key]=s.val();scheduleRender()};
+   const onChanged=s=>{if(s.key==null)return;state[key]=state[key]||{};state[key][s.key]=s.val();scheduleRender()};
+   const onRemoved=s=>{if(state[key])delete state[key][s.key];scheduleRender()};
+   ref.on('child_added',onAdded);ref.on('child_changed',onChanged);ref.on('child_removed',onRemoved);
+   window.__sendwayoRealtimeRefs.push(ref);
+ };
+ ['users','beneficiaries','accounts','envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','audit','dailyReports','credits','ledger'].forEach(bindCollection);
+ ['settings'].forEach(key=>{
+   const ref=root.child(key);ref.off();ref.on('value',s=>{if(s.exists())state[key]=s.val()||{};scheduleRender()});window.__sendwayoRealtimeRefs.push(ref);
  });
- const connRef=firebase.database().ref('.info/connected');connRef.off();connRef.on('value',snap=>{const connected=snap.val()===true;const b=document.querySelector('.refresh-btn');if(b){b.title=connected?'Firebase conectado · Actualizar ahora':'Firebase sin conexión · Reintentando';b.style.opacity=connected?'1':'.55'}});startAutoFirebaseRefresh();
- const nref=firebase.database().ref(DB_PATH+'/notifications');nref.off();nref.on('child_added',snap=>{const n=snap.val();if(!n)return;state.notifications=state.notifications||{};const existed=!!state.notifications[n.id];state.notifications[n.id]=n;if(notificationHydrated&&!existed&&(n.targetUserId===currentUser?.id||(isAdmin()&&n.target==='Administrador'))){playBell();if(n.collection&&n.recordId&&state[n.collection]?.[n.recordId]?.status==='Aprobado'&&state[n.collection]?.[n.recordId]?.receipt){setTimeout(()=>showReceipt(n.collection,n.recordId),180)}}renderNotifications()});nref.on('child_changed',snap=>{const n=snap.val();if(n){state.notifications=state.notifications||{};state.notifications[n.id]=n;renderNotifications()}});nref.on('child_removed',snap=>{const id=snap.key;if(state.notifications)delete state.notifications[id];renderNotifications()});nref.once('value').then(()=>notificationHydrated=true).catch(()=>notificationHydrated=true);
+ const connRef=firebase.database().ref('.info/connected');connRef.off();connRef.on('value',snap=>{const connected=snap.val()===true;const b=document.querySelector('.refresh-btn');if(b){b.title=connected?'Firebase conectado · Actualizar ahora':'Firebase sin conexión · Reintentando';b.style.opacity=connected?'1':'.55'}});
+ // El refresco periódico queda desactivado: evita lecturas completas cada 15 s.
+ startAutoFirebaseRefresh();
+ const nref=root.child('notifications');nref.off();
+ nref.on('child_added',snap=>{
+   const n=snap.val();if(!n)return;
+   state.notifications=state.notifications||{};
+   const existed=!!state.notifications[n.id];state.notifications[n.id]=n;
+   if(notificationHydrated&&!existed&&(n.targetUserId===currentUser?.id||(isAdmin()&&n.target==='Administrador'))){
+     playBell();
+     if(n.collection&&n.recordId&&state[n.collection]?.[n.recordId]?.status==='Aprobado'&&state[n.collection]?.[n.recordId]?.receipt)setTimeout(()=>showReceipt(n.collection,n.recordId),180);
+   }
+   renderNotifications();
+ });
+ nref.on('child_changed',snap=>{const n=snap.val();if(n){state.notifications=state.notifications||{};state.notifications[n.id]=n;renderNotifications()}});
+ nref.on('child_removed',snap=>{const id=snap.key;if(state.notifications)delete state.notifications[id];renderNotifications()});
+ nref.once('value').then(()=>notificationHydrated=true).catch(()=>notificationHydrated=true);
+ window.__sendwayoRealtimeRefs.push(nref);
 }
 
 function applyBrandLogo(){document.querySelectorAll('img.brand-logo, .sidebar-brand img, #login-screen img, #header-avatar, #profile-preview').forEach(img=>{if(!img.dataset.userAvatar)img.src=LOGO_DATA});}
@@ -2208,7 +2229,7 @@ function updateSelectors(){
 const _renderAll=renderAll;renderAll=function(){updateSelectors();_renderAll()}
 setInterval(()=>{document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');updateSessionUI();if(currentUser&&Date.now()-lastActivity>=SESSION_TTL)cerrarSesion()},1000);
 let autoFirebaseRefreshTimer=null;
-function startAutoFirebaseRefresh(){if(autoFirebaseRefreshTimer)clearInterval(autoFirebaseRefreshTimer);autoFirebaseRefreshTimer=setInterval(()=>{if(currentUser&&firebaseReady&&firebase.auth().currentUser&&!document.hidden)manualRefresh(false)},15000)}
+function startAutoFirebaseRefresh(){if(autoFirebaseRefreshTimer)clearInterval(autoFirebaseRefreshTimer);autoFirebaseRefreshTimer=null;}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady)manualRefresh(false)});
 
 window.addEventListener('load',()=>{let access=new URLSearchParams(location.search).get('access');if(access&&!currentUser){showLogin();document.getElementById('login-user').value=access}updateSessionUI()});
