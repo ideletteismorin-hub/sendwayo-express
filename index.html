@@ -1405,14 +1405,14 @@ function resolveEnvioPerson(kind){
 async function guardarEnvio(){
  if(!canTransact())return;
  resolveEnvioPerson('remitente');resolveEnvioPerson('beneficiario');
- const amount=Number(document.getElementById('env-monto').value),remId=document.getElementById('env-remitente-select').value,benId=document.getElementById('env-beneficiario-select').value;
+ const amount=Number(document.getElementById('env-monto').value),remId=document.getElementById('env-remitente-select').value,benId=document.getElementById('env-beneficiario-select').value,type=document.getElementById('env-tipo-trans').value;
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
  if(!remId)return toast('Escriba el nombre o número del remitente y seleccione la sugerencia.','warn');
  if(!benId)return toast('Escriba el nombre o número del beneficiario y seleccione la sugerencia.','warn');
  if(!isAdmin()&&remId!==currentUser.id)return toast('Un usuario solo puede registrar sus propios envíos.','warn');
+ const c=calcEnvio(amount,type);if(!c.valid||isOfficialHtiCashRoute(type)&&officialHtiCashFee(amount,type)===null)return toast(isOfficialHtiCashRoute(type)?'Para MonCash/NatCash el monto debe estar entre RD$50 y RD$36,000 según la tabla oficial.':'Ingrese un monto válido.','warn');
  if(!await guardBalance(amount))return;
- const type=document.getElementById('env-tipo-trans').value,c=calcEnvio(amount,type);if(!c.valid||isOfficialHtiCashRoute(type)&&officialHtiCashFee(amount,type)===null)return toast(isOfficialHtiCashRoute(type)?'Para MonCash/NatCash el monto debe estar entre RD$50 y RD$36,000 según la tabla oficial.':'Ingrese un monto válido.','warn');const ben=state.beneficiaries[benId],rem=userById(remId);
- const remName=personName(rem),remPhone=personPhone(rem),benName=personName(ben),benPhone=personPhone(ben);
+ const ben=state.beneficiaries[benId],rem=userById(remId),remName=personName(rem),remPhone=personPhone(rem),benName=personName(ben),benPhone=personPhone(ben);
  const id=await createTransaction('envios',{type,route:type,remitenteId:remId,remitente:remName,remitenteNombre:remName,remitentePhone:remPhone,remitenteDoc:rem.doc||rem.document||'',beneficiarioId:benId,beneficiario:benName,beneficiarioNombre:benName,beneficiarioPhone:benPhone,net:c.net,commission:c.commission,destination:c.total},amount);
  if(!id)return;
  closeModal('envioModal');toast('Envío guardado como PENDIENTE y enviado a la página del Administrador.','success');
@@ -1510,8 +1510,8 @@ async function guardarRecarga(){
 }
 async function guardarPaquetico(){
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
- let amount=Number(document.getElementById('pkt-monto').value||0);if(amount&&!(await guardBalance(amount)))return;
- const id=await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);if(!id)return;closeModal('paquetikoModal');toast('Paquetico guardado y notificado.')
+ const amount=Number(document.getElementById('pkt-monto').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
+ const id=await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);if(!id)return;closeModal('paquetikoModal');toast('Paquetico guardado y notificado.');
 }
 async function guardarPago(){
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
@@ -1520,8 +1520,8 @@ async function guardarPago(){
 }
 async function guardarPaquete(){
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
- let amount=Number(document.getElementById('paq-costo').value||0);if(amount&&!(await guardBalance(amount)))return;
- const id=await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);if(!id)return;closeModal('paqueteModal');toast('Paquete guardado y notificado.')
+ const amount=Number(document.getElementById('paq-costo').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
+ const id=await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);if(!id)return;closeModal('paqueteModal');toast('Paquete guardado y notificado.');
 }
 function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0)}
 async function guardarComision(){
