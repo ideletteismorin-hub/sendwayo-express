@@ -625,33 +625,32 @@ function canPersistOwnRecord(collection,record,prev){
  if(collection==='requests')return !prev&&owner;
  return false;
 }
-function buildFirebaseUpdates(){const updates={};
+function buildFirebaseUpdates(){const updates={},USER_PROFILE_FIELDS=['name','username','usernameCustomized','phone','doc','avatar','active','accountStatus','authEmail','legacyAuthEmail'];
  const keys=new Set([...Object.keys(state||{}),...Object.keys(lastSyncedState||{})]);
  keys.forEach(k=>{
-   const cur=state[k],prev=lastSyncedState?.[k];
-   const both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);
-   if(both){
-     const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);
-     ids.forEach(id=>{
-       const currentRecord=id in cur?cur[id]:null;
-       const previousRecord=id in prev?prev[id]:null;
-       if(JSON.stringify(currentRecord??null)!==JSON.stringify(previousRecord??null)){
-         if(canPersistOwnRecord(k,currentRecord,previousRecord)){
-           if(currentRecord===null){
-             if(isAdmin())updates[k+'/'+id]=null;
-           }else{
-             updates[k+'/'+id]=currentRecord;
-             if(isAdmin()&&FINANCIAL_COLLECTIONS.includes(k))updates['ledger/'+k+'/'+id]=currentRecord;
-           }
-         }
-       }
-     });
-   }else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null)){
-     if(isAdmin())updates[k]=cur??null;
-   }
+  const cur=state[k],prev=lastSyncedState?.[k],both=cur&&typeof cur==='object'&&!Array.isArray(cur)&&prev&&typeof prev==='object'&&!Array.isArray(prev);
+  if(k==='users'&&both){
+   const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);
+   ids.forEach(id=>{
+    const currentRecord=id in cur?cur[id]:null,previousRecord=id in prev?prev[id]:null;
+    if(currentRecord===null){if(isAdmin()&&previousRecord)updates[k+'/'+id]=null;return}
+    if(!previousRecord||!canPersistOwnRecord(k,currentRecord,previousRecord))return;
+    USER_PROFILE_FIELDS.forEach(field=>{const cv=currentRecord[field],pv=previousRecord[field];if(JSON.stringify(cv??null)!==JSON.stringify(pv??null))updates[k+'/'+id+'/'+field]=cv===undefined?null:cv});
+   });
+   return;
+  }
+  if(both){
+   const ids=new Set([...Object.keys(cur),...Object.keys(prev)]);
+   ids.forEach(id=>{
+    const currentRecord=id in cur?cur[id]:null,previousRecord=id in prev?prev[id]:null;
+    if(JSON.stringify(currentRecord??null)!==JSON.stringify(previousRecord??null)&&canPersistOwnRecord(k,currentRecord,previousRecord)){
+     if(currentRecord===null){if(isAdmin())updates[k+'/'+id]=null}else{updates[k+'/'+id]=currentRecord;if(isAdmin()&&FINANCIAL_COLLECTIONS.includes(k))updates['ledger/'+k+'/'+id]=currentRecord}
+    }
+   });
+  }else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null)){if(isAdmin()&&k!=='users')updates[k]=cur??null}
  });
  if(isAdmin())FINANCIAL_COLLECTIONS.forEach(k=>Object.entries(state[k]||{}).forEach(([id,record])=>{if(record)updates['ledger/'+k+'/'+id]=record}));
- return updates
+ return updates;
 }
 async function persist(){localSave();if(!firebaseReady)return Promise.resolve(true);const updates=buildFirebaseUpdates();if(!Object.keys(updates).length)return Promise.resolve(true);persistQueue=persistQueue.then(async()=>{try{
    for(const [path,value] of Object.entries(updates)){await firebase.database().ref(DB_PATH+'/'+path).set(value);}
