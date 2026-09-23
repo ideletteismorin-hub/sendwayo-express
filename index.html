@@ -197,6 +197,22 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     </div>
   </section>
 
+  <section id="view-credito" class="view-section">
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Crédito</h2><p class="muted" style="margin-top:5px">Control del crédito autorizado a cada Remitente. El crédito se usa solamente cuando el balance disponible no alcanza y se paga automáticamente con los próximos depósitos aprobados.</p></div>
+        <button class="btn btn-primary admin-only" onclick="openCreditGrantModal()">Otorgar / aumentar crédito</button>
+      </div>
+      <div id="credit-summary-kpis" class="kpis" style="margin-bottom:14px"></div>
+      <div class="info-box" style="margin-bottom:14px"><b>Regla:</b> el crédito no entra al balance como dinero disponible. Si un Remitente tiene RD$20 y necesita RD$100, usa RD$20 de su balance y RD$80 de crédito. Cuando llegue un depósito aprobado de RD$100, se pagan primero los RD$80 de crédito y los RD$20 restantes entran al balance.</div>
+      <div class="table-toolbar">
+        <div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','creditTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','creditTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','creditTable')">CSV</button></div>
+        <input class="search-box" placeholder="Buscar remitente..." oninput="filterTable(this,'creditTable')">
+      </div>
+      <div class="table-wrap"><table id="creditTable"><thead><tr><th>N°</th><th>ID</th><th>Remitente</th><th>Cupo autorizado</th><th>Crédito utilizado</th><th>Crédito disponible</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
   <section id="view-envios" class="view-section">
     <div class="card">
       <div class="card-header"><h3>Gestión de Envíos y Transacciones Globales</h3><button class="btn btn-primary" onclick="openModal('envioModal')"><i class="fa-solid fa-plus"></i> Agregar Nuevo</button></div>
@@ -960,7 +976,7 @@ function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
  let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
  document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',informes:'Informes del Día',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+ let title={dashboard:'Tablero Principal',informes:'Informes del Día',credito:'Crédito',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
@@ -1039,7 +1055,7 @@ async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
  const id=uid(collection),amountNumber=Number(amount||0),creditUsed=isAdmin()?0:Number(currentUser.__lastCreditUsed||0),suppliedCommission=Number.isFinite(Number(fields?.commission))?Number(fields.commission):null,rate=commissionRateFor(collection,{...fields,amount:amountNumber,commission:suppliedCommission}),commissionAmount=suppliedCommission!==null?suppliedCommission:amountNumber*rate;
- const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:amountNumber,commissionRate:amountNumber>0?commissionAmount/amountNumber:rate,commission:commissionAmount,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50',creditUsed,creditBalanceUsed=Math.max(0,amountNumber-creditUsed),adminVisible:true,adminInbox:true};
+ const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:amountNumber,commissionRate:amountNumber>0?commissionAmount/amountNumber:rate,commission:commissionAmount,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50',creditUsed,creditBalanceUsed:Math.max(0,amountNumber-creditUsed),adminVisible:true,adminInbox:true};
  if(!isAdmin())record.balanceDebited=true;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
  try{
