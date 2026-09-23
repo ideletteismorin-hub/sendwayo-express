@@ -1425,23 +1425,14 @@ document.querySelectorAll('[data-role]').forEach(x=>x.addEventListener('click',e
 function generateLink(username){return location.href.split('?')[0]+'?access='+encodeURIComponent(username)}
 async function guardarPersona(){if(!isAdmin())return toast('Solo el Administrador puede crear remitentes.','warn');const role=document.getElementById('personaModal').dataset.role||'Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=fullPhone('pers-country',document.getElementById('pers-wsp').value.trim()),doc=document.getElementById('pers-doc').value.trim();const user=normalizeUsername(name);if(!name||!phone||!doc||!user)return toast('Complete nombre, WhatsApp, documento y usuario.','warn');if(Object.values(state.users).some(x=>x.username===user))return toast('Ese usuario ya existe.','warn');const id=uid('rm'),staffId=makePermanentId();const u={id,staffId,role:'Remitente',name,phone,doc,username:user,authEmail:authEmailFor({id,name,username:user,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};const waWindow=window.open('about:blank','_blank');state.users[id]=u;addAudit('Crear '+role,id);const cr=await createFirebaseAccountForUser(u);if(cr.status==='created'||cr.status==='exists'){await persist();closeModal('personaModal');renderAll();toast(role+' creado. ID: '+staffId+'. Contraseña inicial: 12345678.');sendWhatsAppCredentials(u,INITIAL_PASSWORD,waWindow);}else{await persist();if(waWindow&&!waWindow.closed)waWindow.close();closeModal('personaModal');renderAll();toast('El acceso de Firebase no quedó creado ('+(cr.code||'error')+'). No se abrió WhatsApp.','warn')}}
 async function creditDepositToRemitente(depositId,remitenteId,amount){
- const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');
- if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
- const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);
- const tx=await ref.transaction(u=>{
-  if(!u||u.role!=='Remitente')return undefined;
-  // REGLA FINANCIERA: un depósito aprobado acredita el 100% del monto
-  // directamente al balance/capital del Remitente. Nunca se descuenta
-  // crédito pendiente ni se genera comisión.
-  const credits={...(u.depositCredits||{})};
-  if(credits[depositId]!==undefined){
-    return Math.abs(Number(credits[depositId])-n)<0.000001?u:undefined;
-  }
-  return {...u,balance:Number(u.balance||0)+n,depositCredits:{...credits,[depositId]:n}};
+ const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
+ const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);let result={creditRepaid:0,balanceAdded:0};
+ const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;const deposits={...(u.depositCredits||{})};
+  if(deposits[depositId]!==undefined){if(Math.abs(Number(deposits[depositId])-n)<0.000001){result={creditRepaid:Number(u.creditRepayments?.[depositId]||0),balanceAdded:Number(u.depositBalanceAdded?.[depositId]||0)};return u}return undefined}
+  const outstanding=Math.max(0,Number(u.creditOutstanding||0)),creditRepaid=Math.min(n,outstanding),balanceAdded=n-creditRepaid;result={creditRepaid,balanceAdded};
+  return {...u,balance:Number(u.balance||0)+balanceAdded,creditOutstanding:Math.max(0,outstanding-creditRepaid),creditRepaidTotal:Number(u.creditRepaidTotal||0)+creditRepaid,depositCredits:{...deposits,[depositId]:n},creditRepayments:{...(u.creditRepayments||{}),[depositId]:creditRepaid},depositBalanceAdded:{...(u.depositBalanceAdded||{}),[depositId]:balanceAdded}};
  });
- if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');
- const updated=tx.snapshot.val();state.users[remitenteId]=updated;if(currentUser?.id===remitenteId)currentUser=updated;if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(updated);localSave();
- return {user:updated,creditRepaid:0,balanceAdded:n};
+ if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');const updated=tx.snapshot.val();state.users[remitenteId]=updated;if(currentUser?.id===remitenteId)currentUser=updated;if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(updated);localSave();return {user:updated,creditRepaid:result.creditRepaid,balanceAdded:result.balanceAdded};
 }
 
 async function guardarDeposito(){
