@@ -1632,19 +1632,10 @@ async function creditAdminCommission(amount){ if(!isAdmin())return false;
 function adminCommissionFloor(u){return commissionTotalFor('admin')}
 function adminBalanceAllowed(u,nextBalance){return u?.id!=='admin'||Number(nextBalance)+0.000001>=adminCommissionFloor(u)}
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0),dBal=Number(deltaBalance||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>{if(!u)return u;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return undefined;return {...u,balance:nextBalance,commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}});if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return null;u.balance=nextBalance;u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u} if(!isAdmin())return null;
-async function applyTransactionCommissionShare(userId,transactionId,amount){ if(!isAdmin())return false;
- const n=Number(amount||0);if(n<=0)return true;if(!firebaseReady||!firebase.auth().currentUser)return false;
+async function applyTransactionCommissionShare(userId,transactionId,amount){
+ const n=Number(amount||0);if(n<=0)return true;if(!isAdmin()||!firebaseReady||!firebase.auth().currentUser)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
- try{
-  const tx=await ref.transaction(u=>{
-   if(!u)return undefined;const applied={...(u.transactionCommissionCredits||{})};
-   if(applied[transactionId]!==undefined)return u;
-   const next={...u,commission:Number(u.commission||0)+n,commissionAccrued:Number(u.commissionAccrued||0)+n,transactionCommissionCredits:{...applied,[transactionId]:{id:transactionId,amount:n,creditedAt:now()}}};
-   if(userId==='admin')next.balance=Number(u.balance||0)+n;
-   return next;
-  });
-  if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true;
- }catch(e){console.warn('Aplicar comisión idempotente:',e);return false}
+ try{const tx=await ref.transaction(u=>{if(!u)return undefined;const applied={...(u.transactionCommissionCredits||{})};if(applied[transactionId]!==undefined)return u;const next={...u,commissionAccrued:Number(u.commissionAccrued||0)+n,transactionCommissionCredits:{...applied,[transactionId]:{id:transactionId,amount:n,creditedAt:now()}}};if(userId==='admin')next.balance=Number(u.balance||0)+n;else next.commission=Number(u.commission||0)+n;return next});if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true}catch(e){console.warn('Aplicar comisión idempotente:',e);return false}
 }
 async function refundTransactionReservation(userId,transactionId,amount,creditUsed){ if(!isAdmin())return false;
  const n=Number(amount||0),used=Math.max(0,Number(creditUsed||0)),balanceUsed=Math.max(0,n-used);if(balanceUsed<=0&&used<=0)return true;if(!firebaseReady||!firebase.auth().currentUser)return false;
