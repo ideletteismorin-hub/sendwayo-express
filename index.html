@@ -556,9 +556,10 @@ async function manualRefresh(showMessage=true){
    const root=firebase.database().ref(DB_PATH);
    let remote={};
    if(isAdmin()){
-     const snap=await Promise.race([root.once('value'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))]);
-     if(!snap.exists())throw new Error('FIREBASE_EMPTY');
-     remote=snap.val()||{};
+     const keys=['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','notifications','settings'];
+     const snaps=await Promise.race([Promise.all(keys.map(k=>root.child(k).once('value').then(s=>[k,s.val()||{}]))),new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))]);
+     remote=Object.fromEntries(snaps);
+     if(!remote.users||Object.keys(remote.users).length===0)throw new Error('FIREBASE_EMPTY');
    }else{
      const uidv=currentUser.id;
      const refs={
@@ -590,7 +591,7 @@ async function manualRefresh(showMessage=true){
    state={
      users:remote.users||{},
      beneficiaries:remote.beneficiaries||{},
-     accounts:(remote.accounts&&Object.keys(remote.accounts).length)?remote.accounts:Object.fromEntries(BANKS.map(x=>[x.id,{...x}])),
+     accounts:remote.accounts||{},
      envios:remote.envios||{},
      recargas:remote.recargas||{},
      paqueticos:remote.paqueticos||{},
