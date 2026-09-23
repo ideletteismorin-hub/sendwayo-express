@@ -912,8 +912,8 @@ async function boot(){
     }catch(e){console.warn('SENDWAYO local state:',e)}
   },1200);
 
-  // Las librerías de exportación no participan en el arranque.
-  setTimeout(()=>loadExportLibraries().catch(()=>{}),5000);
+  // Las librerías pesadas de Excel/PDF se cargan únicamente cuando el usuario exporta.
+  // Nunca se descargan automáticamente a los 5 segundos: eso podía bloquear tablets/celulares.
 
   // Firebase NO se inicia en la bienvenida.
   // Se inicializa únicamente al entrar al formulario de acceso. Esto elimina
@@ -927,12 +927,8 @@ function showLogin(){
  document.getElementById('welcome-screen').classList.add('hidden');
  document.getElementById('login-screen').classList.remove('hidden');
  setTimeout(()=>document.getElementById('login-user').focus(),100);
- // La conexión externa comienza aquí, no antes. No bloquea la bienvenida.
- setTimeout(()=>{
-   if(firebaseReady||window.__sendwayoFirebaseStarting)return;
-   window.__sendwayoFirebaseStarting=true;
-   initFirebase().catch(()=>{}).finally(()=>{window.__sendwayoFirebaseStarting=false});
- },0);
+ // Firebase se inicializa solamente al pulsar «Ingresar».
+ // Evita dos inicializaciones simultáneas y reduce trabajo innecesario en móviles.
 }
 function openRequest(type){
  const modal=document.getElementById('requestModal');
