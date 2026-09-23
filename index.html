@@ -911,6 +911,7 @@ async function boot(){
   // Firebase NO se inicia en la bienvenida.
   // Se inicializa únicamente al entrar al formulario de acceso. Esto elimina
   // cualquier posibilidad de que una red lenta, Auth o RTDB bloquee la bienvenida.
+}
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
 
