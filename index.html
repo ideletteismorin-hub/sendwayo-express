@@ -113,7 +113,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <p class="muted" style="text-align:center;margin:7px 0 20px">Ingrese sus credenciales de acceso</p>
     <div class="form-group"><label>Usuario o correo electrónico</label><input id="login-user" type="text" class="form-control" autocomplete="username" placeholder="nombre.apellido"></div>
     <div class="form-group"><label>Contraseña</label><input id="login-pass" type="password" class="form-control" autocomplete="current-password"></div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="window.sendwayoLogin()">Ingresar al Sistema</button><div id="login-status" class="login-status" role="status" aria-live="polite"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="window.sendwayoLogin()">Ingresar al Sistema</button><button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="window.sendwayoResetAdminPassword()">Olvidé la contraseña del administrador</button><div id="login-status" class="login-status" role="status" aria-live="polite"></div>
     <button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="showWelcome()">Volver a bienvenida</button>
   </div>
 </div>
@@ -379,6 +379,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 <script>
 window.sendwayoOpenLogin=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(w)w.classList.add('hidden');if(l)l.classList.remove('hidden');var u=document.getElementById('login-user');if(u)setTimeout(function(){u.focus()},50)};
 window.sendwayoOpenWelcome=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(l)l.classList.add('hidden');if(w)w.classList.remove('hidden')};
+window.sendwayoResetAdminPassword=async function(){var status=document.getElementById('login-status');var set=function(m,c){if(status){status.textContent=m;status.className='login-status '+(c||'')}};try{set('Enviando enlace de recuperación…');if(typeof firebase==='undefined'||!firebase.auth)throw new Error('FIREBASE_UNAVAILABLE');var ready=typeof initFirebase==='function'?await initFirebase():false;if(!ready)throw new Error('FIREBASE_UNAVAILABLE');await firebase.auth().sendPasswordResetEmail('sendwayoexpress@gmail.com');set('Enlace enviado al correo sendwayoexpress@gmail.com. Revise también Spam o Correo no deseado.','ok');toast('Se envió el enlace para restablecer la contraseña.','success')}catch(e){console.warn('SENDWAYO password reset:',e);var msg=e.code==='auth/user-not-found'?'La cuenta administrativa no existe en Firebase Authentication.':e.code==='auth/operation-not-allowed'?'El acceso por correo y contraseña no está habilitado en Firebase Authentication.':e.code==='auth/network-request-failed'?'No fue posible comunicarse con Firebase. Revise Internet.':'No se pudo enviar el enlace de recuperación.';set(msg,'error');toast(msg,'error')}};
 window.sendwayoLogin=function(){
   var status=document.getElementById('login-status'),u=document.getElementById('login-user'),p=document.getElementById('login-pass');
   var set=function(m,c){if(status){status.textContent=m;status.className='login-status '+(c||'')}};
