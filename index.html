@@ -1632,51 +1632,58 @@ async function creditAdminCommission(amount){
 function adminCommissionFloor(u){return commissionTotalFor('admin')}
 function adminBalanceAllowed(u,nextBalance){return u?.id!=='admin'||Number(nextBalance)+0.000001>=adminCommissionFloor(u)}
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0),dBal=Number(deltaBalance||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>{if(!u)return u;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return undefined;return {...u,balance:nextBalance,commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}});if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return null;u.balance=nextBalance;u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
+async function applyTransactionCommissionShare(userId,transactionId,amount){
+ const n=Number(amount||0);if(n<=0)return true;if(!firebaseReady||!firebase.auth().currentUser)return false;
+ const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
+ try{
+  const tx=await ref.transaction(u=>{
+   if(!u)return undefined;const applied={...(u.transactionCommissionCredits||{})};
+   if(applied[transactionId]!==undefined)return u;
+   const next={...u,commission:Number(u.commission||0)+n,commissionAccrued:Number(u.commissionAccrued||0)+n,transactionCommissionCredits:{...applied,[transactionId]:{id:transactionId,amount:n,creditedAt:now()}}};
+   if(userId==='admin')next.balance=Number(u.balance||0)+n;
+   return next;
+  });
+  if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true;
+ }catch(e){console.warn('Aplicar comisión idempotente:',e);return false}
+}
+async function refundTransactionReservation(userId,transactionId,amount,creditUsed){
+ const n=Number(amount||0),used=Math.max(0,Number(creditUsed||0)),balanceUsed=Math.max(0,n-used);if(balanceUsed<=0&&used<=0)return true;if(!firebaseReady||!firebase.auth().currentUser)return false;
+ const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
+ try{
+  const tx=await ref.transaction(u=>{
+   if(!u)return undefined;const refunds={...(u.transactionBalanceRefunds||{})};
+   if(refunds[transactionId]!==undefined)return u;
+   const outstanding=Math.max(0,Number(u.creditOutstanding||0)),next={...u,balance:Number(u.balance||0)+balanceUsed,creditOutstanding:Math.max(0,outstanding-used),transactionBalanceRefunds:{...refunds,[transactionId]:{id:transactionId,balanceRefunded:balanceUsed,creditRepaid:used,refundedAt:now()}}};
+   return next;
+  });
+  if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true;
+ }catch(e){console.warn('Devolución idempotente:',e);return false}
+}
 async function setTransactionStatus(collection,id,status){
  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
  if(!isAdmin())return;
- // Depósitos: flujo separado; aprobación = 100% al balance del Remitente, comisión RD$0.
  if(collection==='deposits')return approveDeposit(id,status);
  let r=state[collection]?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
- if(status!=='Aprobado'){
-   reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';
-   if(!reviewReason)return toast('Debe escribir un motivo.','warn');
- }
- if(firebaseReady){
-   const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
-   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason});
-   if(!tx.committed)return toast('La operación ya fue procesada o cambió en otro dispositivo.','warn');
-   r=tx.snapshot.val();state[collection][id]=r;
- }else{r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.manualReview=true;r.reviewReason=reviewReason;state[collection][id]=r}
- const u=state.users?.[r.userId];if(!u){await persist();renderAll();return}
- const commission=Number(r.commission??(Number(r.amount||0)*commissionRateFor(collection,r)));
+ if(status!=='Aprobado'){reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';if(!reviewReason)return toast('Debe escribir un motivo.','warn')}
+ const u=state.users?.[r.userId];if(!u)return toast('No se encontró el remitente.','error');
  if(status==='Aprobado'){
-   // REGLA CONTABLE: 50% de la comisión al Remitente y 50% al Administrador.
-   const userShare=commission*0.50,adminShare=commission*0.50;
-   if(userShare>0&&!await updateUserFinancials(u.id,0,userShare))return toast('No se pudo acreditar el 50% de la comisión al Remitente.','error');
-   if(adminShare>0&&!await creditAdminCommission(adminShare))return toast('No se pudo acreditar el 50% de la comisión al Administrador.','error');
-   r=state[collection][id];
-   r.commissionUser=userShare;
-   r.commissionAdmin=adminShare;
-   r.commissionTotal=commission;
-   r.commissionRate=commissionRateFor(collection,r);
-   r.commissionAccount='50% REMITENTE / 50% ADMINISTRADOR';
-   r.balanceDebited=!!r.balanceDebited;
-   r.balanceSettledAt=now();
-   r.net=Number(r.amount||0)-Number(r.commission||0);
-   generateReceipt(collection,id);
-   state[collection][id]=r;
- }else if((status==='Rechazado'||status==='No coincide')&&r.balanceDebited&&!r.balanceRefunded){
-   {
- const used=Number(r.creditUsed||0),balanceUsed=Math.max(0,Number(r.amount||0)-used);
- if(firebaseReady){const tx=await firebase.database().ref(DB_PATH+'/users/'+u.id).transaction(x=>x?{...x,balance:Number(x.balance||0)+balanceUsed,creditOutstanding:Math.max(0,Number(x.creditOutstanding||0)-used)}:undefined);if(!tx.committed)return toast('No se pudo devolver balance/crédito al remitente.','error')}
- else{u.balance=Number(u.balance||0)+balanceUsed;u.creditOutstanding=Math.max(0,Number(u.creditOutstanding||0)-used)}
-}
-   r=state[collection][id];r.balanceRefunded=true;r.balanceRefundedAt=now();state[collection][id]=r;
+   const commission=Number(r.commission??(Number(r.amount||0)*commissionRateFor(collection,r))),userShare=commission*0.50,adminShare=commission*0.50;
+   if(userShare>0&&!await applyTransactionCommissionShare(u.id,r.id,userShare))return toast('No se pudo completar la comisión del Remitente. La operación seguirá pendiente para reintento.','error');
+   if(adminShare>0&&!await applyTransactionCommissionShare('admin',r.id,adminShare))return toast('No se pudo completar la comisión de Administración. La operación seguirá pendiente para reintento.','error');
+   const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
+   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status:'Aprobado',reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason:'',commissionUser:userShare,commissionAdmin:adminShare,commissionTotal:commission,commissionRate:commissionRateFor(collection,v||r),commissionAccount:'50% REMITENTE / 50% ADMINISTRADOR',balanceDebited:!!v.balanceDebited,balanceSettledAt:now(),net:Number(v.amount||0)-Number(v.commission||0)});
+   if(!tx.committed)return toast('La operación sigue pendiente porque Firebase no confirmó el cambio de estado. Puede reintentarse sin duplicar comisiones.','warn');
+   r=tx.snapshot.val();state[collection][id]=r;generateReceipt(collection,id);r=state[collection][id];if(r?.receipt)await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt});state[collection][id]=r;
+ }else{
+   if(r.balanceDebited&&!r.balanceRefunded){if(!await refundTransactionReservation(r.userId,r.id,r.amount,r.creditUsed))return toast('No se pudo devolver balance/crédito. La operación seguirá pendiente para reintento.','error')}
+   const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
+   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason,balanceRefunded:!!v.balanceDebited,balanceRefundedAt:v.balanceDebited?now():null});
+   if(!tx.committed)return toast('La operación sigue pendiente porque Firebase no confirmó el cambio de estado. La devolución no se duplicará.','warn');
+   r=tx.snapshot.val();state[collection][id]=r;
  }
- const msg=collection==='deposits'&&status==='Aprobado'?('Depósito de '+money(Number(r.amount||0))+' aprobado. Crédito cobrado: '+money(Number(r.creditRepaid||0))+'. Balance aumentado: '+money(Number(r.balanceAdded||0))+'. Comisión: RD$0.00.'):(status==='Aprobado'?('Transacción '+id+' APROBADA. El monto de la operación permanece descontado del balance del remitente; 50% de la comisión corresponde al Remitente y 50% al Administrador; recibo/factura disponible.'):'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason);
- await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&state[collection][id]?.receipt)setTimeout(()=>showReceipt(collection,id),180);toast(collection==='deposits'&&status==='Aprobado'?'Depósito aprobado: crédito cobrado '+money(Number(r?.creditRepaid||0))+' y balance aumentado '+money(Number(r?.balanceAdded||0))+'.':'Estado actualizado: '+status)
+ const msg=status==='Aprobado'?'Transacción '+id+' APROBADA. Comisión Remitente: '+money(Number(r.commissionUser||0))+'. Comisión Administración: '+money(Number(r.commissionAdmin||0))+'.':'Transacción '+id+' '+status.toUpperCase()+'. '+reviewReason;
+ await addNotification(u.id,msg,collection,id);await persist();renderAll();if(status==='Aprobado'&&r.receipt)setTimeout(()=>showReceipt(collection,id),180);toast('Estado actualizado: '+status,'success');
 }
 
 function enforceDepositCapital(r){
