@@ -1634,7 +1634,7 @@ async function creditAdminCommission(amount){
    return false;
  }
 }
-function adminCommissionFloor(u){return Math.max(0,Number(u?.commissionAccrued||0))}
+function adminCommissionFloor(u){return commissionTotalFor('admin')}
 function adminBalanceAllowed(u,nextBalance){return u?.id!=='admin'||Number(nextBalance)+0.000001>=adminCommissionFloor(u)}
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0),dBal=Number(deltaBalance||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>{if(!u)return u;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return undefined;return {...u,balance:nextBalance,commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}});if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return null;u.balance=nextBalance;u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
@@ -1983,19 +1983,15 @@ function commissionTodayFor(userId){
  return Number(total.toFixed(2));
 }
 function commissionTotalFor(userId){
- // commissionAccrued = histórico generado; commission = disponible para retiro/pago.
  const stored=Number(state.users?.[userId]?.commissionAccrued||0);
- if(Number.isFinite(stored)&&stored>0)return Number(stored.toFixed(2));
  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
- let total=0;
- for(const col of cols){
-  for(const r of Object.values(state[col]||{})){
+ let derived=0;
+ for(const col of cols)for(const r of Object.values(state[col]||{})){
    if(!r||r.status!=='Aprobado'||r.userId!==userId)continue;
-   const share=Number(r.commissionUser??(Number(r.commission||0)*0.5));
-   if(Number.isFinite(share)&&share>0)total+=share;
-  }
+   const share=userId==='admin'?Number(r.commissionAdmin??(Number(r.commission||0)*0.5)):Number(r.commissionUser??(Number(r.commission||0)*0.5));
+   if(Number.isFinite(share)&&share>0)derived+=share;
  }
- return Number(total.toFixed(2));
+ return Number(Math.max(0,stored,derived).toFixed(2));
 }
 function adminBonusTotal(){
  const stored=Number(state.users?.admin?.bonusAccrued||0);
