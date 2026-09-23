@@ -619,7 +619,21 @@ async function manualRefresh(showMessage=true){
    if(btn){btn.disabled=false;btn.classList.remove('is-refreshing')}
  }
 }
-function localSave(){localStorage.setItem(DB_PATH,JSON.stringify(state))}
+let __sendwayoLocalSaveTimer=null;
+let __sendwayoLocalSavePending=false;
+function localSave(){
+  // Agrupar escrituras locales para no bloquear el hilo principal con varios
+  // JSON.stringify/localStorage.setItem consecutivos durante una sola operación.
+  __sendwayoLocalSavePending=true;
+  if(__sendwayoLocalSaveTimer)return;
+  __sendwayoLocalSaveTimer=setTimeout(()=>{
+    __sendwayoLocalSaveTimer=null;
+    if(!__sendwayoLocalSavePending)return;
+    __sendwayoLocalSavePending=false;
+    try{localStorage.setItem(DB_PATH,JSON.stringify(state))}
+    catch(e){console.warn('SENDWAYO localSave:',e)}
+  },180);
+}
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
 function markSynced(pathParts,value){if(!lastSyncedState)return;let cur=lastSyncedState;for(let i=0;i<pathParts.length-1;i++){const k=pathParts[i];if(!cur[k]||typeof cur[k]!=='object')cur[k]={};cur=cur[k]}if(pathParts.length)cur[pathParts.length-1]=cloneState(value)}
 function canPersistOwnRecord(collection,record,prev){
@@ -864,22 +878,33 @@ function openBrandSite(){window.location.href='https://sendwayo-oficial.github.i
 async function boot(){
   if(window.__sendwayoBootStarted)return;
   window.__sendwayoBootStarted=true;
-  // La bienvenida se muestra primero: ninguna conexión externa puede bloquear el acceso visual.
+  // PRIMERA PRIORIDAD: pintar y dejar interactiva la bienvenida antes de tocar
+  // localStorage, Firebase o librerías externas. JSON.parse/localStorage es síncrono
+  // y una base local grande puede congelar el hilo principal de móviles/tablets.
   try{showWelcome()}catch(e){console.error('SENDWAYO welcome:',e)}
   try{initLanguage()}catch(e){console.warn('SENDWAYO language:',e)}
-  try{
-    let saved=localStorage.getItem(DB_PATH);
-    if(saved){
-      const local=JSON.parse(saved);
-      state={...state,...local};
-      state.users={...state.users,...(local.users||{})};
-      state.beneficiaries={...state.beneficiaries,...(local.beneficiaries||{})};
-      state.accounts={...state.accounts,...(local.accounts||{})};
-    }
-  }catch(e){console.warn('SENDWAYO local state:',e)}
   try{ensureSeedData()}catch(e){console.warn('SENDWAYO seed:',e)}
   try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}
-  setTimeout(()=>loadExportLibraries().catch(()=>{}),3000);
+
+  // Restauración local diferida: nunca bloquea el primer pintado ni el gesto táctil.
+  setTimeout(()=>{
+    try{
+      let saved=localStorage.getItem(DB_PATH);
+      if(saved){
+        const local=JSON.parse(saved);
+        state={...state,...local};
+        state.users={...state.users,...(local.users||{})};
+        state.beneficiaries={...state.beneficiaries,...(local.beneficiaries||{})};
+        state.accounts={...state.accounts,...(local.accounts||{})};
+      }
+      ensureSeedData();
+    }catch(e){console.warn('SENDWAYO local state:',e)}
+  },1200);
+
+  // Las librerías de exportación no participan en el arranque.
+  setTimeout(()=>loadExportLibraries().catch(()=>{}),5000);
+
+  // Firebase arranca después de que el usuario ya puede tocar/deslizar la bienvenida.
   setTimeout(()=>{Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_BOOT_TIMEOUT')),10000))])
     .then(ok=>{if(!ok){console.warn('Firebase no disponible al iniciar.');return}
       firebase.auth().onAuthStateChanged(async authUser=>{
