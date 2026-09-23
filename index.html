@@ -891,17 +891,9 @@ function openBrandSite(){window.location.href='https://sendwayo-oficial.github.i
 async function boot(){
   if(window.__sendwayoBootStarted)return;
   window.__sendwayoBootStarted=true;
-  // PRIMERA PRIORIDAD: mostrar la bienvenida y dejar libre el hilo principal.
-  // No se inicializan datos, Firebase ni procesos de traducción pesados en este punto.
+  // Arranque mínimo: no ejecutar ningún proceso secundario mientras el usuario está en bienvenida.
   try{showWelcome()}catch(e){console.error('SENDWAYO welcome:',e)}
-  setTimeout(()=>{try{initLanguage()}catch(e){console.warn('SENDWAYO language:',e)}},0);
-  setTimeout(()=>{try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}},40);
-  // La preparación del estado se hace al iniciar sesión, no durante la apertura.
-
-  // Firebase es la fuente de verdad en producción.
-  // No se restaura un JSON financiero completo desde localStorage.
-  // Las librerías de Excel/PDF se cargan únicamente cuando se exporta.
-  // Firebase se inicializa únicamente al entrar al acceso.
+  // Idioma, logo, Firebase y estado financiero se cargan después, bajo demanda.
 }
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
