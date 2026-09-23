@@ -902,6 +902,7 @@ async function boot(){
   // No se restaura un JSON financiero completo desde localStorage.
   // Las librerías de Excel/PDF se cargan únicamente cuando se exporta.
   // Firebase se inicializa únicamente al entrar al acceso.
+}
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
 
