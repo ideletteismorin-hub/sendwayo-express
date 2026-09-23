@@ -204,7 +204,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
       </div>
       <div id="credit-summary-kpis" class="kpis" style="margin-bottom:14px"></div>
       <div class="info-box" style="margin-bottom:14px"><b>Funcionamiento:</b> si un Remitente tiene RD$20 y necesita RD$100, se usan RD$20 de su balance y RD$80 de crédito. Cuando llegue un depósito aprobado, primero se abona la deuda de crédito y solamente el sobrante aumenta el balance.</div>
-      <div class="table-wrap"><table id="creditTable"><thead><tr><th>ID</th><th>Remitente</th><th>Cupo</th><th>Deuda utilizada</th><th>Disponible</th><th>Estado</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="status-bar" id="credit-statusbar"><button class="btn btn-light btn-sm active" onclick="setCreditStatusFilter('Todos',this)">TODOS</button><button class="btn btn-warning btn-sm" onclick="setCreditStatusFilter('Pendiente',this)">PENDIENTE</button><button class="btn btn-success btn-sm" onclick="setCreditStatusFilter('Disponible',this)">DISPONIBLE</button><button class="btn btn-danger btn-sm" onclick="setCreditStatusFilter('Sin crédito',this)">SIN CRÉDITO</button></div><div class="table-toolbar"><div class="actions"><button class="btn btn-primary btn-sm admin-only" onclick="openCreditGrantModal()">Agregar nuevo</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','creditTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','creditTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','creditTable')">CSV</button></div><input id="credit-search-box" class="search-box" placeholder="Buscar por nombre, ID o usuario..." oninput="renderCredit()"></div><div class="table-wrap"><table id="creditTable"><thead><tr><th>ID</th><th>Remitente</th><th>Cupo</th><th>Deuda utilizada</th><th>Disponible</th><th>Estado</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
   </section>
 
@@ -1236,12 +1236,36 @@ async function createTransaction(collection,fields,amount){
  }
  renderAll();return id;
 }
-function creditInfo(u){const limit=Number(u?.creditLimit||0),out=Number(u?.creditOutstanding||0);return {limit,out,available:Math.max(0,limit-out)}}
+function creditInfo(u){const limit=Number(u?.creditLimit||0),out=Math.max(0,Number(u?.creditOutstanding||0));return {limit,out,available:Math.max(0,limit-out)}}
+let creditStatusFilter='Todos';
+function setCreditStatusFilter(status,button){creditStatusFilter=status;document.querySelectorAll('#credit-statusbar .btn').forEach(b=>b.classList.remove('active'));if(button)button.classList.add('active');renderCredit()}
+function creditIndexRecords(){
+ const out=[];
+ for(const u of Object.values(state.users||{})){if(!u||u.role!=='Remitente')continue;for(const g of Object.values(u.creditGrants||{})){if(g?.id)out.push({...g,userId:u.id,username:u.username})}}
+ for(const r of Object.values(state.credits||{})){if(r&&!out.some(x=>x.id===r.id))out.push(r)}
+ out.sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));return out;
+}
+function viewCreditRecord(id){
+ const r=creditIndexRecords().find(x=>x.id===id);if(!r)return toast('No se encontró el crédito.','error');const u=state.users?.[r.userId]||{};
+ document.getElementById('detail-content').innerHTML='<div class="receipt-shell"><h3>Crédito '+escapeHtml(r.id)+'</h3><p><b>Remitente:</b> '+escapeHtml(u.name||r.username||'')+'</p><p><b>Monto:</b> '+money(r.amount)+'</p><p><b>Nota:</b> '+escapeHtml(r.note||'')+'</p><p><b>Estado:</b> '+escapeHtml(r.status||'Aplicado')+'</p><p><b>Fecha:</b> '+escapeHtml(r.createdAt||'')+'</p></div>';openModal('detailModal');
+}
+function downloadCreditRecord(id){const r=creditIndexRecords().find(x=>x.id===id);if(!r)return toast('No se encontró el crédito.','error');const payload={sistema:'SENDWAYO EXPRESS',tipo:'CREDITO_OTORGADO',registro:r};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SENDWAYO_credito_'+id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function editCreditGrant(id){
+ if(!isAdmin())return toast('Solo Administración puede modificar créditos.','warn');const r=creditIndexRecords().find(x=>x.id===id),u=r&&state.users?.[r.userId];if(!r||!u)return;
+ const note=prompt('Nota del crédito:',r.note||'');if(note===null)return;
+ try{const tx=await firebase.database().ref(DB_PATH+'/users/'+u.id).transaction(v=>{if(!v||!v.creditGrants?.[id])return undefined;return {...v,creditGrants:{...v.creditGrants,[id]:{...v.creditGrants[id],note}}}});if(!tx.committed)return toast('No se pudo modificar el crédito.','error');state.users[u.id]=tx.snapshot.val();if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);localSave();renderAll();toast('Crédito modificado.','success')}catch(e){console.warn('editCreditGrant:',e);toast('No se pudo modificar el crédito.','error')}
+}
+async function deleteCreditGrant(id){
+ if(!isAdmin())return toast('Solo Administración puede eliminar créditos.','warn');const r=creditIndexRecords().find(x=>x.id===id),u=r&&state.users?.[r.userId];if(!r||!u)return;if(Number(u.creditOutstanding||0)>0)return toast('No se puede eliminar un crédito con deuda pendiente.','warn');if(!confirm('¿Eliminar este otorgamiento de crédito y revertir su cupo?'))return;
+ try{const tx=await firebase.database().ref(DB_PATH+'/users/'+u.id).transaction(v=>{if(!v||!v.creditGrants?.[id])return undefined;const amt=Number(v.creditGrants[id].amount||0),limit=Number(v.creditLimit||0);if(limit<amt)return undefined;const next={...v,creditLimit:limit-amt,creditGrantedTotal:Math.max(0,Number(v.creditGrantedTotal||0)-amt),creditGrants:{...v.creditGrants}};delete next.creditGrants[id];return next});if(!tx.committed)return toast('No se pudo eliminar el crédito.','error');state.users[u.id]=tx.snapshot.val();delete state.credits[id];try{await firebase.database().ref(DB_PATH+'/credits/'+id).remove()}catch(_){}if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);localSave();renderAll();toast('Crédito eliminado.','success')}catch(e){console.warn('deleteCreditGrant:',e);toast('No se pudo eliminar el crédito.','error')}
+}
+function creditActionButtons(r){return '<div class="actions"><button class="btn btn-light btn-sm" onclick="viewCreditRecord(\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadCreditRecord(\''+r.id+'\')">Descargar</button>'+(isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editCreditGrant(\''+r.id+'\')">Modificar</button><button class="btn btn-danger btn-sm" onclick="deleteCreditGrant(\''+r.id+'\')">Eliminar</button>':'')+'</div>'}
 function renderCredit(){
- const body=document.querySelector('#creditTable tbody'),summary=document.getElementById('credit-summary-kpis');if(!body||!currentUser)return;
- const users=isAdmin()?Object.values(state.users||{}).filter(u=>u?.role==='Remitente'):Object.values(state.users||{}).filter(u=>u?.id===currentUser.id);
- let totalLimit=0,totalOut=0;
- body.innerHTML=users.map(u=>{const x=creditInfo(u);totalLimit+=x.limit;totalOut+=x.out;return '<tr><td>'+escapeHtml(u.staffId||u.id)+'</td><td><b>'+escapeHtml(u.name||u.username||u.id)+'</b><br><small>'+escapeHtml(u.username||'')+'</small></td><td>'+money(x.limit)+'</td><td>'+money(x.out)+'</td><td>'+money(x.available)+'</td><td>'+escapeHtml(x.out>0?'PENDIENTE':(x.limit>0?'DISPONIBLE':'SIN CRÉDITO'))+'</td><td>'+(isAdmin()?'<button class="btn btn-light btn-sm" onclick="openCreditGrantModal(\''+u.id+'\')">Otorgar más</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="7" class="muted">No hay remitentes.</td></tr>';
+ const body=document.querySelector('#creditTable tbody'),summary=document.getElementById('credit-summary-kpis');if(!body||!currentUser)return;const q=normalizeSearchText(document.querySelector('#view-credito .search-box')?.value||'');
+ const users=(isAdmin()?Object.values(state.users||{}).filter(u=>u?.role==='Remitente'):Object.values(state.users||{}).filter(u=>u?.id===currentUser.id));let rows=[];
+ users.forEach(u=>{const x=creditInfo(u),status=x.out>0?'Pendiente':x.limit>0?'Disponible':'Sin crédito';if((creditStatusFilter!=='Todos'&&status!==creditStatusFilter)||(q&&!normalizeSearchText(u.name).includes(q)&&!normalizeSearchText(u.username).includes(q)&&!normalizeSearchText(u.staffId).includes(q)))return;const grants=Object.values(u.creditGrants||{});if(!grants.length)rows.push({u,g:null,x,status});else grants.forEach(g=>rows.push({u,g:{...g,userId:u.id,username:u.username},x,status}))});
+ let totalLimit=0,totalOut=0;rows.forEach(row=>{totalLimit+=row.x.limit;totalOut+=row.x.out});
+ body.innerHTML=rows.map((row,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(row.g?.id||'—')+'</td><td><b>'+escapeHtml(row.u.name||row.u.username||row.u.id)+'</b><br><small>'+escapeHtml(row.u.username||'')+'</small></td><td>'+money(row.x.limit)+'</td><td>'+money(row.x.out)+'</td><td>'+money(row.x.available)+'</td><td>'+escapeHtml(row.status.toUpperCase())+'</td><td>'+ (row.g?creditActionButtons(row.g):(isAdmin()?'<button class="btn btn-primary btn-sm" onclick="openCreditGrantModal(\''+row.u.id+'\')">Agregar crédito</button>':'—')) +'</td></tr>').join('')||'<tr><td colspan="8" class="muted">No hay créditos registrados.</td></tr>';
  if(summary)summary.innerHTML='<div class="kpi"><b>Cupo autorizado</b><h2>'+money(totalLimit)+'</h2></div><div class="kpi"><b>Crédito utilizado</b><h2>'+money(totalOut)+'</h2></div><div class="kpi"><b>Crédito disponible</b><h2>'+money(Math.max(0,totalLimit-totalOut))+'</h2></div>';
 }
 function openCreditGrantModal(targetId){
@@ -1253,21 +1277,10 @@ function openCreditGrantModal(targetId){
  document.getElementById('creditGrantModal').style.display='flex';
 }
 async function saveCreditGrant(){
- if(!isAdmin())return;
- const id=document.getElementById('credit-target')?.value,amount=Number(document.getElementById('credit-amount')?.value||0),note=document.getElementById('credit-note')?.value.trim()||'';
- if(!id||!Number.isFinite(amount)||amount<=0)return toast('Indique un remitente y un monto mayor que cero.','warn');
- const ref=firebase.database().ref(DB_PATH+'/users/'+id);
- try{
-  const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;return {...u,creditLimit:Number(u.creditLimit||0)+amount,creditGrantedTotal:Number(u.creditGrantedTotal||0)+amount}});
-  if(!tx.committed)return toast('No se pudo otorgar el crédito.','error');
-  const updated=tx.snapshot.val(),cid=uid('crd'),record={id:cid,userId:id,amount,note,createdAt:now(),createdBy:currentUser.username,status:'Aplicado',type:'CREDITO_OTORGADO'};
-  state.users[id]=updated;state.credits=state.credits||{};state.credits[cid]=record;
-  await firebase.database().ref(DB_PATH+'/credits/'+cid).set(record);
-  if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);
-  localSave();closeModal('creditGrantModal');renderAll();
-  try{await addNotification(id,'Administración le otorgó '+money(amount)+' de crédito. Cupo disponible: '+money(creditInfo(updated).available)+'.','credits',cid)}catch(e){}
-  toast('Crédito otorgado correctamente.','success');
- }catch(e){console.warn('saveCreditGrant:',e);toast('No se pudo guardar el crédito en Firebase.','error')}
+ if(!isAdmin())return;const id=document.getElementById('credit-target')?.value,amount=Number(document.getElementById('credit-amount')?.value||0),note=document.getElementById('credit-note')?.value.trim()||'';
+ if(!id||!Number.isFinite(amount)||amount<=0)return toast('Indique un remitente y un monto mayor que cero.','warn');if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
+ const cid=uid('crd'),ref=firebase.database().ref(DB_PATH+'/users/'+id);
+ try{const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;const grants={...(u.creditGrants||{})};return {...u,creditLimit:Number(u.creditLimit||0)+amount,creditGrantedTotal:Number(u.creditGrantedTotal||0)+amount,creditGrants:{...grants,[cid]:{id:cid,amount,note,createdAt:now(),createdBy:currentUser.username,status:'Aplicado',type:'CREDITO_OTORGADO'}}}});if(!tx.committed)return toast('No se pudo guardar el crédito. Verifique que el remitente exista.','error');const updated=tx.snapshot.val(),record={id:cid,userId:id,amount,note,createdAt:now(),createdBy:currentUser.username,status:'Aplicado',type:'CREDITO_OTORGADO'};state.users[id]=updated;state.credits=state.credits||{};state.credits[cid]=record;try{await firebase.database().ref(DB_PATH+'/credits/'+cid).set(record)}catch(e){console.warn('Índice de crédito no disponible:',e)}if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);localSave();closeModal('creditGrantModal');renderAll();try{await addNotification(id,'Administración le otorgó '+money(amount)+' de crédito. Cupo disponible: '+money(creditInfo(updated).available)+'.','credits',cid)}catch(_){}toast('Crédito otorgado y guardado correctamente.','success')}catch(e){console.warn('saveCreditGrant:',e);toast('No se pudo guardar el crédito en Firebase.','error')}
 }
 async function guardBalance(amount){
  if(isAdmin())return true;
