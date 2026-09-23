@@ -805,19 +805,22 @@ async function realizarLogin(){
  const setStatus=(msg,kind='')=>{if(status){status.textContent=msg;status.className='login-status '+kind}};
  const identifier=document.getElementById('login-user').value.trim();
  const password=document.getElementById('login-pass').value;
- // Evitar que onAuthStateChanged compita con este inicio de sesión y cierre la sesión antes de terminar de cargar el perfil.
+ const ADMIN_EMAIL='sendwayoexpress@gmail.com';
  window.__sendwayoLoginInProgress=true;
- if(!identifier||!password){setStatus('Escriba su usuario o correo y su contraseña.','warn');return toast('Escriba su usuario o correo y su contraseña.','warn')}
+ if(!identifier||!password){setStatus('Escriba su correo de administración y su contraseña.','warn');return toast('Escriba sus credenciales de acceso.','warn')}
  const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
  if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent='Conectando…'}
  try{
-   setStatus('Conectando con el servicio de acceso…');
+   setStatus('Conectando con Firebase Authentication…');
    const ready=await Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_TIMEOUT')),10000))]);
    if(!ready)throw new Error('FIREBASE_UNAVAILABLE');
+
    const users=Object.values(state.users||{});
    const normalizedIdentifier=normalizeUsername(identifier);
-   let found=users.find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
-   let email=found?(found.authEmail||authEmailFor(found)):identifier.toLowerCase();
+   const isAdminLogin=identifier.toLowerCase()===ADMIN_EMAIL||identifier.toLowerCase()==='admin';
+   let found=isAdminLogin?users.find(u=>u.id==='admin'):users.find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
+   let email=isAdminLogin?ADMIN_EMAIL:(found?(found.authEmail||authEmailFor(found)):identifier.toLowerCase());
+
    setStatus('Verificando credenciales…');
    let cred;
    try{
@@ -833,24 +836,57 @@ async function realizarLogin(){
        new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
      ]);
    }
+
    const authUser=cred.user;
-   // La autenticación de Firebase es suficiente para abrir el espacio del usuario.
-   // La carga completa de datos se hace después y no puede devolver al usuario a Bienvenida.
-   found=Object.values(state.users||{}).find(u=>(u.id==='admin'&&authUser.email===state.users.admin.authEmail)||(u.authUid===authUser.uid)||(u.authEmail===authUser.email)||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
-   if(!found)throw new Error('PROFILE_NOT_FOUND');
-   if(found.active===false)throw new Error('INACTIVE');
-   found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;lastActivity=Date.now();sessionStartedAt=Date.now();saveSession();
+   const authenticatedAdmin=String(authUser.email||'').toLowerCase()===ADMIN_EMAIL;
+   if(authenticatedAdmin){
+     found=Object.values(state.users||{}).find(u=>u.id==='admin')||{
+       id:'admin',role:'Administrador',name:'Administración SENDWAYO EXPRESS',username:'admin',
+       authEmail:ADMIN_EMAIL,authUid:authUser.uid,active:true,balance:0,commission:0,
+       staffId:'ADMIN',accountSchemaV3:1
+     };
+     found.authEmail=ADMIN_EMAIL;
+     found.authUid=authUser.uid;
+     found.active=true;
+     state.users.admin=found;
+   }else{
+     found=Object.values(state.users||{}).find(u=>
+       (u.authUid&&u.authUid===authUser.uid)||
+       (u.authEmail&&u.authEmail.toLowerCase()===String(authUser.email||'').toLowerCase())||
+       String(u.username||'').toLowerCase()===identifier.toLowerCase()||
+       normalizeUsername(u.name||'')===normalizedIdentifier
+     );
+     if(!found)throw new Error('PROFILE_NOT_FOUND');
+     if(found.active===false)throw new Error('INACTIVE');
+     found.authUid=authUser.uid;
+     found.authEmail=authUser.email;
+     state.users[found.id]=found;
+   }
+
+   currentUser=found;
+   lastActivity=Date.now();
+   sessionStartedAt=Date.now();
+   saveSession();
    setStatus('Acceso autorizado. Sincronizando…','ok');
-   showAppForUser(found);applyRoleVisibility();renderAll();
-   // Ya dentro del sistema, sincronizamos Firebase sin bloquear ni cerrar la sesión.
+   showAppForUser(found);
+   applyRoleVisibility();
+   renderAll();
+
    try{
      await Promise.race([
        loadAuthorizedState(authUser),
        new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))
      ]);
-     found=Object.values(state.users||{}).find(u=>u.id===currentUser.id)||found;
-     found.authUid=authUser.uid;found.authEmail=authUser.email;state.users[found.id]=found;currentUser=found;
-     attachRealtimeListeners();applyRoleVisibility();renderAll();
+     const fresh=Object.values(state.users||{}).find(u=>u.id===currentUser.id);
+     if(fresh){
+       fresh.authUid=authUser.uid;
+       fresh.authEmail=authenticatedAdmin?ADMIN_EMAIL:authUser.email;
+       state.users[fresh.id]=fresh;
+       currentUser=fresh;
+     }
+     attachRealtimeListeners();
+     applyRoleVisibility();
+     renderAll();
    }catch(syncError){
      console.warn('SENDWAYO sincronización posterior al login:',syncError);
      setStatus('Acceso autorizado. Firebase está sincronizando en segundo plano.','ok');
@@ -859,17 +895,18 @@ async function realizarLogin(){
  }catch(e){
    console.warn('SENDWAYO login diagnostic:',e);
    let msg;
-   if(e.message==='FIREBASE_TIMEOUT')msg='El servicio de Firebase tardó demasiado en responder. La pantalla no quedará bloqueada; revise la conexión y vuelva a intentar.';
-   else if(e.message==='FIREBASE_UNAVAILABLE')msg='Firebase no está disponible en este momento. Verifique que los servicios de Firebase estén cargando correctamente.';
-   else if(e.message==='AUTH_TIMEOUT')msg='Firebase Authentication no respondió dentro de 15 segundos. Revise Internet y la configuración de Authentication.';
+   if(e.message==='FIREBASE_TIMEOUT')msg='El servicio de Firebase tardó demasiado en responder. Revise la conexión y vuelva a intentar.';
+   else if(e.message==='FIREBASE_UNAVAILABLE')msg='Firebase no está disponible en este momento. Verifique la configuración de Firebase.';
+   else if(e.message==='AUTH_TIMEOUT')msg='Firebase Authentication no respondió dentro de 15 segundos. Revise Internet y vuelva a intentar.';
    else if(e.code==='auth/operation-not-allowed')msg='El método Correo/Contraseña no está habilitado en Firebase Authentication.';
    else if(e.code==='auth/invalid-api-key')msg='La configuración de Firebase contiene una clave API inválida.';
-   else if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found')msg='Usuario/correo o contraseña incorrectos.';
+   else if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found')msg='El correo de administración o la contraseña de Firebase no son correctos.';
    else if(e.code==='auth/network-request-failed')msg='No fue posible comunicarse con Firebase Authentication.';
    else if(e.message==='PROFILE_NOT_FOUND')msg='La cuenta de Firebase existe, pero no tiene un perfil SENDWAYO asociado.';
    else if(e.message==='INACTIVE')msg='Esta cuenta está inactiva. Solo el Administrador puede reactivarla.';
    else msg='No se pudo iniciar sesión'+(e.code?' ('+e.code+')':e.message?' ('+e.message+')':'')+'.';
-   setStatus(msg,'error');toast(msg,'error');
+   setStatus(msg,'error');
+   toast(msg,'error');
  }finally{
    window.__sendwayoLoginInProgress=false;
    if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||'Ingresar al Sistema'}
