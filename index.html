@@ -547,15 +547,42 @@ async function manualRefresh(showMessage=true){
      if(showMessage)toast('Firebase no está conectado con esta sesión.','error');
      return false;
    }
-   // IMPORTANTE: esta función es una lectura completa de Firebase.
-   // No mezcla datos locales antiguos: el estado visible queda exactamente
-   // igual al estado que devuelve RTDB en este momento.
-   const snap=await Promise.race([
-     firebase.database().ref(DB_PATH).once('value'),
-     new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))
-   ]);
-   if(!snap.exists())throw new Error('FIREBASE_EMPTY');
-   const remote=snap.val()||{};
+   // ANTI-CONGELAMIENTO: un Remitente nunca descarga toda la base.
+   // El Administrador sí puede solicitar la consolidación completa.
+   const root=firebase.database().ref(DB_PATH);
+   let remote={};
+   if(isAdmin()){
+     const snap=await Promise.race([root.once('value'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))]);
+     if(!snap.exists())throw new Error('FIREBASE_EMPTY');
+     remote=snap.val()||{};
+   }else{
+     const uidv=currentUser.id;
+     const refs={
+       user:root.child('users').child(uidv),
+       beneficiaries:root.child('beneficiaries').orderByChild('userId').equalTo(uidv),
+       envios:root.child('envios').orderByChild('userId').equalTo(uidv),
+       recargas:root.child('recargas').orderByChild('userId').equalTo(uidv),
+       paqueticos:root.child('paqueticos').orderByChild('userId').equalTo(uidv),
+       pagos:root.child('pagos').orderByChild('userId').equalTo(uidv),
+       paquetes:root.child('paquetes').orderByChild('userId').equalTo(uidv),
+       deposits:root.child('deposits').orderByChild('userId').equalTo(uidv),
+       accountWithdrawals:root.child('accountWithdrawals').orderByChild('userId').equalTo(uidv),
+       commissions:root.child('commissions').orderByChild('userId').equalTo(uidv),
+       notifications:root.child('notifications').orderByChild('targetUserId').equalTo(uidv),
+       accounts:root.child('accounts'),
+       settings:root.child('settings')
+     };
+     const entries=Object.entries(refs);
+     const snaps=await Promise.race([
+       Promise.all(entries.map(([k,ref])=>ref.once('value').then(s=>[k,s]))),
+       new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))
+     ]);
+     const obj={};
+     for(const [k,s] of snaps)obj[k]=s.val()||{};
+     remote.users={[uidv]:obj.user||{}};
+     delete obj.user;
+     remote={...obj,...remote};
+   }
    state={
      users:remote.users||{},
      beneficiaries:remote.beneficiaries||{},
@@ -574,7 +601,7 @@ async function manualRefresh(showMessage=true){
      dailyReports:remote.dailyReports||{},
      credits:remote.credits||{},
      settings:remote.settings||{},
-     ...remote
+     ledger:remote.ledger||{}
    };
    const fresh=currentUser&&state.users?.[currentUser.id];
    if(fresh&&fresh.active!==false)currentUser=fresh;
@@ -582,17 +609,16 @@ async function manualRefresh(showMessage=true){
    localSave();
    renderAll();
    attachRealtimeListeners();
-   if(showMessage)toast('✓ Actualizado directamente desde Firebase.','success');
+   if(showMessage)toast('✓ Actualizado desde Firebase sin descargar datos ajenos.','success');
    return true;
  }catch(e){
    console.warn('SENDWAYO manualRefresh:',e);
-   if(showMessage)toast(e.message==='REFRESH_TIMEOUT'?'Firebase tardó demasiado en responder.':'No se pudo actualizar directamente desde Firebase.','error');
+   if(showMessage)toast(e.message==='REFRESH_TIMEOUT'?'Firebase tardó demasiado en responder.':'No se pudo actualizar desde Firebase.','error');
    return false;
  }finally{
    if(btn){btn.disabled=false;btn.classList.remove('is-refreshing')}
  }
 }
-
 function localSave(){localStorage.setItem(DB_PATH,JSON.stringify(state))}
 function cloneState(v){try{return JSON.parse(JSON.stringify(v))}catch(e){return v}}
 function markSynced(pathParts,value){if(!lastSyncedState)return;let cur=lastSyncedState;for(let i=0;i<pathParts.length-1;i++){const k=pathParts[i];if(!cur[k]||typeof cur[k]!=='object')cur[k]={};cur=cur[k]}if(pathParts.length)cur[pathParts.length-1]=cloneState(value)}
@@ -1041,12 +1067,59 @@ async function updateHistoricalReceipts(){
  }
 }
 async function loadAuthorizedState(authUser){
- const ref=firebase.database().ref(DB_PATH),snap=await ref.once('value');let remoteResetVersion=null;
- if(snap.exists()){const remote=snap.val()||{};remoteResetVersion=remote.settings?.productionResetVersion||null;state={...state,...remote};state.users={...state.users,...(remote.users||{})};state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};state.accounts={...state.accounts,...(remote.accounts||{})};state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}}}
- // PRODUCCIÓN: nunca se borran ni se ponen a cero operaciones/balances automáticamente.
-mergeFinancialLedgerIntoState();const before=JSON.stringify(state);ensureSeedData();mergeFinancialLedgerIntoState();lastSyncedState=JSON.parse(before);await persist();lastSyncedState=cloneState(state);await repairApprovedDeposits();await repairLegacyDepositCommissions();lastSyncedState=cloneState(state);attachRealtimeListeners();await updateHistoricalReceipts();
+ const root=firebase.database().ref(DB_PATH);
+ if(isAdmin()){
+   const snap=await Promise.race([root.once('value'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
+   if(snap.exists()){
+     const remote=snap.val()||{};
+     state={...state,...remote};
+     state.users={...state.users,...(remote.users||{})};
+     state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};
+     state.accounts={...state.accounts,...(remote.accounts||{})};
+     state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};
+   }
+   mergeFinancialLedgerIntoState();
+   ensureSeedData();
+   mergeFinancialLedgerIntoState();
+   lastSyncedState=cloneState(state);
+   attachRealtimeListeners();
+   await updateHistoricalReceipts();
+   lastSyncedState=cloneState(state);
+   return;
+ }
+ // REMITENTE: cargar solamente su información. Nunca descargar toda la base.
+ const uidv=currentUser?.id;
+ if(!uidv)throw new Error('PROFILE_NOT_FOUND');
+ const refs={
+   user:root.child('users').child(uidv),
+   beneficiaries:root.child('beneficiaries').orderByChild('userId').equalTo(uidv),
+   envios:root.child('envios').orderByChild('userId').equalTo(uidv),
+   recargas:root.child('recargas').orderByChild('userId').equalTo(uidv),
+   paqueticos:root.child('paqueticos').orderByChild('userId').equalTo(uidv),
+   pagos:root.child('pagos').orderByChild('userId').equalTo(uidv),
+   paquetes:root.child('paquetes').orderByChild('userId').equalTo(uidv),
+   deposits:root.child('deposits').orderByChild('userId').equalTo(uidv),
+   accountWithdrawals:root.child('accountWithdrawals').orderByChild('userId').equalTo(uidv),
+   commissions:root.child('commissions').orderByChild('userId').equalTo(uidv),
+   notifications:root.child('notifications').orderByChild('targetUserId').equalTo(uidv),
+   accounts:root.child('accounts'),
+   settings:root.child('settings')
+ };
+ const entries=Object.entries(refs);
+ const snaps=await Promise.race([
+   Promise.all(entries.map(([k,ref])=>ref.once('value').then(s=>[k,s]))),
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))
+ ]);
+ const next={users:{},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},notifications:{},settings:{}};
+ for(const [k,s] of snaps){
+   if(k==='user')next.users[uidv]=s.val()||{};
+   else next[k]=s.val()||{};
+ }
+ state={...state,...next};
+ ensureSeedData();
+ lastSyncedState=cloneState(state);
+ attachRealtimeListeners();
 }
-
 async function resetProductionFinancialsIfNeeded(){return false;}
 function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&firebase.auth().currentUser){firebase.auth().signOut().catch(()=>{})}currentUser=null;sessionStartedAt=0;document.getElementById('app-sidebar').classList.add('hidden');document.getElementById('app-shell').classList.add('hidden');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';showWelcome()}
 function applyRoleVisibility(){
@@ -2424,8 +2497,8 @@ function startProductionRealtimeRefresh(){
   window.__sendwayoRefreshTimer=null;
  }catch(e){console.warn('Realtime refresh:',e)}
 }
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady)manualRefresh(false)});
-window.addEventListener('online',()=>{if(currentUser&&firebaseReady)manualRefresh(false)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&firebaseReady){touch();}});
+window.addEventListener('online',()=>{if(currentUser&&firebaseReady){touch();}});
 window.addEventListener('load',()=>{if(typeof startProductionRealtimeRefresh==='function')startProductionRealtimeRefresh();if(typeof startDailyReportAutomation==='function')startDailyReportAutomation()});
 
 /* POLITICA FINANCIERA SENDWAYO EXPRESS — DEPÓSITOS Y COMISIONES 2026-09-21 */
