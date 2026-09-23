@@ -1947,8 +1947,25 @@ function renderAccounting(){
  const mb=document.querySelector('#accountingMovementsTable tbody');
  mb.innerHTML=rows.filter(r=>!q2||normalizeSearchText(r.type).includes(q2)||normalizeSearchText(r.person).includes(q2)||normalizeSearchText(r.id).includes(q2)).slice(0,500).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.person)+'</td><td>'+money(r.amount)+'</td><td>'+money(r.commission)+'</td><td>'+escapeHtml(r.status)+'</td><td>'+escapeHtml(r.origin)+'</td><td><button class="btn btn-light btn-sm" onclick="viewRecord(\''+r.origin+'\',\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadRecord(\''+r.origin+'\',\''+r.id+'\')">Descargar</button></td></tr>').join('')||'<tr><td colspan="9" class="muted">No hay movimientos financieros.</td></tr>';
 }
+function ensureDownloadActions(){
+ document.querySelectorAll('td .actions').forEach(box=>{
+   if(box.querySelector('[data-sendwayo-download]'))return;
+   const buttons=[...box.querySelectorAll('button')];
+   let source=buttons.find(b=>/viewRecord\(/.test(b.getAttribute('onclick')||''));
+   let collection='',id='';
+   if(source){
+     const m=(source.getAttribute('onclick')||'').match(/viewRecord\(['"]([^'"]+)['"],['"]([^'"]+)['"]\)/);if(m){collection=m[1];id=m[2]}
+   }else{
+     source=buttons.find(b=>/viewUser\(/.test(b.getAttribute('onclick')||''));
+     if(source){const m=(source.getAttribute('onclick')||'').match(/viewUser\(['"]([^'"]+)['"]\)/);if(m){collection='users';id=m[1]}}
+   }
+   if(!collection||!id)return;
+   const d=document.createElement('button');d.type='button';d.className='btn btn-primary btn-sm';d.textContent='Descargar';d.dataset.sendwayoDownload='1';d.onclick=()=>downloadRecord(collection,id);
+   box.insertBefore(d,box.children[1]||null);
+ });
+}
 function renderAll(){
- setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderCredit();renderAccounting();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO')}
+ setTimeout(translateInterface,0);if(!currentUser)return;renderDashboard();renderEnvios();renderPeople();renderBeneficiaries();renderAccounts();renderDeposits();renderSimple('recargas','recTable',['company','phone','amount']);renderSimple('paqueticos','paqktTable',['company','phone','plan','amount']);renderSimple('pagos','pagoTable',['company','contract','amount']);renderSimple('paquetes','paqTable',['type','weight','description','cost']);renderCommissions();renderRequests();renderSecrets();renderCredit();renderAccounting();renderProfile();renderMiCuenta();renderContact();renderNotifications();document.getElementById('header-datetime').textContent=new Date().toLocaleString('es-DO');ensureDownloadActions()}
 function renderDashboardNotifications(){
  const box=document.getElementById('dashboard-notifications');if(!box||!currentUser)return;
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
