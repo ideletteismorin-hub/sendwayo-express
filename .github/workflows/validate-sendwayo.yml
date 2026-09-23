@@ -1,0 +1,26 @@
+name: Validar SENDWAYO EXPRESS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extraer JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path("index.html").read_text(encoding="utf-8")
+          scripts=re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", html, re.S|re.I)
+          if not scripts:
+              raise SystemExit("No se encontró JavaScript inline")
+          Path("/tmp/sendwayo.js").write_text("\n\n".join(scripts),encoding="utf-8")
+          print("Scripts encontrados:",len(scripts))
+          PY
+      - name: Comprobar sintaxis JavaScript
+        run: node --check /tmp/sendwayo.js
