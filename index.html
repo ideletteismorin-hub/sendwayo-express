@@ -450,23 +450,6 @@ function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'
 const FINANCIAL_COLLECTIONS=['envios','recargas','paqueticos','pagos','paquetes','deposits'];
 function productionResetState(){state.settings=state.settings||{};state.users=state.users||{};state.accounts=state.accounts||{};state.ledger=state.ledger||{};state.envios=state.envios||{};state.recargas=state.recargas||{};state.paqueticos=state.paqueticos||{};state.pagos=state.pagos||{};state.paquetes=state.paquetes||{};state.deposits=state.deposits||{};state.accountWithdrawals=state.accountWithdrawals||{};state.commissions=state.commissions||{};state.requests=state.requests||{};state.notifications=state.notifications||{};state.audit=state.audit||{};state.beneficiaries=state.beneficiaries||{};state.dailyReports=state.dailyReports||{};state.credits=state.credits||{};return false}
 function mergeFinancialLedgerIntoState(){state.ledger=state.ledger||{};FINANCIAL_COLLECTIONS.forEach(col=>{state[col]=state[col]||{};Object.entries(state.ledger[col]||{}).forEach(([id,record])=>{if(record&&!state[col][id])state[col][id]=cloneState(record)})})}
-const DEMO_ACCOUNTS=[
-      {id:'rm1',role:'Remitente',name:'Ana Maria Santos',phone:'8295552001',doc:'DEMO-RM-01',username:'ana.santos',active:true,balance:0,commission:0,referrals:0},
- {id:'rm2',role:'Remitente',name:'Pedro Antonio Diaz',phone:'8295552002',doc:'DEMO-RM-02',username:'pedro.diaz',active:true,balance:0,commission:0,referrals:0},
- {id:'rm3',role:'Remitente',name:'Jean Robert',phone:'8295552003',doc:'DEMO-RM-03',username:'jean.robert',active:true,balance:0,commission:0,referrals:0},
- {id:'rm4',role:'Remitente',name:'Lucia Fernandez',phone:'8295552004',doc:'DEMO-RM-04',username:'lucia.fernandez',active:true,balance:0,commission:0,referrals:0},
- {id:'rm5',role:'Remitente',name:'Miguel Torres',phone:'8295552005',doc:'DEMO-RM-05',username:'miguel.torres',active:true,balance:0,commission:0,referrals:0},
- {id:'rm6',role:'Remitente',name:'Sofia Ramirez',phone:'8295552006',doc:'DEMO-RM-06',username:'sofia.ramirez',active:true,balance:0,commission:0,referrals:0},
- {id:'rm7',role:'Remitente',name:'David Pierre',phone:'8295552007',doc:'DEMO-RM-07',username:'david.pierre',active:true,balance:0,commission:0,referrals:0},
- {id:'rm8',role:'Remitente',name:'Carolina Gomez',phone:'8295552008',doc:'DEMO-RM-08',username:'carolina.gomez',active:true,balance:0,commission:0,referrals:0},
- {id:'rm9',role:'Remitente',name:'Ramon Castillo',phone:'8295552009',doc:'DEMO-RM-09',username:'ramon.castillo',active:true,balance:0,commission:0,referrals:0},
- {id:'rm10',role:'Remitente',name:'Elena Joseph',phone:'8295552010',doc:'DEMO-RM-10',username:'elena.joseph',active:true,balance:0,commission:0,referrals:0},
- {id:'rm11',role:'Remitente',name:'Luis Michel',phone:'8295552011',doc:'DEMO-RM-11',username:'luis.michel',active:true,balance:0,commission:0,referrals:0},
- {id:'rm12',role:'Remitente',name:'Patricia Jean',phone:'8295552012',doc:'DEMO-RM-12',username:'patricia.jean',active:true,balance:0,commission:0,referrals:0},
- {id:'rm13',role:'Remitente',name:'Roberto Noel',phone:'8295552013',doc:'DEMO-RM-13',username:'roberto.noel',active:true,balance:0,commission:0},
- {id:'rm14',role:'Remitente',name:'Isabel Laurent',phone:'8295552014',doc:'DEMO-RM-14',username:'isabel.laurent',active:true,balance:0,commission:0},
- {id:'rm15',role:'Remitente',name:'Wilson Charles',phone:'8295552015',doc:'DEMO-RM-15',username:'wilson.charles',active:true,balance:0,commission:0}
-];
 const INITIAL_PASSWORD='12345678';
 function makePermanentId(){
   let id='';
@@ -494,21 +477,6 @@ function legacyAuthEmailFor(user){
 function ensureStaffDirectory(){}
 function nextStaffId(role){return makePermanentId()}
 
-const BANKS=[
- {id:'b1',bank:'Banco Popular',holder:'Herace Fleuranvil',number:'831434592'},
- {id:'b2',bank:'Banreservas',holder:'Herace Fleuranvil',number:'9601783620'},
- {id:'b3',bank:'BHD',holder:'Herace Fleuranvil',number:'36818900013'}
-];
-const BENEFICIARIES=[
- {id:'bn1',name:'SIMEON Bicarlos',phone:'50942710678',address:'Haití',active:true},
- {id:'bn2',name:'Marie Jean',phone:'50937010001',address:'Haití',active:true},
- {id:'bn3',name:'Jean Claude Pierre',phone:'50937010002',address:'Haití',active:true},
- {id:'bn4',name:'Claudia Santos',phone:'8295553001',address:'República Dominicana',active:true},
- {id:'bn5',name:'Samuel Joseph',phone:'50937010003',address:'Haití',active:true},
- {id:'bn6',name:'Nadia Michel',phone:'8295553002',address:'República Dominicana',active:true},
- {id:'bn7',name:'Robert Louis',phone:'50937010004',address:'Haití',active:true},
- {id:'bn8',name:'Elie Charles',phone:'50937010005',address:'Haití',active:true}
-];
 let state={settings:{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0,commissionAccrued:0,bonusAccrued:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{},dailyReports:{}};
 // Producción: no crear registros automáticamente.
 
