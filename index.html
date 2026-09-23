@@ -113,7 +113,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <p class="muted" style="text-align:center;margin:7px 0 20px">Ingrese sus credenciales de acceso</p>
     <div class="form-group"><label>Usuario o correo electrónico</label><input id="login-user" type="text" class="form-control" autocomplete="username" placeholder="nombre.apellido"></div>
     <div class="form-group"><label>Contraseña</label><input id="login-pass" type="password" class="form-control" autocomplete="current-password"></div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="realizarLogin()">Ingresar al Sistema</button><div id="login-status" class="login-status" role="status" aria-live="polite"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="window.sendwayoLogin()">Ingresar al Sistema</button><div id="login-status" class="login-status" role="status" aria-live="polite"></div>
     <button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="showWelcome()">Volver a bienvenida</button>
   </div>
 </div>
@@ -379,6 +379,19 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 <script>
 window.sendwayoOpenLogin=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(w)w.classList.add('hidden');if(l)l.classList.remove('hidden');var u=document.getElementById('login-user');if(u)setTimeout(function(){u.focus()},50)};
 window.sendwayoOpenWelcome=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(l)l.classList.add('hidden');if(w)w.classList.remove('hidden')};
+window.sendwayoLogin=function(){
+  var status=document.getElementById('login-status'),u=document.getElementById('login-user'),p=document.getElementById('login-pass');
+  var set=function(m,c){if(status){status.textContent=m;status.className='login-status '+(c||'')}};
+  var user=(u&&u.value||'').trim(),pass=(p&&p.value||'');
+  if(!user||!pass){set('Escriba usuario y contraseña.','warn');return}
+  set('Iniciando acceso…');
+  setTimeout(function(){
+    try{
+      if(typeof realizarLogin==='function'){set('Verificando credenciales…');realizarLogin();return}
+      set('El módulo de acceso todavía no terminó de cargar. Recargue la página.','error');
+    }catch(e){set('Error al iniciar el acceso: '+(e.message||e),'error');}
+  },0);
+};
 </script>
 <script>
 const DB_PATH='sendwayo_express_v2';
