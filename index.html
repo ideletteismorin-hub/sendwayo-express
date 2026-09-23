@@ -533,7 +533,7 @@ function toast(msg,type='success'){let t=document.getElementById('toast');t.text
 function saveSession(){if(!currentUser)return;localStorage.setItem(SESSION_KEY,JSON.stringify({userId:currentUser.id,lastActivity}));lastSessionWrite=Date.now()}
 function touch(){if(!currentUser)return;lastActivity=Date.now();if(Date.now()-lastSessionWrite>8000)saveSession()}
 ['mousemove','keypress','click','touchstart'].forEach(e=>window.addEventListener(e,touch,{passive:true}))
-async async function restoreSession(){
+async function restoreSession(){
   try{
     const saved=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
     if(!saved?.userId||!saved?.lastActivity)return false;
@@ -769,7 +769,7 @@ function ensureSeedData(){
   ensureStaffDirectory();
 }
 async function loadScript(src,timeout=8000){return new Promise((resolve,reject)=>{if(document.querySelector('script[data-src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.async=true;s.dataset.src=src;let done=false;const finish=(err)=>{if(done)return;done=true;clearTimeout(timer);s.onload=s.onerror=null;err?reject(err):resolve()};const timer=setTimeout(()=>finish(new Error('SCRIPT_TIMEOUT: '+src)),timeout);s.onload=()=>finish();s.onerror=()=>finish(new Error('SCRIPT_LOAD_ERROR: '+src));document.head.appendChild(s)})}
-async async function initFirebase(){try{
+async function initFirebase(){try{
   if(typeof firebase==='undefined'||!firebase.initializeApp){
     const base='https://www.gstatic.com/firebasejs/9.23.0/';
     await loadScript(base+'firebase-app-compat.js',7000);
@@ -1592,7 +1592,7 @@ async function guardarPersona(){
  }catch(e){console.warn('guardarPersona:',e);delete state.users[id];renderAll();toast('No se creó el remitente porque Firebase no confirmó el registro.','error')}
 }
 function guardarCuenta(){if(!isAdmin())return toast('Solo el Administrador puede agregar cuentas bancarias.','warn');const bank=document.getElementById('cta-banco')?.value.trim(),holder=document.getElementById('cta-titular')?.value.trim(),number=document.getElementById('cta-numero')?.value.trim();if(!bank||!holder||!number)return toast('Complete banco, titular y número de cuenta.','warn');if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');const id=uid('cta'),record={id,bank,holder,number,active:true,createdAt:now(),createdBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid};return firebase.database().ref(DB_PATH+'/accounts/'+id).set(record).then(()=>{state.accounts[id]=record;markSynced(['accounts',id],record);localSave();closeModal('cuentaModal');renderAll();toast('Cuenta bancaria agregada por Administración.','success')}).catch(e=>{console.warn('guardarCuenta:',e);toast('No se pudo guardar la cuenta bancaria en Firebase.','error')})}
-async async function creditDepositToRemitente(depositId,remitenteId,amount){ if(!isAdmin())throw new Error('ADMIN_REQUIRED');
+async function creditDepositToRemitente(depositId,remitenteId,amount){ if(!isAdmin())throw new Error('ADMIN_REQUIRED');
  const n=Number(amount);if(!depositId||!remitenteId||!Number.isFinite(n)||n<=0)throw new Error('DEPÓSITO_INVÁLIDO');if(!firebaseReady||!firebase.auth().currentUser)throw new Error('FIREBASE_NO_AUTORIZADO');
  const ref=firebase.database().ref(DB_PATH+'/users/'+remitenteId);let result={creditRepaid:0,balanceAdded:0};
  const tx=await ref.transaction(u=>{if(!u||u.role!=='Remitente')return undefined;const deposits={...(u.depositCredits||{})};
