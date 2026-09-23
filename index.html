@@ -1651,6 +1651,7 @@ function adminCommissionFloor(u){return Math.max(0,Number(u?.commissionAccrued||
 function adminBalanceAllowed(u,nextBalance){return u?.id!=='admin'||Number(nextBalance)+0.000001>=adminCommissionFloor(u)}
 async function updateUserFinancials(userId,deltaBalance,deltaCommission){const db=Number(deltaCommission||0),dBal=Number(deltaBalance||0);if(firebaseReady){try{const ref=firebase.database().ref(DB_PATH+'/users/'+userId);const tx=await ref.transaction(u=>{if(!u)return u;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return undefined;return {...u,balance:nextBalance,commission:Number(u.commission||0)+db,commissionAccrued:Number(u.commissionAccrued||0)+(db>0?db:0)}});if(!tx.committed)return null;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return state.users[userId]}catch(e){console.warn('Financial transaction:',e);return null}}const u=state.users?.[userId];if(!u)return null;const nextBalance=Number(u.balance||0)+dBal;if(!adminBalanceAllowed(u,nextBalance))return null;u.balance=nextBalance;u.commission=Number(u.commission||0)+db;if(db>0)u.commissionAccrued=Number(u.commissionAccrued||0)+db;state.users[userId]=u;if(currentUser?.id===userId)currentUser=u;return u}
 async function setTransactionStatus(collection,id,status){
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
  if(!isAdmin())return;
  // Depósitos: flujo separado; aprobación = 100% al balance del Remitente, comisión RD$0.
  if(collection==='deposits')return approveDeposit(id,status);
@@ -1714,6 +1715,7 @@ async function removeDepositCommissionArtifacts(depositId){
 }
 
 async function approveDeposit(id,status){
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
  if(!isAdmin())return;
  let r=state.deposits?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
@@ -1912,6 +1914,7 @@ function guardarRetiroCuenta(){
 }
 function renderContact(){let c=state.settings?.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
 async function reviewAccountWithdrawal(id,status){
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
  if(!isAdmin())return;let r=state.accountWithdrawals?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
  if(status!=='Aprobado'){
@@ -2423,7 +2426,28 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(document.activeElem
      return '<tr><td>'+ (i+1) +'</td><td>'+escapeHtml(r.username)+'</td><td>'+escapeHtml(a?.bank||'')+' - '+escapeHtml(a?.number||'')+'</td><td>'+money(r.amount)+'</td><td>'+escapeHtml(r.voucher)+'</td><td><span class="status '+statusClass(r.status||'Pendiente')+'">'+escapeHtml(r.status||'Pendiente')+'</span></td><td data-record-id="'+r.id+'">'+actions+'</td></tr>';
    }).join('')||'<tr><td colspan="7" class="muted">No hay depósitos.</td></tr>';
  };
- const _deleteRecordOriginal=deleteRecord;
+ function viewRecord(collection,id){
+ const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
+ const title=(collection==='users'?'Cuenta de usuario':collection==='credits'?'Crédito':collection==='deposits'?'Depósito':collection==='accountWithdrawals'?'Retiro de cuenta':collection==='commissions'?'Movimiento de comisión':'Registro');
+ document.getElementById('detail-content').innerHTML='<div class="receipt-shell"><h3>'+escapeHtml(title)+'</h3><p><b>ID:</b> '+escapeHtml(r.id||id)+'</p><pre style="white-space:pre-wrap;word-break:break-word;background:#f6f8fa;padding:12px;border-radius:8px;max-height:60vh;overflow:auto">'+escapeHtml(JSON.stringify(r,null,2))+'</pre></div>';
+ openModal('detailModal');
+}
+async function deleteRecord(collection,id){
+ const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
+ const admin=isAdmin(),owner=r.userId===currentUser?.id;
+ if(!admin&&(!owner||!['Rechazado','No coincide'].includes(r.status)))return toast('No tiene permiso para eliminar este registro.','warn');
+ const financial=['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','credits'].includes(collection);
+ if(r.status==='Aprobado'||(financial&&r.status==='Pagado'))return toast('Una operación financiera ya aprobada/pagada no se elimina. Use el proceso contable correspondiente.','warn');
+ if(!confirm('¿Eliminar el registro '+String(id)+'?'))return;
+ if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. No se eliminará ningún registro financiero.','error');
+ try{
+  await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).remove();
+  if(state[collection])delete state[collection][id];
+  if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
+  localSave();renderAll();toast('Registro eliminado.','success');
+ }catch(e){console.warn('deleteRecord:',e);toast('No se pudo eliminar el registro en Firebase.','error')}
+}
+const _deleteRecordOriginal=deleteRecord;
  deleteRecord=async function(collection,id){
    const rec=state[collection]?.[id];
    if(!isAdmin() && rec && rec.status==='Aprobado')return toast('Esta operación ya fue aprobada. El Remitente no puede modificarla ni eliminarla.','warn');
