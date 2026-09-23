@@ -862,6 +862,8 @@ function attachRealtimeListeners(){
 function applyBrandLogo(){document.querySelectorAll('img.brand-logo, .sidebar-brand img, #login-screen img, #header-avatar, #profile-preview').forEach(img=>{if(!img.dataset.userAvatar)img.src=LOGO_DATA});}
 function openBrandSite(){window.location.href='https://sendwayo-oficial.github.io/sendwayo-express/';}
 async function boot(){
+  if(window.__sendwayoBootStarted)return;
+  window.__sendwayoBootStarted=true;
   // La bienvenida se muestra primero: ninguna conexión externa puede bloquear el acceso visual.
   try{showWelcome()}catch(e){console.error('SENDWAYO welcome:',e)}
   try{initLanguage()}catch(e){console.warn('SENDWAYO language:',e)}
@@ -877,8 +879,8 @@ async function boot(){
   }catch(e){console.warn('SENDWAYO local state:',e)}
   try{ensureSeedData()}catch(e){console.warn('SENDWAYO seed:',e)}
   try{applyBrandLogo()}catch(e){console.warn('SENDWAYO branding:',e)}
-  loadExportLibraries().catch(()=>{});
-  Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_BOOT_TIMEOUT')),10000))])
+  setTimeout(()=>loadExportLibraries().catch(()=>{}),3000);
+  setTimeout(()=>{Promise.race([initFirebase(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIREBASE_BOOT_TIMEOUT')),10000))])
     .then(ok=>{if(!ok){console.warn('Firebase no disponible al iniciar.');return}
       firebase.auth().onAuthStateChanged(async authUser=>{
         if(!authUser||window.__sendwayoLoginInProgress)return;
@@ -912,6 +914,7 @@ async function boot(){
         }catch(e){console.warn('SENDWAYO session restore:',e);await firebase.auth().signOut().catch(()=>{});currentUser=null;showWelcome()}
       });
     }).catch(e=>console.warn('SENDWAYO Firebase boot:',e));
+  },800);
 }
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
@@ -1075,23 +1078,18 @@ async function updateHistoricalReceipts(){
 async function loadAuthorizedState(authUser){
  const root=firebase.database().ref(DB_PATH);
  if(isAdmin()){
-   const snap=await Promise.race([root.once('value'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
-   if(snap.exists()){
-     const remote=snap.val()||{};
-     state={...state,...remote};
-     state.users={...state.users,...(remote.users||{})};
-     state.beneficiaries={...state.beneficiaries,...(remote.beneficiaries||{})};
-     state.accounts={...state.accounts,...(remote.accounts||{})};
-     state.settings={...state.settings,...(remote.settings||{}),contact:{...state.settings?.contact,...(remote.settings?.contact||{})}};
-   }
+   // Administrador: cargar colecciones separadas, nunca el árbol raíz completo.
+   const adminCollections=['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','notifications','settings'];
+   const snaps=await Promise.race([
+     Promise.all(adminCollections.map(k=>root.child(k).once('value').then(s=>[k,s.val()||{}]))),
+     new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))
+   ]);
+   for(const [k,v] of snaps)state[k]={...(state[k]||{}),...(v||{})};
    mergeFinancialLedgerIntoState();
    ensureSeedData();
    mergeFinancialLedgerIntoState();
    lastSyncedState=cloneState(state);
    attachRealtimeListeners();
-   // No actualizar recibos históricos automáticamente al iniciar sesión.
-   // Esa escritura masiva podía bloquear la interfaz cuando había muchos registros.
-   lastSyncedState=cloneState(state);
    return;
  }
  // REMITENTE: cargar solamente su información. Nunca descargar toda la base.
