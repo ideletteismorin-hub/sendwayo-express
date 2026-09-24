@@ -3007,28 +3007,6 @@ async function guardarDepositoAdministrativo(){
     set('No se pudo inicializar el acceso. Recargue la página e intente nuevamente.','error');
   };
 })();
-<script>
-/* SENDWAYO — puente de acceso: espera a que el módulo principal termine de cargar. */
-(function(){
-  function bindLogin(){
-    window.sendwayoLogin=function(){
-      var status=document.getElementById('login-status');
-      var set=function(m,c){if(status){status.textContent=m;status.className='login-status '+(c||'')}};
-      var tries=0;
-      function run(){
-        if(typeof window.realizarLogin==='function'){
-          try{return window.realizarLogin();}
-          catch(e){set('Error al iniciar el acceso: '+(e.message||e),'error');return;}
-        }
-        tries++;
-        if(tries<100){set('Cargando módulo de acceso…');setTimeout(run,100);}
-        else set('El módulo de acceso no terminó de cargar. Recargue la página.','error');
-      }
-      run();
-    };
-  }
-  bindLogin();
-})();
 </script>
 </body>
 </html>
