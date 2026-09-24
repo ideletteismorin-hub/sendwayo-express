@@ -1302,6 +1302,15 @@ function handleModalBackdropClick(ev){
  // Al cerrar por clic fuera, refrescamos la vista sin bloquear la interfaz.
  if(currentUser&&typeof manualRefresh==='function')manualRefresh(false).catch(()=>{});
 }
+function beginFormSubmit(modalId){
+ const modal=document.getElementById(modalId);
+ if(!modal)return true;
+ if(modal.dataset.submitting==='1')return false;
+ modal.dataset.submitting='1';
+ modal.querySelectorAll('button').forEach(b=>{b.disabled=true;b.style.pointerEvents='none'});
+ closeModal(modalId);
+ return true;
+}
 function closeModal(id){
  const el=document.getElementById(id); if(!el)return;
  el.style.display='none'; el.classList.remove('show');
@@ -1546,7 +1555,7 @@ function resolveEnvioPerson(kind){
  if(kind==='remitente'&&!isAdmin()&&currentUser){const me=state.users?.[currentUser.id];if(me)return setEnvioPersonFields(kind,me,me.id)}
  hidden.value='';
 }
-async function guardarEnvio(){
+async function guardarEnvio(){\n const _modal=document.getElementById('envioModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return;
  resolveEnvioPerson('remitente');resolveEnvioPerson('beneficiario');
  const amount=Number(document.getElementById('env-monto').value),remId=document.getElementById('env-remitente-select').value,benId=document.getElementById('env-beneficiario-select').value,type=document.getElementById('env-tipo-trans').value;
@@ -1561,7 +1570,7 @@ async function guardarEnvio(){
  if(!id)return;
  closeModal('envioModal');toast('Envío guardado como PENDIENTE y enviado a la página del Administrador.','success');
 }
-async function guardarBeneficiario(){
+async function guardarBeneficiario(){\n const _modal=document.getElementById('beneficiarioModal');if(_modal?.dataset.submitting==='1')return;
  let name=document.getElementById('ben-nombre').value.trim(),phone=fullPhone('ben-country',document.getElementById('ben-cel').value.trim());
  if(!name||!phone)return toast('Nombre y celular son obligatorios.','warn');
  let id=uid('bn');
@@ -1575,7 +1584,7 @@ function openPerson(role){if(!isAdmin())return toast('Solo el Administrador pued
 const ip=document.getElementById('pers-initial-pass');if(ip)ip.value=INITIAL_PASSWORD;document.getElementById('pers-active').value='true';openModal('personaModal')}
 document.querySelectorAll('[data-role]').forEach(x=>x.addEventListener('click',e=>openPerson(e.currentTarget.dataset.role)));document.getElementById('pers-nombre')?.addEventListener('input',e=>{const v=normalizeUsername(e.target.value);const user=document.getElementById('pers-user'),el=document.getElementById('pers-auth-email');if(user)user.value=v;if(el)el.value=v?'Se asigna automáticamente al guardar el ID':''})
 function generateLink(username){return location.href.split('?')[0]+'?access='+encodeURIComponent(username)}
-async function guardarPersona(){
+async function guardarPersona(){\n const _modal=document.getElementById('personaModal');if(_modal?.dataset.submitting==='1')return;
  if(!isAdmin())return toast('Solo el Administrador puede crear remitentes.','warn');
  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
  const role='Remitente',name=document.getElementById('pers-nombre').value.trim(),phone=fullPhone('pers-country',document.getElementById('pers-wsp').value.trim()),doc=document.getElementById('pers-doc').value.trim(),user=normalizeUsername(name);
@@ -1603,7 +1612,7 @@ async function creditDepositToRemitente(depositId,remitenteId,amount){ if(!isAdm
  if(!tx.committed)throw new Error('DEPOSITO_NO_ACREDITADO');const updated=tx.snapshot.val();state.users[remitenteId]=updated;if(currentUser?.id===remitenteId)currentUser=updated;if(lastSyncedState?.users?.[remitenteId])lastSyncedState.users[remitenteId]=cloneState(updated);localSave();return {user:updated,creditRepaid:result.creditRepaid,balanceAdded:result.balanceAdded};
 }
 
-async function guardarDeposito(){
+async function guardarDeposito(){\n const _modal=document.getElementById('depositoModal');if(_modal?.dataset.submitting==='1')return;
  const amount=Number(document.getElementById('dep-monto')?.value||0);
  const accountId=document.getElementById('dep-cuenta')?.value||'';
  if(!amount||amount<=0)return toast('Ingrese un monto válido.','warn');
@@ -1647,28 +1656,28 @@ async function guardarDeposito(){
    toast(e?.code==='PERMISSION_DENIED'?'Firebase rechazó el depósito por permisos.':'No se pudo guardar el depósito en Firebase.','error');
  }
 }
-async function guardarRecarga(){
+async function guardarRecarga(){\n const _modal=document.getElementById('recargaModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  let amount=Number(document.getElementById('rec-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
- const id=await createTransaction('recargas',{company:document.getElementById('rec-comp').value,phone:document.getElementById('rec-num').value},amount);if(!id)return;closeModal('recargaModal');toast('Recarga guardada y notificada.')
+ const id=await createTransaction('recargas',{company:document.getElementById('rec-comp').value,phone:document.getElementById('rec-num').value},amount);if(!id)return;toast('Recarga guardada y notificada.')
 }
-async function guardarPaquetico(){
+async function guardarPaquetico(){\n const _modal=document.getElementById('paquetikoModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  const amount=Number(document.getElementById('pkt-monto').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
- const id=await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);if(!id)return;closeModal('paquetikoModal');toast('Paquetico guardado y notificado.');
+ const id=await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);if(!id)return;toast('Paquetico guardado y notificado.');
 }
-async function guardarPago(){
+async function guardarPago(){\n const _modal=document.getElementById('pagoModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  let amount=Number(document.getElementById('pag-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
- const id=await createTransaction('pagos',{company:document.getElementById('pag-empresa').value,contract:document.getElementById('pag-contrato').value,concepto:document.getElementById('pag-concepto')?.value.trim()||''},amount);if(!id)return;closeModal('pagoModal');toast('Pago guardado y notificado.')
+ const id=await createTransaction('pagos',{company:document.getElementById('pag-empresa').value,contract:document.getElementById('pag-contrato').value,concepto:document.getElementById('pag-concepto')?.value.trim()||''},amount);if(!id)return;toast('Pago guardado y notificado.')
 }
-async function guardarPaquete(){
+async function guardarPaquete(){\n const _modal=document.getElementById('paqueteModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
  const amount=Number(document.getElementById('paq-costo').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;
- const id=await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);if(!id)return;closeModal('paqueteModal');toast('Paquete guardado y notificado.');
+ const id=await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);if(!id)return;toast('Paquete guardado y notificado.');
 }
 function updateCommissionTarget(){let sel=document.getElementById('com-target');if(!sel)return;let users=Object.values(state.users).filter(u=>u.role==='Remitente'&&u.active);sel.innerHTML=users.map(u=>`<option value="${u.id}">${escapeHtml(u.name)} — ${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');if(!isAdmin()&&currentUser)sel.value=currentUser.id;let target=state.users[sel.value]||currentUser;document.getElementById('com-disp').value=money(target?.commission||0);const info=document.querySelector('#comisionModal .info-box');if(info)info.textContent=isAdmin()?'Administración puede aplicar la comisión de cualquier Remitente inmediatamente, sin aprobación adicional. El monto debe ser menor o igual a la comisión disponible y pasa directamente a su balance.':'Este módulo permite al Remitente aplicar su propia comisión inmediatamente, sin aprobación administrativa. El monto debe ser menor o igual a su comisión disponible y pasa directamente a su balance.'}
-async function guardarComision(){
+async function guardarComision(){\n const _modal=document.getElementById('comisionModal');if(_modal?.dataset.submitting==='1')return;
  if(!currentUser)return;
  // Retiro/pago: descuenta comisión disponible y acredita el mismo monto al balance inmediatamente.
  const targetId=isAdmin()?document.getElementById('com-target').value:currentUser.id;
