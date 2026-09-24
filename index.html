@@ -1703,7 +1703,8 @@ function calculateCommissionAvailable(userId){
  const paid=Object.values(state.commissions||{}).filter(x=>x&&x.userId===userId&&x.accountingType==='COMISION_PAGADA').reduce((s,x)=>s+Math.max(0,Number(x.amount||0)),0);
  const derived=Math.max(0,earned-paid);
  const fallback=Math.max(0,accrued-paid);
- return Number(Math.max(current,derived,fallback).toFixed(2));
+ const available=earned>0?derived:(accrued>0?fallback:Math.max(0,current));
+ return Number(available.toFixed(2));
 }
 function reconcileCommissionDisplay(userId){
  const u=state.users?.[userId];if(!u)return 0;
