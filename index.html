@@ -1083,7 +1083,7 @@ async function realizarLoginOriginal(){
    const normalizedIdentifier=normalizeUsername(identifier);
    const isAdminLogin=identifier.toLowerCase()===ADMIN_EMAIL||identifier.toLowerCase()==='admin';
    let found=isAdminLogin?users.find(u=>u.id==='admin'):users.find(u=>u.username===identifier||u.authEmail===identifier||u.legacyAuthEmail===identifier||String(u.username||'').toLowerCase()===identifier.toLowerCase()||normalizeUsername(u.name||'')===normalizedIdentifier);
-   let email=isAdminLogin?ADMIN_EMAIL:(found?(found.authEmail||authEmailFor(found)):identifier.toLowerCase());
+   let email=isAdminLogin?ADMIN_EMAIL:(found?(found.authEmail||authEmailFor(found)):(identifier.includes('@')?identifier.toLowerCase():normalizeUsername(identifier)+'@sendwayoexpress.com'));
 
    setStatus('Verificando credenciales…');
    let cred;
@@ -1120,6 +1120,15 @@ async function realizarLoginOriginal(){
        String(u.username||'').toLowerCase()===identifier.toLowerCase()||
        normalizeUsername(u.name||'')===normalizedIdentifier
      );
+     if(!found){
+       try{
+         const snap=await firebase.database().ref(DB_PATH+'/users').orderByChild('authUid').equalTo(authUser.uid).once('value');
+         const vals=snap.val()||{};
+         found=Object.values(vals).find(u=>u&&u.role==='Remitente')||null;
+       }catch(profileLookupError){
+         console.warn('SENDWAYO perfil por authUid:',profileLookupError);
+       }
+     }
      if(!found)throw new Error('PROFILE_NOT_FOUND');
      if(found.active===false)throw new Error('INACTIVE');
      found.authUid=authUser.uid;
