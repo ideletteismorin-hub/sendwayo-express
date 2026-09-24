@@ -76,6 +76,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 .receipt-compact{max-width:560px!important;padding:18px!important;border-radius:16px!important;box-shadow:0 10px 28px rgba(15,44,89,.16)!important}.receipt-compact .receipt-logo{width:125px!important;max-height:58px;margin:0 auto 3px}.receipt-compact .receipt-head h2{font-size:1.08rem!important}.receipt-compact .receipt-slogan{font-size:.67rem!important;max-width:500px!important;line-height:1.25}.receipt-compact .receipt-original{font-size:.72rem!important;padding:5px 10px!important;margin:6px auto!important}.receipt-compact .receipt-concept{font-size:.76rem!important;padding:7px 9px!important;margin:7px 0!important}.receipt-compact .receipt-grid-compact{grid-template-columns:1fr 1fr!important;padding:8px!important;gap:3px 10px}.receipt-compact .receipt-grid-compact>div{font-size:.72rem!important;padding:4px 0!important}.receipt-compact .receipt-amount-row,.receipt-compact .receipt-row.compact{font-size:.78rem!important;padding:7px 9px!important;margin-top:5px}.receipt-compact .receipt-status{font-size:.72rem!important;padding:5px 8px!important;margin:5px 0!important}.receipt-compact .receipt-sign{font-size:13px!important;margin-top:6px!important}.receipt-compact .receipt-sign small{font-size:.62rem!important;width:180px!important}.receipt-compact .receipt-thanks,.receipt-compact .receipt-bottom-line{font-size:.66rem!important;margin:4px auto!important;max-width:500px!important}.receipt-compact .receipt-capture{margin-top:7px!important}.receipt-compact .receipt-capture .btn{font-size:.72rem!important;padding:7px 10px!important}@media(max-width:800px){.receipt-compact{max-width:96vw!important;padding:12px!important}.receipt-compact .receipt-grid-compact{grid-template-columns:1fr!important}}
 
 /* SENDWAYO welcome services visual */
+.service-search-panel{margin:0 0 12px;padding:12px;border:1px solid #dbe3ee;border-radius:12px;background:#f8fbff}.service-search-panel label{display:block;color:#0f2c59;margin-bottom:6px}.service-search-panel input{width:100%}.service-catalog-group.service-hidden{display:none!important}.service-chip.service-match{outline:2px solid #f3b51b;transform:translateY(-1px)}
 .welcome-services-photo{width:100%;margin:18px auto 20px;border-radius:16px;overflow:hidden;background:#f4f6f9;border:1px solid #dbe3ee;box-shadow:0 12px 28px rgba(15,44,89,.16)}
 .welcome-services-photo img{display:block;width:100%;height:auto;max-height:560px;object-fit:contain;filter:brightness(1.04) contrast(1.04) saturate(1.04)}
 .service-catalog{margin:16px 0 18px;padding:16px;border:1px solid #dbe3ee;border-radius:14px;background:linear-gradient(135deg,#f8fbff,#fffdf5)}
@@ -304,6 +305,11 @@ aside{height:100vh;min-height:0;overflow:hidden}
 
   <section id="view-pagos" class="view-section">
     <div class="card"><div class="card-header"><h3>Pago de Facturas y Servicios</h3><button class="btn btn-primary" onclick="openModal('pagoModal')">Agregar Nuevo</button></div>
+    <div class="service-search-panel">
+      <label for="service-catalog-search"><strong>Buscar factura o servicio</strong></label>
+      <input id="service-catalog-search" class="form-control" type="search" autocomplete="off" placeholder="Escriba el nombre del servicio, empresa o factura..." oninput="filterServiceCatalog(this.value)">
+      <div id="service-search-empty" class="muted" style="display:none;margin-top:8px">No aparece en el listado. Puede escribirlo como <strong>Otro servicio</strong> en la solicitud.</div>
+    </div>
     <div class="service-catalog">
       <div class="service-catalog-title"><i class="fa-solid fa-list-check"></i> Todos los servicios y facturas disponibles</div>
       <div class="service-catalog-grid">
@@ -407,7 +413,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
 
 <div class="modal" id="paquetikoModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('paquetikoModal')">×</button><h3>Paquetico</h3><div class="form-grid"><div class="form-group"><label>Compañía</label><select id="pkt-comp" class="form-control"><option>Claro</option><option>VIVA</option><option>Altice</option></select></div><div class="form-group"><label>Número</label><input id="pkt-num" class="form-control"></div><div class="form-group"><label>Plan</label><input id="pkt-plan" class="form-control"></div><div class="form-group"><label>Monto RD$</label><input id="pkt-monto" type="number" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarPaquetico()">Guardar y Notificar</button></div></div>
 
-<div class="modal" id="pagoModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('pagoModal')">×</button><h3>Pago de Factura / Servicio</h3><div class="form-grid"><div class="form-group"><label>Empresa / Servicio</label><select id="pag-empresa" class="form-control"><option>EDEEste</option><option>EDENorte</option><option>EDESur</option><option>CEPM</option><option>CAASD</option><option>Paso Rápido</option></select></div><div class="form-group"><label>NIS / Contrato</label><input id="pag-contrato" class="form-control"></div><div class="form-group"><label>Concepto</label><input id="pag-concepto" class="form-control" placeholder="Ej.: factura de energía, internet, agua, etc."></div><div class="form-group"><label>Monto RD$</label><input id="pag-monto" type="number" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarPago()">Guardar y Notificar</button></div></div>
+<div class="modal" id="pagoModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('pagoModal')">×</button><h3>Pago de Factura / Servicio</h3><div class="form-grid"><div class="form-group"><label>Empresa / Servicio</label><input id="pag-empresa" class="form-control" list="service-options" autocomplete="off" placeholder="Escriba o seleccione el servicio"><datalist id="service-options"><option value="EDEEste"><option value="EDENorte"><option value="EDESur"><option value="CEPM"><option value="CAASD"><option value="Paso Rápido"><option value="Claro"><option value="Altice"><option value="Viva"><option value="Digicel"><option value="Natcom"><option value="MonCash"><option value="NatCash"><option value="Telecable"><option value="Aster"><option value="Sky"><option value="Humana Seguros"><option value="Seguros Reservas"><option value="INTRANT Multas"><option value="Impuestos Internos"><option value="TSS"><option value="Alcaldía S.D.E."><option value="Otro servicio"></datalist></div><div class="form-group"><label>NIS / Contrato</label><input id="pag-contrato" class="form-control"></div><div class="form-group"><label>Concepto</label><input id="pag-concepto" class="form-control" placeholder="Ej.: factura de energía, internet, agua, etc."></div><div class="form-group"><label>Monto RD$</label><input id="pag-monto" type="number" class="form-control"></div></div><div class="muted" style="margin:8px 0">Si no encuentra el servicio, escriba su nombre directamente en «Empresa / Servicio».</div><button class="btn btn-primary" onclick="guardarPago()">Guardar y Notificar</button></div></div>
 
 <div class="modal" id="paqueteModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('paqueteModal')">×</button><h3>Paquete - Recepción y Envío</h3><div class="form-grid"><div class="form-group"><label>Tipo</label><select id="paq-tipo" class="form-control"><option>Enviar paquete</option><option>Recibir paquete</option></select></div><div class="form-group"><label>Peso (kg)</label><input id="paq-peso" type="number" step=".01" class="form-control"></div><div class="form-group"><label>Descripción</label><input id="paq-desc" class="form-control"></div><div class="form-group"><label>Costo RD$</label><input id="paq-costo" type="number" step=".01" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarPaquete()">Guardar y Notificar</button></div></div>
 
@@ -1784,6 +1790,24 @@ currentUser.name=name;currentUser.username=newUser;currentUser.usernameCustomize
 }
 async function setProfileAvatar(input){const file=input?.files?.[0];if(!file||!currentUser)return;const reader=new FileReader();reader.onload=async()=>{currentUser.avatar=reader.result;state.users[currentUser.id]=currentUser;document.getElementById('profile-preview').src=currentUser.avatar;document.getElementById('header-avatar').src=currentUser.avatar;await persist();toast('Foto de perfil actualizada.')};reader.readAsDataURL(file)}
 
+function filterServiceCatalog(query){
+ const q=String(query||'').trim().toLowerCase();
+ const groups=document.querySelectorAll('#view-pagos .service-catalog-group');
+ let matches=0;
+ groups.forEach(group=>{
+   const chips=group.querySelectorAll('.service-chip');
+   let groupMatch=false;
+   chips.forEach(chip=>{
+     const hit=!q||chip.textContent.toLowerCase().includes(q);
+     chip.classList.toggle('service-match',!!q&&hit);
+     if(hit)groupMatch=true;
+   });
+   group.classList.toggle('service-hidden',!!q&&!groupMatch);
+   if(q&&groupMatch)matches++;
+ });
+ const empty=document.getElementById('service-search-empty');
+ if(empty)empty.style.display=(q&&matches===0)?'block':'none';
+}
 function filterTable(input,id){let q=input.value.toLowerCase();document.querySelectorAll('#'+id+' tbody tr').forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?'':'none')}
 function setStatusFilter(view,s,btn){statusFilter=s;document.querySelectorAll('#envio-statusbar button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderEnvios()}
 function filterRequests(s){requestFilter=s;renderRequests()}
