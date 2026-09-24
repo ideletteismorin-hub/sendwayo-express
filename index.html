@@ -339,7 +339,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
     <div class="card"><div class="card-header"><h3>Solicitudes y Aprobaciones</h3><span class="muted">Aprobado · Rechazado · No coincide</span></div>
     <div class="status-bar"><button class="btn btn-success btn-sm" onclick="filterRequests('Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="filterRequests('Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="filterRequests('No coincide')">NO COINCIDE</button><button class="btn btn-light btn-sm" onclick="filterRequests('Todos')">TODOS</button></div>
     <div class="table-toolbar"><div class="actions"><button class="btn btn-primary btn-sm" onclick="openRequest('Enviar dinero')">Agregar Nuevo</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','reqTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','reqTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','reqTable')">CSV</button></div><input class="search-box" placeholder="Buscar solicitud..." oninput="filterTable(this,'reqTable')"></div>
-    <div class="table-wrap"><table id="reqTable"><thead><tr><th>N°</th><th>Nombre</th><th>WhatsApp</th><th>Documento</th><th>Solicitud</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="table-wrap"><table id="reqTable"><thead><tr><th>N°</th><th>Nombre</th><th>Correo</th><th>WhatsApp</th><th>Solicitud</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
   <section id="view-secretas" class="view-section">
@@ -2003,7 +2003,8 @@ async function approveDeposit(id,status){
  try{await addNotification(u.id,'Su depósito fue '+status.toUpperCase()+'. '+reviewReason+' No se generó comisión.','deposits',id)}catch(e){console.warn('Notificación de depósito:',e)}
  await persist();renderAll();toast('Depósito '+status);
 }
-async async function approveRequest(id,status){
+async async function swSaveRequestDecision(id){ const s=document.getElementById('req-status-'+id)?.value; if(!s)return toast('Seleccione APROBADO, RECHAZADO o NO COINCIDE.','warn'); approveRequest(id,s); }
+function approveRequest(id,status){
  if(!isAdmin())return;
  let r=state.requests?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
@@ -2645,7 +2646,7 @@ function renderCommissions(){
 }
 function renderRequests(){
  let rows=newestFirst(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
- document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.email||'')}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${(isAdmin()||(r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid))&&['Rechazado','No coincide'].includes(r.status)?'<button class="btn btn-danger btn-sm" title="Eliminar solicitud rechazada" onclick="deleteRecord(\'requests\',\'${r.id}\')"><i class="fa-solid fa-trash"></i> Eliminar</button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\'${r.id}\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\'${r.id}\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\'${r.id}\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="8" class="muted">No hay solicitudes.</td></tr>'
+ document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.email||'')}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${(isAdmin()||(r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid))&&['Rechazado','No coincide'].includes(r.status)?'<button class="btn btn-danger btn-sm" title="Eliminar solicitud rechazada" onclick="deleteRecord(\'requests\',\'${r.id}\')"><i class="fa-solid fa-trash"></i> Eliminar</button>':''}${isAdmin()&&r.status==='Pendiente'?'<select id="req-status-${r.id}" class="form-control" style="width:auto;min-width:145px"><option value="">Seleccionar</option><option value="Aprobado">APROBADO</option><option value="Rechazado">RECHAZADO</option><option value="No coincide">NO COINCIDE</option></select><button class="btn btn-primary btn-sm" onclick="swSaveRequestDecision(\'${r.id}\')">Guardar</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
 }
 function renderSecrets(){
  if(!isAdmin())return;
@@ -3391,7 +3392,7 @@ async function swUpdateCapital(id){
   localSave();swRenderCapital();closeModal('swCapitalModal');renderAll();toast('Capital modificado y conciliable en contabilidad.','success');
 }
 function swEditCapital(id){swCapitalModal('Editar capital',id,'edit')}
-function swCreditCapital(id){swEditCapital(id)}
+function swCreditCapital(id){swOpenCapitalModal()}
 function swViewCapital(id){const r=state.capital?.movements?.[id];if(!r)return;alert('Capital\\nMonto: '+money(r.amount)+'\\nFecha: '+(r.createdAt||'—')+'\\nAdministrador: '+(r.by||'Administrador')+'\\nNota: '+(r.note||''))}
 function swDownloadCapital(id){const r=state.capital?.movements?.[id];if(!r)return;const blob=new Blob([JSON.stringify(r,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='capital-'+id+'.json';a.click();URL.revokeObjectURL(a.href)}
 async function swDeleteCapital(id){
