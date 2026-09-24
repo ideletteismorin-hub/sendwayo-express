@@ -159,6 +159,11 @@
         ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)"
       },
       ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid || (query.orderByChild === 'userId' && root.child('sendwayo_express_v2/users').child(query.equalTo).child('authUid').val() === auth.uid))"
+    },
+    "capital": {
+      ".read": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)",
+      ".write": "auth != null && (auth.token.admin === true || root.child('sendwayo_express_v2/users/admin/authUid').val() === auth.uid)",
+      ".validate": "!newData.exists() || (newData.child('balance').isNumber() && newData.child('balance').val() >= 0 && newData.child('totalAcreditado').isNumber() && newData.child('totalAcreditado').val() >= 0)"
     }
   }
 }
