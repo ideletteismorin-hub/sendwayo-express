@@ -535,7 +535,7 @@ function ensureStaffDirectory(){}
 function nextStaffId(role){return makePermanentId()}
 
 const BANKS=[{id:'b1',bank:'Banco Popular',holder:'Herace Fleuranvil',number:'831434592',active:true},{id:'b2',bank:'Banreservas',holder:'Herace Fleuranvil',number:'9601783620',active:true},{id:'b3',bank:'BHD',holder:'Herace Fleuranvil',number:'36818900013',active:true}];
-let state={settings:{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0,commissionAccrued:0,bonusAccrued:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{},dailyReports:{}};
+let state={settings:{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0,commissionAccrued:0,bonusAccrued:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{},dailyReports:{},capital:{balance:0,totalAcreditado:0,movements:{}}};
 // Producción: no crear transacciones demo; las cuentas bancarias oficiales sí deben conservarse.
 
 const SESSION_KEY='sendwayo_express_session_v4'; const SESSION_TTL=30*60*1000;
