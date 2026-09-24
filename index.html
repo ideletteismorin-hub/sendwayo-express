@@ -1188,7 +1188,7 @@ async function realizarLogin(){
    setStatus(msg,'error');toast(msg,'error');
  }finally{if(btn){btn.disabled=false;btn.textContent='Ingresar al Sistema'}}
 }
-window.realizarLogin=realizarLogin;
+window.realizarLogin=realizarLoginOriginal;
 async function repairApprovedDeposits(){
   // PRODUCCIÓN: no se recalculan ni se vuelven a acreditar depósitos históricos automáticamente.
   // Esto evita duplicar balances cuando un registro antiguo no trae balanceCredited/depositCredits.
