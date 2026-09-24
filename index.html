@@ -75,7 +75,15 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
  .language-selector{padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#0f2c59;font-size:.76rem;font-weight:700}.phone-wrap{display:flex;gap:6px}.phone-wrap select{width:145px;flex:0 0 145px}.phone-wrap input{flex:1}.country-hint{font-size:.68rem;color:#7b8794;margin-top:3px}.env-suggestions{position:absolute;left:0;right:49px;top:calc(100% + 3px);z-index:12050;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 24px rgba(0,0,0,.16);overflow:hidden;margin-top:0}.search-select-wrap{position:relative}.env-beneficiario-inline{right:49px}.env-suggestion-single{padding:8px 10px}.env-suggestion{display:block;width:100%;border:0;background:#fff;text-align:left;padding:9px 11px;cursor:pointer;font-size:.8rem;border-bottom:1px solid #edf1f5}.env-suggestion:last-child{border-bottom:0}.env-suggestion:hover{background:#f1f5f9}.env-suggestion b{color:#0f2c59}.env-suggestion span{color:#52606d}
 .receipt-compact{max-width:560px!important;padding:18px!important;border-radius:16px!important;box-shadow:0 10px 28px rgba(15,44,89,.16)!important}.receipt-compact .receipt-logo{width:125px!important;max-height:58px;margin:0 auto 3px}.receipt-compact .receipt-head h2{font-size:1.08rem!important}.receipt-compact .receipt-slogan{font-size:.67rem!important;max-width:500px!important;line-height:1.25}.receipt-compact .receipt-original{font-size:.72rem!important;padding:5px 10px!important;margin:6px auto!important}.receipt-compact .receipt-concept{font-size:.76rem!important;padding:7px 9px!important;margin:7px 0!important}.receipt-compact .receipt-grid-compact{grid-template-columns:1fr 1fr!important;padding:8px!important;gap:3px 10px}.receipt-compact .receipt-grid-compact>div{font-size:.72rem!important;padding:4px 0!important}.receipt-compact .receipt-amount-row,.receipt-compact .receipt-row.compact{font-size:.78rem!important;padding:7px 9px!important;margin-top:5px}.receipt-compact .receipt-status{font-size:.72rem!important;padding:5px 8px!important;margin:5px 0!important}.receipt-compact .receipt-sign{font-size:13px!important;margin-top:6px!important}.receipt-compact .receipt-sign small{font-size:.62rem!important;width:180px!important}.receipt-compact .receipt-thanks,.receipt-compact .receipt-bottom-line{font-size:.66rem!important;margin:4px auto!important;max-width:500px!important}.receipt-compact .receipt-capture{margin-top:7px!important}.receipt-compact .receipt-capture .btn{font-size:.72rem!important;padding:7px 10px!important}@media(max-width:800px){.receipt-compact{max-width:96vw!important;padding:12px!important}.receipt-compact .receipt-grid-compact{grid-template-columns:1fr!important}}
 </style>
-</head>
+<style id="sendwayo-sidebar-scroll-fix">
+aside{height:100vh;min-height:0;overflow:hidden}
+.sidebar-menu{min-height:0;max-height:calc(100vh - 98px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.55) transparent;overscroll-behavior:contain;touch-action:pan-y}
+.sidebar-menu::-webkit-scrollbar{width:9px}
+.sidebar-menu::-webkit-scrollbar-track{background:rgba(255,255,255,.08);border-radius:8px}
+.sidebar-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.55);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+.sidebar-menu::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.82);background-clip:padding-box}
+@media(max-width:900px){aside{height:100dvh}.sidebar-menu{max-height:calc(100dvh - 98px);-webkit-overflow-scrolling:touch}}
+</style></head>
 <body>
 <div id="welcome-screen">
   <div class="welcome-card">
@@ -3324,156 +3332,6 @@ window.showReceipt=async function(collection,id){
   }
   return result;
 };
-function swImproveSecrets(){
-  const sec=document.getElementById('view-secretas');if(!sec)return;
-  sec.querySelectorAll('.info-box').forEach((e,i)=>{e.style.padding='8px 10px';e.style.marginBottom='6px';e.style.fontSize='.74rem';if(i>0&&/UID de autenticación|UID del administrador|UID temporal/i.test(e.textContent||''))e.style.display='none'});
-  const div=sec.querySelector('.secret-divider');if(div)div.style.display='none';
-}
-function swInstallStandardListToolbars(){
-  const maps={enviosTable:['Agregar envío','openModal("envioModal")'],benefTable:['Agregar beneficiario','openModal("beneficiarioModal")'],paqTable:['Agregar paquete','openModal("paqueteModal")'],remTable:['Agregar remitente','openPerson("Remitente")'],recTable:['Agregar recarga','openModal("recargaModal")'],paqktTable:['Agregar paquetico','openModal("paquetikoModal")'],pagoTable:['Agregar pago','openModal("pagoModal")'],cuentaTable:['Agregar cuenta','openModal("cuentaModal")'],depTable:['Agregar depósito','openModal("depositoModal")'],accountMoveTable:['Solicitar retiro','openModal("retiroCuentaModal")'],comTable:['Retiro / pago de comisión','openModal("comisionModal")'],creditTable:['Agregar crédito','openCreditGrantModal()']};
-  Object.entries(maps).forEach(([tableId,conf])=>{
-    const table=document.getElementById(tableId);if(!table)return;const card=table.closest('.card');if(!card||card.querySelector('.table-toolbar[data-sw-standard="1"]'))return;
-    const toolbar=document.createElement('div');toolbar.className='table-toolbar';toolbar.dataset.swStandard='1';
-    const add=document.createElement('button');add.className='btn btn-primary btn-sm';add.textContent=conf[0];add.setAttribute('onclick',conf[1]);
-    const acts=document.createElement('div');acts.className='actions';
-    ['Excel','PDF','CSV'].forEach(fmt=>{const b=document.createElement('button');b.className='btn btn-light btn-sm';b.textContent=fmt;b.setAttribute('onclick','exportData("'+fmt+'","'+tableId+'")');acts.appendChild(b)});
-    const search=document.createElement('input');search.className='search-box';search.placeholder='Buscar...';search.setAttribute('oninput','filterTable(this,"'+tableId+'")');
-    toolbar.appendChild(add);toolbar.appendChild(acts);toolbar.appendChild(search);card.insertBefore(toolbar,table.closest('.table-wrap')||table);
-  });
-}
-function swInstallSecurityAndSession(){
-  try{const raw=localStorage.getItem(SESSION_KEY);if(!raw)return;const saved=JSON.parse(raw);if(!saved?.userId||Date.now()-Number(saved.lastActivity||0)>=SESSION_TTL)return;Promise.race([restoreSession(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('SESSION_RESTORE_TIMEOUT')),7000))]).catch(()=>{});}catch(_){}
-}
-const swBaseRenderAll=window.renderAll;if(typeof swBaseRenderAll==='function')window.renderAll=function(){swBaseRenderAll.apply(this,arguments);try{swInstallStandardListToolbars();swImproveSecrets()}catch(_){}};
-const swBaseRenderDashboard=window.renderDashboard;if(typeof swBaseRenderDashboard==='function')window.renderDashboard=function(){swBaseRenderDashboard.apply(this,arguments);if(isAdmin()){const raw=window.adminCommissionRawTotal?window.adminCommissionRawTotal():0,balance=Number(state.users?.admin?.balance||0),shown=Number(commissionTotalFor('admin')||0),el=document.getElementById('admin-finance-control');if(el)el.innerHTML='<b>CONCILIACIÓN:</b> Balance Administración <b>'+money(balance)+'</b> · Comisión acumulada reconocida <b>'+money(shown)+'</b> · Comisión acumulada bruta <b>'+money(raw)+'</b> · Diferencia de control <b>'+money(balance-raw)+'</b>. Las comisiones aprobadas se acreditan automáticamente al balance administrativo.';}};
-window.adminCommissionRawTotal=function(){const a=state.users?.admin||{},stored=Math.max(0,Number(a.commissionAccrued||0));let derived=0;['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>Object.values(state[col]||{}).forEach(r=>{if(r?.status!=='Aprobado')return;const n=Number(r.commissionAdmin??(Number(r.commission||0)*0.5));if(Number.isFinite(n)&&n>0)derived+=n}));return Number(Math.max(stored,derived).toFixed(2))};
-window.commissionTodayFor=function(userId){const today=todayDateKey();let total=0;['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>Object.values(state[col]||{}).forEach(r=>{if(r?.status!=='Aprobado'||commissionDateKey(r.reviewedAt||r.balanceSettledAt||r.createdAt||r.date)!==today)return;const n=userId==='admin'?Number(r.commissionAdmin??(Number(r.commission||0)*0.5)):(r.userId===userId?Number(r.commissionUser??(Number(r.commission||0)*0.5)):0);if(Number.isFinite(n)&&n>0)total+=n}));return Number(total.toFixed(2))};
-window.commissionTotalFor=function(userId){if(userId==='admin'){const raw=window.adminCommissionRawTotal(),bal=Math.max(0,Number(state.users?.admin?.balance||0));return Number(Math.min(raw,bal).toFixed(2))}const u=state.users?.[userId];if(!u)return 0;const accrued=Math.max(0,Number(u.commissionAccrued||0)),current=Math.max(0,Number(u.commission||0));let earned=0;['envios','recargas','paqueticos','pagos','paquetes'].forEach(col=>Object.values(state[col]||{}).forEach(r=>{if(r?.status==='Aprobado'&&r.userId===userId){const n=Number(r.commissionUser??(Number(r.commission||0)*0.5));if(Number.isFinite(n)&&n>0)earned+=n}}));return Number(Math.max(accrued,earned,current).toFixed(2))};
-window.addNotification=async function(target,msg,collection=null,recordId=null){const id=uid('n'),t=resolveNotificationTarget(target),n={id,...t,msg,collection,recordId,createdAt:now(),createdAtMs:Date.now(),read:false};state.notifications=state.notifications||{};state.notifications[id]=n;knownNotificationIds.add(id);localSave();renderNotifications();if(firebaseReady)firebase.database().ref(DB_PATH+'/notifications/'+id).set(n).then(()=>markSynced(['notifications',id],n)).catch(e=>{console.warn('Firebase notification:',e);delete state.notifications[id];knownNotificationIds.delete(id);localSave();renderNotifications()});if(t.target==='Administrador'&&isAdmin())playBell();return id};
-window.resubmitTransaction=swResubmitTransaction;
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',swInstallSecurityAndSession,{once:true});else setTimeout(swInstallSecurityAndSession,250);
-const swStyle=document.createElement('style');swStyle.textContent='.request-compact-section{margin-top:10px;padding:12px;border:1px solid #dbe5ef;border-radius:12px;background:#fbfdff}.request-compact-section h4{margin-bottom:10px;color:#0f2c59}.request-compact-section.hidden{display:none!important}#view-secretas .card{padding:12px}#view-secretas .table-wrap{max-height:58vh;overflow:auto}#view-secretas table{font-size:.72rem}#view-secretas th,#view-secretas td{padding:7px 8px}#view-secretas .table-toolbar{position:sticky;top:0;z-index:3;background:#fff;padding:6px 0;margin-bottom:6px}#view-secretas .actions .btn{font-size:.68rem;padding:4px 6px}';document.head.appendChild(swStyle);
-})();
-</script>
-
-</body>
-</html>,r.amount||0,'number')+field('remName','Nombre del remitente',r.remitenteNombre||r.remitente||'')+field('remPhone','Número del remitente',r.remitentePhone||'')+field('remDoc','Cédula / Pasaporte del remitente',r.remitenteDoc||'')+field('benName','Nombre del beneficiario',r.beneficiarioNombre||r.beneficiario||'')+field('benPhone','Número del beneficiario',r.beneficiarioPhone||'')+'</div>';
-  else if(collection==='recargas')body='<div class="form-grid">'+field('company','Compañía',r.company||'')+field('phone','Número',r.phone||'')+field('amount','Monto',r.amount||0,'number')+'</div>';
-  else if(collection==='paqueticos')body='<div class="form-grid">'+field('company','Compañía',r.company||'')+field('phone','Número',r.phone||'')+field('plan','Plan',r.plan||'')+field('amount','Monto',r.amount||0,'number')+'</div>';
-  else if(collection==='pagos')body='<div class="form-grid">'+field('company','Empresa / servicio',r.company||'')+field('contract','Contrato / NIS',r.contract||'')+field('amount','Monto',r.amount||0,'number')+field('concepto','Concepto',r.concepto||r.concept||'')+'</div>';
-  else if(collection==='paquetes')body='<div class="form-grid">'+field('type','Tipo de paquete',r.type||'')+field('weight','Peso',r.weight||'')+field('amount','Costo / monto',r.amount||r.cost||0,'number')+'<div class="form-group" style="grid-column:1/-1"><label>Descripción</label><textarea id="sw-edit-description" class="form-control" rows="3">'+escapeHtml(r.description||'')+'</textarea></div></div>';
-  else body='<div class="form-grid">'+field('amount','Monto',r.amount||0,'number')+'</div>';
-  const footer=(r.status==='No coincide'&&!admin)?'<button class="btn btn-warning" onclick="swSaveTransactionEdit(\''+collection+'\',\''+id+'\',false)">Guardar cambios</button><button class="btn btn-primary" onclick="swSaveTransactionEdit(\''+collection+'\',\''+id+'\',true)">Guardar y reenviar</button>':'<button class="btn btn-warning" onclick="swSaveTransactionEdit(\''+collection+'\',\''+id+'\',false)">Guardar cambios</button>';
-  m.innerHTML='<div class="modal-content" style="width:min(820px,96vw)"><button class="modal-close-x" onclick="closeModal(\'swTransactionEditModal\')">×</button><h3 style="color:#0f2c59">Modificar operación</h3><p class="muted">Puede corregir los datos. En una operación aprobada, Administración mantiene el control de la conciliación financiera.</p>'+body+'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal(\'swTransactionEditModal\')">Cancelar</button>'+footer+'</div></div>';
-  m.style.display='flex';
-}
-async function swAdjustApprovedTransactionFinancials(collection,r,newAmount){
-  const oldAmount=Number(r.amount||0),newAmt=Number(newAmount||0);if(Math.abs(oldAmount-newAmt)<0.000001)return true;
-  const oldCommission=Number(r.commission||0),calc=collection==='envios'?calcEnvio(newAmt,r.type||r.route):null;
-  if(collection==='envios'&&(!calc.valid||calc.commission<0))return false;
-  const rate=commissionRateFor(collection,{...r,amount:newAmt}),newCommission=collection==='envios'?Number(calc.commission||0):Number(newAmt*rate);
-  const oldUserShare=Number(r.commissionUser??oldCommission*0.5),oldAdminShare=Number(r.commissionAdmin??oldCommission*0.5),newUserShare=newCommission*0.5,newAdminShare=newCommission*0.5;
-  const deltaAmount=newAmt-oldAmount,deltaUserShare=newUserShare-oldUserShare,deltaAdminShare=newAdminShare-oldAdminShare;
-  if(!firebaseReady||!firebase.auth().currentUser)return false;
-  const root=firebase.database().ref(DB_PATH),userId=r.userId;
-  if(userId&&userId!=='admin'){
-    const tx=await root.child('users').child(userId).transaction(u=>{
-      if(!u)return undefined;
-      const balance=Number(u.balance||0)-deltaAmount,commission=Number(u.commission||0)+deltaUserShare,accrued=Number(u.commissionAccrued||0)+deltaUserShare;
-      const paid=Object.values(state.commissions||{}).filter(x=>x&&x.userId===userId&&x.accountingType==='COMISION_PAGADA').reduce((s,x)=>s+Math.max(0,Number(x.amount||0)),0);
-      if(balance<0||commission<0||accrued<paid)return undefined;
-      return {...u,balance:Number(balance.toFixed(2)),commission:Number(commission.toFixed(2)),commissionAccrued:Number(accrued.toFixed(2))};
-    });
-    if(!tx.committed)return false;
-    state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];
-  }
-  const atx=await root.child('users').child('admin').transaction(u=>{
-    if(!u)return undefined;
-    const balance=Number(u.balance||0)+deltaAdminShare,accrued=Math.max(0,Number(u.commissionAccrued||0)+deltaAdminShare);
-    if(balance<0||balance+0.000001<accrued)return undefined;
-    return {...u,balance:Number(balance.toFixed(2)),commissionAccrued:Number(accrued.toFixed(2))};
-  });
-  if(!atx.committed){
-    if(userId&&userId!=='admin')await root.child('users').child(userId).transaction(u=>u?{...u,balance:Number(u.balance||0)+deltaAmount,commission:Number(u.commission||0)-deltaUserShare,commissionAccrued:Number(u.commissionAccrued||0)-deltaUserShare}:undefined);
-    return false;
-  }
-  state.users.admin=atx.snapshot.val();if(currentUser?.id==='admin')currentUser=state.users.admin;
-  r.amount=newAmt;r.commission=newCommission;r.commissionRate=newAmt>0?newCommission/newAmt:rate;r.commissionUser=newUserShare;r.commissionAdmin=newAdminShare;
-  if(collection==='envios'){r.net=calc.net;r.destination=calc.total}
-  return true;
-}
-async function swSaveTransactionEdit(collection,id,resubmit){
-  const r=state[collection]?.[id];if(!r)return;const admin=isAdmin(),owner=r.userId===currentUser?.id;
-  if(!admin&&!(owner&&r.status==='No coincide'))return toast('No tiene permiso para modificar esta operación.','warn');
-  const v=k=>String(document.getElementById('sw-edit-'+k)?.value||'').trim();
-  const amount=Number(v('amount')||0);if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto válido.','warn');
-  if(collection==='envios'){r.type=v('type');r.route=r.type;r.remitenteNombre=v('remName');r.remitente=v('remName');r.remitentePhone=v('remPhone');r.remitenteDoc=v('remDoc');r.beneficiarioNombre=v('benName');r.beneficiario=v('benName');r.beneficiarioPhone=v('benPhone')}
-  else if(collection==='recargas'){r.company=v('company');r.phone=v('phone');if(admin&&r.status==='Aprobado'){if(!await swAdjustApprovedTransactionFinancials(collection,r,amount))return toast('No se pudo reconciliar el cambio financiero.','error')}else{r.amount=amount;r.commission=amount*Number(r.commissionRate??commissionRateFor(collection,r))}}
-  else if(collection==='paqueticos'){r.company=v('company');r.phone=v('phone');r.plan=v('plan');if(admin&&r.status==='Aprobado'){if(!await swAdjustApprovedTransactionFinancials(collection,r,amount))return toast('No se pudo reconciliar el cambio financiero.','error')}else{r.amount=amount;r.commission=amount*Number(r.commissionRate??commissionRateFor(collection,r))}}
-  else if(collection==='pagos'){r.company=v('company');r.contract=v('contract');r.concepto=v('concepto');if(admin&&r.status==='Aprobado'){if(!await swAdjustApprovedTransactionFinancials(collection,r,amount))return toast('No se pudo reconciliar el cambio financiero.','error')}else{r.amount=amount;r.commission=amount*Number(r.commissionRate??commissionRateFor(collection,r))}}
-  else if(collection==='paquetes'){r.type=v('type');r.weight=v('weight');r.description=String(document.getElementById('sw-edit-description')?.value||'').trim();r.cost=amount;if(admin&&r.status==='Aprobado'){if(!await swAdjustApprovedTransactionFinancials(collection,r,amount))return toast('No se pudo reconciliar el cambio financiero.','error')}else{r.amount=amount;r.commission=amount*Number(r.commissionRate??commissionRateFor(collection,r))}}
-  else r.amount=amount;
-  r.editedAt=now();r.editedBy=currentUser?.username||'';
-  if(resubmit&&r.status==='No coincide'&&!admin){if(!await swResubmitTransaction(collection,id))return}
-  else{await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).set(r);state[collection][id]=r;localSave();closeModal('swTransactionEditModal');renderAll();toast('Operación modificada correctamente.','success')}
-}
-async function swResubmitTransaction(collection,id){
-  const r=state[collection]?.[id];if(!r||r.userId!==currentUser?.id||r.status!=='No coincide')return false;
-  if(!await guardBalance(Number(r.amount||0)))return false;
-  r.status='Pendiente';r.reviewReason='';r.reviewedAt='';r.reviewedBy='';r.manualReview=false;r.balanceDebited=true;r.balanceRefunded=false;r.balanceRefundedAt=null;r.creditUsed=Number(currentUser.__creditUsedForOperation||0);r.resubmittedAt=now();
-  await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).set(r);window.addNotification('Administrador','Operación corregida y reenviada para revisión: '+id,collection,id);state[collection][id]=r;localSave();closeModal('swTransactionEditModal');renderAll();toast('Datos corregidos y reenviados al Administrador.','success');return true;
-}
-window.resubmitTransaction=swResubmitTransaction;
-window.editRecord=function(collection,id){const r=state[collection]?.[id];if(!r)return;if(!isAdmin()&&r.status!=='No coincide')return toast('Esta operación no se puede modificar en este estado.','warn');return swShowCorrectTransactionModal(collection,id)};
-window.actionButtons=function(collection,id,status){
-  const admin=isAdmin(),rec=state[collection]?.[id],owner=rec?.userId===currentUser?.id||rec?.createdUserId===currentUser?.id;
-  let a='<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')">Ver</button><button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord(\''+collection+'\',\''+id+'\')">Descargar</button>';
-  if(status==='Aprobado')a+='<button class="btn btn-primary btn-sm" title="Recibo" onclick="showReceipt(\''+collection+'\',\''+id+'\')">COMPROBANTE</button>';
-  if(admin){
-    a+='<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord(\''+collection+'\',\''+id+'\')">Editar</button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\''+collection+'\',\''+id+'\')">Eliminar</button>';
-    if(status==='Pendiente'&&collection!=='accountWithdrawals')a+='<button class="btn btn-success btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'No coincide\')">NO COINCIDE</button>';
-  }else if(owner){
-    if(status==='No coincide')a+='<button class="btn btn-warning btn-sm" onclick="editRecord(\''+collection+'\',\''+id+'\')">Editar</button><button class="btn btn-primary btn-sm" onclick="resubmitTransaction(\''+collection+'\',\''+id+'\')">Reenviar</button><button class="btn btn-danger btn-sm" onclick="deleteRecord(\''+collection+'\',\''+id+'\')">Eliminar</button>';
-    else if(status==='Rechazado')a+='<button class="btn btn-danger btn-sm" onclick="deleteRecord(\''+collection+'\',\''+id+'\')">Eliminar</button>';
-  }
-  return '<div class="actions">'+a+'</div>';
-};
-const swOriginalDeleteRecord=window.deleteRecord;
-window.deleteRecord=async function(collection,id){
-  const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
-  const admin=isAdmin(),owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid;
-  if(!admin&&(!owner||!['Rechazado','No coincide'].includes(r.status)))return toast('No tiene permiso para eliminar este registro.','warn');
-  if(admin&&r.status==='Aprobado')return swAdminDeleteApproved(collection,id);
-  return swOriginalDeleteRecord(collection,id);
-};
-async function swAdminDeleteApproved(collection,id){
-  if(!isAdmin())return false;const r=state[collection]?.[id];if(!r)return false;
-  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
-  if(!confirm('¿Eliminar definitivamente la operación aprobada '+id+'? Se realizará la reversión contable disponible y quedará una auditoría.'))return false;
-  const root=firebase.database().ref(DB_PATH);
-  try{
-    if(['envios','recargas','paqueticos','pagos','paquetes'].includes(collection)){
-      const userId=r.userId,amount=Number(r.amount||0),uShare=Number(r.commissionUser??Number(r.commission||0)*0.5),aShare=Number(r.commissionAdmin??Number(r.commission||0)*0.5);
-      const utx=await root.child('users').child(userId).transaction(u=>{if(!u)return undefined;const balance=Number(u.balance||0)+amount,commission=Number(u.commission||0)-uShare,accrued=Number(u.commissionAccrued||0)-uShare;if(commission<0||accrued<0)return undefined;const next={...u,balance,commission,commissionAccrued:accrued};if(next.transactionCommissionCredits?.[id]){next.transactionCommissionCredits={...next.transactionCommissionCredits};delete next.transactionCommissionCredits[id]}return next});
-      if(!utx.committed)return toast('No se puede eliminar: la conciliación del Remitente no permitiría revertir la comisión.','warn');
-      const atx=await root.child('users').child('admin').transaction(u=>{if(!u)return undefined;const balance=Number(u.balance||0)-aShare,accrued=Number(u.commissionAccrued||0)-aShare;if(balance<0||accrued<0||balance+0.000001<accrued)return undefined;const next={...u,balance,commissionAccrued:accrued};if(next.transactionCommissionCredits?.[id]){next.transactionCommissionCredits={...next.transactionCommissionCredits};delete next.transactionCommissionCredits[id]}return next});
-      if(!atx.committed){await root.child('users').child(userId).transaction(u=>u?{...u,balance:Number(u.balance||0)-amount,commission:Number(u.commission||0)+uShare,commissionAccrued:Number(u.commissionAccrued||0)+uShare}:undefined);return toast('No se puede eliminar: el balance administrativo no permite revertir la comisión sin romper la conciliación.','warn')}
-    }else if(collection==='deposits'){
-      const tx=await root.child('users').child(r.userId).transaction(u=>{if(!u)return undefined;const b=Number(u.balance||0)-Number(r.amount||0);if(b<0)return undefined;const next={...u,balance:b,depositCredits:{...(u.depositCredits||{})}};delete next.depositCredits[id];return next});
-      if(!tx.committed)return toast('No se puede eliminar el depósito: el balance del Remitente no permite revertirlo.','warn');
-    }else if(collection==='commissions'){
-      const tx=await root.child('users').child(r.userId).transaction(u=>{if(!u)return undefined;const b=Number(u.balance||0)-Number(r.amount||0);if(b<0)return undefined;return {...u,balance:b,commission:Number(u.commission||0)+Number(r.amount||0)}});
-      if(!tx.committed)return toast('No se puede eliminar el pago de comisión sin llevar el balance a un valor negativo.','warn');
-    }else if(collection==='accountWithdrawals'){
-      const tx=await root.child('users').child(r.userId).transaction(u=>u?{...u,balance:Number(u.balance||0)+Number(r.amount||0)}:undefined);
-      if(!tx.committed)return toast('No se pudo revertir el retiro aprobado.','warn');
-    }
-    await root.child(collection).child(id).remove();if(state[collection])delete state[collection][id];if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
-    const aid=uid('audit'),audit={id:aid,action:'ELIMINAR APROBADO Y REVERTIR',collection,recordId:id,processedBy:currentUser.username,createdAt:now(),createdByAuthUid:firebase.auth().currentUser.uid};
-    await root.child('audit').child(aid).set(audit);state.audit=state.audit||{};state.audit[aid]=audit;localSave();renderAll();toast('Operación aprobada eliminada y conciliación revertida.','success');return true;
-  }catch(e){console.warn('swAdminDeleteApproved:',e);toast('No se pudo eliminar la operación aprobada de forma segura.','error');return false}
-}
-
 function swImproveSecrets(){
   const sec=document.getElementById('view-secretas');if(!sec)return;
   sec.querySelectorAll('.info-box').forEach((e,i)=>{e.style.padding='8px 10px';e.style.marginBottom='6px';e.style.fontSize='.74rem';if(i>0&&/UID de autenticación|UID del administrador|UID temporal/i.test(e.textContent||''))e.style.display='none'});
