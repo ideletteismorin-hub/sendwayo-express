@@ -181,13 +181,22 @@ aside{height:100vh;min-height:0;overflow:hidden}
     <div class="card admin-only" data-sw-static-capital-dashboard style="margin-top:18px;border-top:5px solid #d4a017;background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.3rem">CAPITAL</h2><p class="muted" style="margin-top:4px">Partida exclusiva de Administración para el capital ingresado y destinado a beneficios mensuales. No se mezcla con depósitos, comisiones ni balance operativo.</p></div><div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()"><i class="fa-solid fa-circle-plus"></i> Acreditar capital</button></div></div><div class="kpis" style="margin-top:8px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="kpi-capital-static">RD$ 0.00</h2><small class="muted">Permanece reservado hasta que Administración decida utilizarlo.</small></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado histórico</b><h2 id="capital-total-acreditado-static">RD$ 0.00</h2></div></div></div><div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
   </section>
 
-  <section id="view-capital" class="view-section admin-only"><div class="card"><div class="card-header"><div><h2>Capital de Administración</h2><p class="muted">Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.</p></div><div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()">Acreditar capital</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTable')">CSV</button></div></div><div class="kpis" style="margin-bottom:14px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="capital-view-balance">RD$ 0.00</h2></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado</b><h2 id="capital-total-acreditado-view">RD$ 0.00</h2></div></div><div class="table-toolbar"><input class="search-box" placeholder="Buscar movimiento de capital..." oninput="filterTable(this,'capitalTable')"></div><div class="table-wrap"><table id="capitalTable"><thead><tr><th>Fecha</th><th>Período</th><th>Tipo</th><th>Monto</th><th>Administrador</th><th>Nota</th></tr></thead><tbody></tbody></table></div></div></section><section id="view-capital-static" class="view-section admin-only" data-sw-static-capital-view>
-<div class="card"><div class="card-header"><div><h2>Capital de Administración</h2><p class="muted">Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.</p></div>
-<div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()">Acreditar capital</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTableStatic')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTableStatic')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTableStatic')">CSV</button></div></div>
-<div class="kpis" style="margin-bottom:14px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="capital-view-balance-static">RD$ 0.00</h2></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado</b><h2 id="capital-total-acreditado-view-static">RD$ 0.00</h2></div></div>
-<div class="table-toolbar"><input class="search-box" placeholder="Buscar movimiento de capital..." oninput="filterTable(this,'capitalTableStatic')"></div>
-<div class="table-wrap"><table id="capitalTableStatic"><thead><tr><th>Fecha</th><th>Período</th><th>Tipo</th><th>Monto</th><th>Administrador</th><th>Nota</th></tr></thead><tbody><tr><td colspan="6" class="muted">No hay movimientos de capital registrados.</td></tr></tbody></table></div></div></section>
-
+  <section id="view-capital" class="view-section admin-only">
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Capital</h2><p class="muted">Capital exclusivo del Administrador.</p></div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="swOpenCapitalModal()">Agregar nuevo</button>
+          <button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTable')">Excel</button>
+          <button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTable')">PDF</button>
+          <button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTable')">CSV</button>
+        </div>
+      </div>
+      <div class="kpis" style="margin-bottom:14px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital</b><h2 id="capital-view-balance">RD$ 0.00</h2></div></div>
+      <div class="table-toolbar"><input id="capital-search" class="search-box" placeholder="Buscar..." oninput="filterTable(this,'capitalTable')"></div>
+      <div class="table-wrap"><table id="capitalTable"><thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Administrador</th><th>Acciones</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
 <section id="view-informes" class="view-section">
     <div class="card">
       <div class="card-header">
@@ -1995,26 +2004,31 @@ async function approveDeposit(id,status){
  try{await addNotification(u.id,'Su depósito fue '+status.toUpperCase()+'. '+reviewReason+' No se generó comisión.','deposits',id)}catch(e){console.warn('Notificación de depósito:',e)}
  await persist();renderAll();toast('Depósito '+status);
 }
-async function approveRequest(id,status){
+async async function approveRequest(id,status){
  if(!isAdmin())return;
  let r=state.requests?.[id];if(!r||r.status!=='Pendiente')return;
  let reviewReason='';
- if(status!=='Aprobado'){
-   reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';
-   if(!reviewReason)return toast('Debe escribir un motivo.','warn');
- }
+ if(status!=='Aprobado'){reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';if(!reviewReason)return toast('Debe escribir un motivo.','warn')}
  r.status=status;r.reviewedAt=now();r.reviewedBy=currentUser.username;r.reviewReason=reviewReason;r.manualReview=true;
  if(status==='Aprobado'&&r.type==='Remitente'){
    const role='Remitente',staffId=makePermanentId(),username=normalizeUsername(r.name)||'remitente',idu=uid('rm');
-   const user={id:idu,staffId,role,name:r.name,phone:r.phone,doc:r.doc,username,authEmail:authEmailFor({id:idu,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
+   const user={id:idu,staffId,role,name:r.name,phone:r.phone,email:r.email,doc:r.doc||'',username,authEmail:authEmailFor({id:idu,staffId}),active:true,accountStatus:'Pendiente de activación',balance:0,commission:0,referrals:0,accountSchemaV3:1};
    r.createdUserId=idu;r.username=username;r.staffId=staffId;r.authEmail=user.authEmail;r.accessLink=generateLink(username);r.accountStatus='Pendiente de activación';state.users[idu]=user;
    const cr=await createFirebaseAccountForUser(user);r.accountStatus=cr.status==='error'?'Error de activación':'Activo';
-   await addNotification(idu,'Solicitud aprobada. ID '+staffId+'. Contraseña inicial: 12345678.', 'requests',id);
+   await addNotification(idu,'Solicitud aprobada. ID '+staffId+'. Contraseña inicial: 12345678.','requests',id);
  }
  if(status!=='Aprobado'&&r.createdUserId)await addNotification(r.createdUserId,'Solicitud '+status.toUpperCase()+'. '+reviewReason,'requests',id);
- addAudit('Solicitud '+id+' -> '+status,id);await persist();renderAll();toast('Solicitud '+status+'.')
+ addAudit('Solicitud '+id+' -> '+status,id);
+ await persist();renderAll();
+ const wa=String(r.phone||'').replace(/\\D/g,'');
+ if(wa){
+   const msg='SENDWAYO EXPRESS\\nSolicitud: '+status.toUpperCase()+'\\nNombre: '+r.name+'\\n'+(reviewReason?'Motivo: '+reviewReason+'\\n':'')+'Gracias por comunicarse con SENDWAYO EXPRESS.';
+   r.whatsappNotificationLink='https://wa.me/'+wa+'?text='+encodeURIComponent(msg);
+   try{await firebase.database().ref(DB_PATH+'/requests/'+id).update({whatsappNotificationLink:r.whatsappNotificationLink})}catch(e){}
+   window.open(r.whatsappNotificationLink,'_blank');
+ }
+ toast('Solicitud '+status+' guardada.','success');
 }
-
 function transactionConcept(collection,r){
  if(collection==='envios')return r.type||'Envío / recepción de dinero';
  if(collection==='recargas')return 'Recarga '+(r.company||'telefónica');
@@ -2632,7 +2646,7 @@ function renderCommissions(){
 }
 function renderRequests(){
  let rows=newestFirst(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
- document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${(isAdmin()||(r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid))&&['Rechazado','No coincide'].includes(r.status)?'<button class="btn btn-danger btn-sm" title="Eliminar solicitud rechazada" onclick="deleteRecord(\'requests\',\'${r.id}\')"><i class="fa-solid fa-trash"></i> Eliminar</button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\'${r.id}\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\'${r.id}\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\'${r.id}\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
+ document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.email||'')}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${(isAdmin()||(r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid))&&['Rechazado','No coincide'].includes(r.status)?'<button class="btn btn-danger btn-sm" title="Eliminar solicitud rechazada" onclick="deleteRecord(\'requests\',\'${r.id}\')"><i class="fa-solid fa-trash"></i> Eliminar</button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\'${r.id}\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\'${r.id}\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\'${r.id}\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="8" class="muted">No hay solicitudes.</td></tr>'
 }
 function renderSecrets(){
  if(!isAdmin())return;
@@ -3066,73 +3080,22 @@ function swField(id,label,type='text',placeholder=''){
 function swBuildPublicRequestForm(){
   const modal=document.getElementById('requestModal'); if(!modal)return;
   const box=modal.querySelector('.modal-content'); if(!box)return;
-  box.style.width='min(980px,97vw)';
+  box.style.width='min(650px,96vw)';
   box.innerHTML=
     '<button class="modal-close-x" onclick="closeModal(\'requestModal\')">×</button>'+
-    '<h3 style="color:#0f2c59">Solicitud completa a SENDWAYO EXPRESS</h3>'+
-    '<p class="muted" style="margin:7px 0 14px">El formulario se adapta al servicio. Se registran completos los datos del solicitante, beneficiario, países, dinero y paquetes para evitar solicitudes incompletas.</p>'+
-    '<div class="info-box" style="margin-bottom:12px"><b>Todos los campos marcados con *</b> son obligatorios.</div>'+
-    '<div class="request-compact-section"><h4>1. Datos del solicitante</h4><div class="form-grid">'+
+    '<h3 style="color:#0f2c59">Solicitud a SENDWAYO EXPRESS</h3>'+
+    '<p class="muted" style="margin:7px 0 14px">Para enviar la solicitud solo necesitamos su nombre, correo electrónico y un número de WhatsApp.</p>'+
+    '<div class="form-grid">'+
       swField('req-first-name','Nombre')+swField('req-last-name','Apellido')+
-      swPhone('req-phone','req-country','WhatsApp / Teléfono celular')+
-      swField('req-doc','Cédula o Pasaporte')+swField('req-email','Correo electrónico','email')+
-      swField('req-city','Ciudad / Provincia')+
-      '<div class="form-group" style="grid-column:1/-1"><label>Dirección completa *</label><input id="req-address" class="form-control"></div>'+
-      '<div class="form-group"><label>Tipo de solicitud *</label><select id="req-type" class="form-control">'+
-        '<option value="">Seleccione el servicio</option><option value="Remitente">Quiero ser remitente</option><option value="Enviar dinero">Quiero enviar dinero</option><option value="Recibir dinero">Quiero recibir dinero</option><option value="Enviar paquete">Quiero enviar paquete</option><option value="Recibir paquete">Quiero recibir paquete</option>'+
-      '</select></div>'+
-    '</div></div>'+
-    '<div id="sw-money-block" class="request-compact-section hidden"><h4>2. Datos del dinero</h4><div class="form-grid">'+
-      swSelect('req-money-origin-country','País de origen')+
-      swSelect('req-money-destination-country','País de destino')+
-      '<div class="form-group"><label>Tipo / moneda *</label><select id="req-money-currency" class="form-control"><option value="">Seleccione</option><option>RD$ - Pesos dominicanos</option><option>HTG - Gourdes haitianos</option><option>USD - Dólares estadounidenses</option><option>EUR - Euros</option><option>CAD - Dólares canadienses</option><option>GBP - Libras esterlinas</option><option>Otra moneda</option></select></div>'+
-      swField('req-money-amount','Monto','number','0.00')+
-      '<div class="form-group"><label>Canal / modalidad *</label><select id="req-money-channel" class="form-control"><option value="">Seleccione</option><option>MonCash</option><option>NatCash</option><option>Cuenta bancaria</option><option>Otro servicio autorizado</option></select></div>'+
-      swField('req-money-purpose','Propósito de la operación','text','Apoyo familiar, pago, compra, etc.')+
-    '</div></div>'+
-    '<div id="sw-beneficiary-block" class="request-compact-section hidden"><h4>3. Datos completos del beneficiario</h4><div class="form-grid">'+
-      swField('req-ben-first-name','Nombre')+swField('req-ben-last-name','Apellido')+
-      swSelect('req-ben-country','País del beneficiario')+
-      swPhone('req-ben-phone','req-ben-phone-country','WhatsApp / Teléfono del beneficiario')+
-      swField('req-ben-doc','Cédula / Pasaporte del beneficiario')+swField('req-ben-city','Ciudad del beneficiario')+
-      '<div class="form-group" style="grid-column:1/-1"><label>Dirección del beneficiario *</label><input id="req-ben-address" class="form-control"></div>'+
-    '</div></div>'+
-    '<div id="sw-money-sender-block" class="request-compact-section hidden"><h4>3. Datos de quien envía el dinero</h4><div class="form-grid">'+
-      swField('req-sender-name','Nombre completo del remitente')+
-      swSelect('req-sender-country','País del remitente')+
-      swPhone('req-sender-phone','req-sender-phone-country','WhatsApp / Teléfono del remitente')+
-      swField('req-sender-relation','Relación con quien recibe')+
-    '</div></div>'+
-    '<div id="sw-package-block" class="request-compact-section hidden"><h4>2. Datos completos del paquete</h4><div class="form-grid">'+
-      swSelect('req-package-origin-country','País de origen del paquete')+
-      swSelect('req-package-destination-country','País de destino del paquete')+
-      '<div class="form-group"><label>Tipo de paquete *</label><select id="req-package-type" class="form-control"><option value="">Seleccione</option><option>Documento</option><option>Paquete pequeño</option><option>Paquete mediano</option><option>Paquete grande</option><option>Compra internacional</option><option>Otro</option></select></div>'+
-      swField('req-package-quantity','Cantidad de piezas','number','1')+
-      swField('req-package-weight','Peso aproximado (kg)','number','0.00')+
-      swField('req-package-value','Valor declarado','number','0.00')+
-      '<div class="form-group"><label>Moneda del valor *</label><select id="req-package-currency" class="form-control"><option value="">Seleccione</option><option>RD$ - Pesos dominicanos</option><option>HTG - Gourdes haitianos</option><option>USD - Dólares estadounidenses</option><option>EUR - Euros</option><option>CAD - Dólares canadienses</option><option>Otra moneda</option></select></div>'+
-      swField('req-package-tracking','Número de rastreo / guía','text','Si ya existe')+
-      '<div class="form-group" style="grid-column:1/-1"><label>Descripción detallada del contenido *</label><textarea id="req-package-description" class="form-control" rows="3" placeholder="Qué contiene el paquete"></textarea></div>'+
-    '</div></div>'+
-    '<div id="sw-package-recipient-block" class="request-compact-section hidden"><h4>3. Datos completos de quien recibe el paquete</h4><div class="form-grid">'+
-      swField('req-rec-first-name','Nombre')+swField('req-rec-last-name','Apellido')+
-      swSelect('req-rec-country','País de entrega')+
-      swPhone('req-rec-phone','req-rec-phone-country','WhatsApp / Teléfono del beneficiario')+
-      '<div class="form-group"><label>Cédula / Pasaporte</label><input id="req-rec-doc" class="form-control"></div>'+
-      swField('req-rec-city','Ciudad')+
-      '<div class="form-group" style="grid-column:1/-1"><label>Dirección de entrega *</label><input id="req-rec-address" class="form-control"></div>'+
-    '</div></div>'+
-    '<div id="sw-package-sender-block" class="request-compact-section hidden"><h4>3. Datos de quien envía el paquete</h4><div class="form-grid">'+
-      swField('req-pkg-sender-name','Nombre completo del remitente')+
-      swSelect('req-pkg-sender-country','País del remitente')+
-      swPhone('req-pkg-sender-phone','req-pkg-sender-phone-country','WhatsApp / Teléfono del remitente')+
-    '</div></div>'+
-    '<div class="request-compact-section"><div class="form-group"><label>Observaciones adicionales</label><textarea id="req-note" class="form-control" rows="3" placeholder="Cualquier instrucción especial"></textarea></div></div>'+
-    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal(\'requestModal\')">Cerrar</button><button class="btn btn-primary" onclick="submitRequest()">Enviar solicitud completa</button></div>';
-
+      swField('req-email','Correo electrónico','email')+
+      swPhone('req-phone','req-country','WhatsApp')+
+      '<div class="form-group" style="grid-column:1/-1"><label>Tipo de solicitud *</label><select id="req-type" class="form-control"><option value="">Seleccione el servicio</option><option value="Remitente">Quiero ser remitente</option><option value="Enviar dinero">Quiero enviar dinero</option><option value="Recibir dinero">Quiero recibir dinero</option><option value="Enviar paquete">Quiero enviar paquete</option><option value="Recibir paquete">Quiero recibir paquete</option></select></div>'+
+    '</div>'+
+    '<div class="form-group"><label>Mensaje / Observación</label><textarea id="req-note" class="form-control" rows="4" placeholder="Escriba su solicitud o mensaje"></textarea></div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal(\'requestModal\')">Cerrar</button><button id="send-request-btn" class="btn btn-primary" onclick="submitRequest()">Enviar solicitud</button></div>';
   const select=document.getElementById('req-type');
   if(select)select.onchange=()=>swRefreshRequestType(select.value);
-  swRefreshRequestType(select?.value||'');
+  swRefreshRequestType('');
 }
 function swRefreshRequestType(type){
   const show=(id,b)=>{const e=document.getElementById(id);if(e)e.classList.toggle('hidden',!b)};
@@ -3152,49 +3115,23 @@ async function openRequest(type){
 window.openRequest=openRequest;window.sendwayoOpenRequest=openRequest;
 
 async function submitRequest(){
-  const first=swVal('req-first-name'),last=swVal('req-last-name'),email=swVal('req-email'),doc=swVal('req-doc'),city=swVal('req-city'),address=swVal('req-address'),type=swVal('req-type'),phone=fullPhone('req-country',swVal('req-phone'));
-  if(!first||!last||!phone||!doc||!email||!city||!address||!type)return toast('Complete todos los datos básicos obligatorios.','warn');
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast('Escriba un correo electrónico válido.','warn');
-  const data={id:uid('req'),name:(first+' '+last).trim(),firstName:first,lastName:last,phone,doc,email,city,address,type,note:swVal('req-note'),status:'Pendiente',createdAt:now(),createdAtMs:Date.now(),requesterUserId:currentUser?.id||null,requesterAuthUid:firebaseReady?firebase.auth().currentUser?.uid||null:null};
-  if(type==='Enviar dinero'||type==='Recibir dinero'){
-    const origin=swVal('req-money-origin-country'),destination=swVal('req-money-destination-country'),currency=swVal('req-money-currency'),amount=swNumber('req-money-amount'),channel=swVal('req-money-channel'),purpose=swVal('req-money-purpose');
-    if(!origin||!destination||!currency||amount<=0||!channel||!purpose)return toast('Complete país de origen, país de destino, moneda, monto, canal y propósito.','warn');
-    data.money={originCountry:origin,destinationCountry:destination,currency,amount,channel,purpose};
-  }
-  if(type==='Enviar dinero'){
-    const bf=swVal('req-ben-first-name'),bl=swVal('req-ben-last-name'),bc=swVal('req-ben-country'),bp=fullPhone('req-ben-phone-country',swVal('req-ben-phone')),bd=swVal('req-ben-doc'),bci=swVal('req-ben-city'),ba=swVal('req-ben-address');
-    if(!bf||!bl||!bc||!bp||!bd||!bci||!ba)return toast('Complete nombre, apellido, país, teléfono, documento, ciudad y dirección del beneficiario.','warn');
-    data.beneficiary={name:(bf+' '+bl).trim(),firstName:bf,lastName:bl,country:bc,phone:bp,doc:bd,city:bci,address:ba};
-  }
-  if(type==='Recibir dinero'){
-    const sn=swVal('req-sender-name'),sc=swVal('req-sender-country'),sp=fullPhone('req-sender-phone-country',swVal('req-sender-phone')),sr=swVal('req-sender-relation');
-    if(!sn||!sc||!sp||!sr)return toast('Complete nombre, país, teléfono y relación de quien envía el dinero.','warn');
-    data.sender={name:sn,country:sc,phone:sp,relation:sr};
-  }
-  if(type==='Enviar paquete'||type==='Recibir paquete'){
-    const po=swVal('req-package-origin-country'),pd=swVal('req-package-destination-country'),pt=swVal('req-package-type'),qty=swNumber('req-package-quantity'),weight=swNumber('req-package-weight'),value=swNumber('req-package-value'),cur=swVal('req-package-currency'),desc=swVal('req-package-description'),track=swVal('req-package-tracking');
-    if(!po||!pd||!pt||qty<1||weight<=0||value<0||!cur||!desc)return toast('Complete países, tipo, cantidad, peso, valor, moneda y descripción del paquete.','warn');
-    data.package={originCountry:po,destinationCountry:pd,type:pt,quantity:qty,weightKg:weight,declaredValue:value,currency:cur,description:desc,trackingNumber:track||''};
-    const rf=swVal('req-rec-first-name'),rl=swVal('req-rec-last-name'),rc=swVal('req-rec-country'),rp=fullPhone('req-rec-phone-country',swVal('req-rec-phone')),rd=swVal('req-rec-doc'),rci=swVal('req-rec-city'),ra=swVal('req-rec-address');
-    if(!rf||!rl||!rc||!rp||!rci||!ra)return toast('Complete nombre, apellido, país, teléfono, ciudad y dirección de quien recibe el paquete.','warn');
-    data.recipient={name:(rf+' '+rl).trim(),firstName:rf,lastName:rl,country:rc,phone:rp,doc:rd,city:rci,address:ra};
-  }
-  if(type==='Recibir paquete'){
-    const sn=swVal('req-pkg-sender-name'),sc=swVal('req-pkg-sender-country'),sp=fullPhone('req-pkg-sender-phone-country',swVal('req-pkg-sender-phone'));
-    if(!sn||!sc||!sp)return toast('Complete los datos de quien envía el paquete.','warn');
-    data.sender={name:sn,country:sc,phone:sp};
-  }
+  const first=swVal('req-first-name'),last=swVal('req-last-name'),email=swVal('req-email'),type=swVal('req-type'),phone=fullPhone('req-country',swVal('req-phone'));
+  const note=swVal('req-note');
+  if(!first||!last||!email||!phone||!type)return toast('Complete nombre, apellido, correo, WhatsApp y tipo de solicitud.','warn');
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return toast('Escriba un correo electrónico válido.','warn');
+  const btn=document.getElementById('send-request-btn');if(btn){btn.disabled=true;btn.textContent='Enviando…'}
+  const data={id:uid('req'),name:(first+' '+last).trim(),firstName:first,lastName:last,email,phone,type,note,status:'Pendiente',createdAt:now(),createdAtMs:Date.now(),requesterUserId:currentUser?.id||null,requesterAuthUid:firebaseReady?firebase.auth().currentUser?.uid||null:null};
   try{
     await initFirebase();
     if(!firebaseReady)throw new Error('FIREBASE_UNAVAILABLE');
     await Promise.race([firebase.database().ref(DB_PATH+'/requests/'+data.id).set(data),new Promise((_,reject)=>setTimeout(()=>reject(new Error('REQUEST_TIMEOUT')),12000))]);
     state.requests=state.requests||{};state.requests[data.id]=data;
     if(firebase.auth().currentUser)window.addNotification('Administrador','Nueva solicitud: '+type+' de '+data.name,'requests',data.id);
-    localSave();closeModal('requestModal');renderAll();toast('Solicitud completa enviada al Administrador.','success');showWelcome();
+    localSave();closeModal('requestModal');renderAll();toast('Solicitud enviada al Administrador.','success');showWelcome();
   }catch(e){
     console.warn('Solicitud pública SENDWAYO:',e);
-    toast(e?.message==='REQUEST_TIMEOUT'?'Firebase tardó demasiado en guardar la solicitud. No se cerró la información.':'No se pudo enviar la solicitud a Firebase. Revise Internet e inténtelo nuevamente.','error');
-  }
+    toast(e?.message==='REQUEST_TIMEOUT'?'Firebase tardó demasiado en guardar la solicitud.':'No se pudo enviar la solicitud a Firebase. Revise Internet e inténtelo nuevamente.','error');
+  }finally{if(btn){btn.disabled=false;btn.textContent='Enviar solicitud'}}
 }
 
 function swShowCorrectTransactionModal(collection,id){
@@ -3403,81 +3340,78 @@ function swCapitalIsAdmin(){
 function swRenderCapital(){
   const c=swEnsureCapitalState(),bal=Math.max(0,Number(c.balance||0));
   document.querySelectorAll('[data-capital-balance]').forEach(el=>el.textContent=money(bal));
-  const k=document.getElementById('kpi-capital');if(k)k.textContent=money(bal);
-  const v=document.getElementById('capital-view-balance');if(v)v.textContent=money(bal);
-  const t=document.getElementById('capital-total-acreditado');if(t)t.textContent=money(c.totalAcreditado||0);const tv=document.getElementById('capital-total-acreditado-view');if(tv)tv.textContent=money(c.totalAcreditado||0);
-  const body=document.querySelector('#capitalTable tbody');
-  if(body){
-    const rows=Object.values(c.movements||{}).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
-    body.innerHTML=rows.map((r,i)=>'<tr><td>'+escapeHtml(r.createdAt||'—')+'</td><td>'+escapeHtml(r.period||'—')+'</td><td>'+escapeHtml(r.type||'ACREDITACIÓN DE CAPITAL')+'</td><td><b>'+money(r.amount)+'</b></td><td>'+escapeHtml(r.by||'Administrador')+'</td><td>'+escapeHtml(r.note||'')+'</td></tr>').join('')||'<tr><td colspan="6" class="muted">No hay movimientos de capital registrados.</td></tr>';
-  }
+  ['capital-view-balance','kpi-capital','kpi-capital-static'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=money(bal)});
+  ['capital-total-acreditado','capital-total-acreditado-view','capital-total-acreditado-static','capital-total-acreditado-view-static'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=money(c.totalAcreditado||0)});
+  document.querySelectorAll('#capitalTable tbody').forEach(body=>{
+    const rows=Object.values(c.movements||{}).sort((a,b)=>Number(b.createdAtMs||0)-Number(a.createdAtMs||0));
+    body.innerHTML=rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.createdAt||'—')+'</td><td>'+escapeHtml(r.type||'ACREDITACIÓN')+'</td><td><b>'+money(r.amount)+'</b></td><td>'+escapeHtml(r.by||'Administrador')+'</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="swViewCapital(\''+r.id+'\')">Ver</button><button class="btn btn-warning btn-sm" onclick="swEditCapital(\''+r.id+'\')">Editar</button><button class="btn btn-success btn-sm" onclick="swCreditCapital(\''+r.id+'\')">Acreditar</button><button class="btn btn-primary btn-sm" onclick="swDownloadCapital(\''+r.id+'\')">Descargar</button><button class="btn btn-danger btn-sm" onclick="swDeleteCapital(\''+r.id+'\')">Eliminar</button></div></td></tr>').join('')||'<tr><td colspan="6" class="muted">No hay movimientos de capital registrados.</td></tr>';
+  });
 }
-function swOpenCapitalModal(){
-  if(!swCapitalIsAdmin())return toast('Solo el Administrador puede acreditar capital.','warn');
+function swCapitalModal(title,id,mode){
+  if(!swCapitalIsAdmin())return;
   let modal=document.getElementById('swCapitalModal');
-  if(!modal){
-    modal=document.createElement('div');
-    modal.className='modal admin-only';
-    modal.id='swCapitalModal';
-    modal.setAttribute('onclick','handleModalBackdropClick(event)');
-    modal.innerHTML='<div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal(\'swCapitalModal\')">×</button><h3 style="color:#0f2c59">Acreditar Capital</h3><div class="info-box" style="margin-bottom:12px"><b>Capital exclusivo de Administración.</b><br>Esta partida queda separada del balance operativo, depósitos y comisiones. No recibe dinero automáticamente y no modifica el balance administrativo.</div><div class="form-group"><label>Monto de capital (RD$)</label><input id="sw-capital-amount" type="number" min="0.01" step="0.01" class="form-control" placeholder="0.00"></div><div class="form-group"><label>Mes / período</label><input id="sw-capital-period" type="month" class="form-control"></div><div class="form-group"><label>Nota</label><textarea id="sw-capital-note" class="form-control" rows="3" placeholder="Descripción de la entrada de capital"></textarea></div><div class="info-box">Capital actual: <b data-capital-balance>RD$ 0.00</b></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal(\'swCapitalModal\')">Cancelar</button><button class="btn btn-primary" onclick="swSaveCapital()">Acreditar capital</button></div></div>';
-    document.body.appendChild(modal);
-  }
-  const d=new Date(),period=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-  document.getElementById('sw-capital-amount').value='';
-  document.getElementById('sw-capital-period').value=period;
-  document.getElementById('sw-capital-note').value='';
-  swRenderCapital();
+  if(!modal){modal=document.createElement('div');modal.className='modal admin-only';modal.id='swCapitalModal';document.body.appendChild(modal)}
+  const r=id?(state.capital?.movements?.[id]||{}):{};
+  modal.innerHTML='<div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close-x" onclick="closeModal(\'swCapitalModal\')">×</button><h3 style="color:#0f2c59">'+title+'</h3><div class="form-group"><label>Monto de capital (RD$)</label><input id="sw-capital-amount" type="number" min="0.01" step="0.01" class="form-control" value="'+(r.amount||'')+'"></div><div class="form-group"><label>Nota</label><textarea id="sw-capital-note" class="form-control" rows="3">'+escapeHtml(r.note||'')+'</textarea></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-light" onclick="closeModal(\'swCapitalModal\')">Cancelar</button><button class="btn btn-primary" onclick="'+(mode==='edit'?'swUpdateCapital(\''+id+'\')':'swSaveCapital()')+'">Guardar</button></div></div>';
   modal.style.display='flex';
 }
+function swOpenCapitalModal(){swCapitalModal('Agregar nuevo capital',null,'add')}
 async function swSaveCapital(){
   if(!swCapitalIsAdmin())return toast('Solo el Administrador puede acreditar capital.','warn');
-  const amount=Number(document.getElementById('sw-capital-amount')?.value||0);
-  const period=String(document.getElementById('sw-capital-period')?.value||'').trim();
-  const note=String(document.getElementById('sw-capital-note')?.value||'').trim();
-  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto de capital mayor que cero.','warn');
-  if(!period)return toast('Seleccione el mes o período del capital.','warn');
+  const amount=Number(document.getElementById('sw-capital-amount')?.value||0),note=swVal('sw-capital-note');
+  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
   if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
-  const root=firebase.database().ref(DB_PATH);
+  const root=firebase.database().ref(DB_PATH),id=uid('cap'),stamp=now(),ms=Date.now(),by=currentUser?.username||'admin';
   try{
     const tx=await root.child('capital').transaction(v=>{
-      const cur=v&&typeof v==='object'?v:{};
-      const balance=Number(cur.balance||0),total=Number(cur.totalAcreditado||0);
-      const id=uid('cap');
-      return {
-        ...cur,
-        balance:Number((balance+amount).toFixed(2)),
-        totalAcreditado:Number((total+amount).toFixed(2)),
-        updatedAt:now(),
-        updatedBy:currentUser?.username||'admin',
-        movements:{
-          ...(cur.movements||{}),
-          [id]:{
-            id,
-            type:'ACREDITACIÓN DE CAPITAL',
-            amount:Number(amount.toFixed(2)),
-            period,
-            note,
-            by:currentUser?.username||'admin',
-            createdAt:now(),
-            createdAtMs:Date.now()
-          }
-        }
-      };
+      const cur=v&&typeof v==='object'?v:{},balance=Number(cur.balance||0),total=Number(cur.totalAcreditado||0);
+      return {...cur,balance:Number((balance+amount).toFixed(2)),totalAcreditado:Number((total+amount).toFixed(2)),updatedAt:stamp,updatedBy:by,movements:{...(cur.movements||{}),[id]:{id,type:'ACREDITACIÓN DE CAPITAL',amount:Number(amount.toFixed(2)),note,by,createdAt:stamp,createdAtMs:ms}}};
     });
     if(!tx.committed)return toast('No se pudo guardar el capital.','error');
     state.capital=tx.snapshot.val()||swCapitalDefaults;
-    localSave();
-    swRenderCapital();
-    closeModal('swCapitalModal');
-    renderAll();
-    toast('Capital acreditado correctamente. No se mezcló con el balance operativo.','success');
-  }catch(e){
-    console.warn('Acreditar capital:',e);
-    toast('No se pudo guardar el capital de forma segura.','error');
-  }
+    try{await root.child('ledger').child(id).set({id,type:'CAPITAL',account:'ADMINISTRADOR',movement:'ACREDITACIÓN',amount:Number(amount.toFixed(2)),reference:'capital/'+id,createdAt:stamp,createdAtMs:ms,by})}catch(e){console.warn('Registro contable de capital:',e)}
+    localSave();swRenderCapital();closeModal('swCapitalModal');renderAll();toast('Capital acreditado y registrado en contabilidad.','success');
+  }catch(e){console.warn('Acreditar capital:',e);toast('No se pudo guardar el capital de forma segura.','error')}
 }
-window.swSaveCapital=swSaveCapital;
+async function swUpdateCapital(id){
+  if(!swCapitalIsAdmin())return;
+  const old=state.capital?.movements?.[id];if(!old)return;
+  const amount=Number(document.getElementById('sw-capital-amount')?.value||0),note=swVal('sw-capital-note');
+  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
+  const root=firebase.database().ref(DB_PATH);
+  const tx=await root.child('capital').transaction(v=>{
+    if(!v?.movements?.[id])return;
+    const cur={...v,movements:{...v.movements}},oldAmt=Number(cur.movements[id].amount||0),delta=amount-oldAmt;
+    cur.balance=Number((Number(cur.balance||0)+delta).toFixed(2));cur.totalAcreditado=Number((Number(cur.totalAcreditado||0)+delta).toFixed(2));
+    cur.movements[id]={...cur.movements[id],amount:Number(amount.toFixed(2)),note,editedAt:now(),editedBy:currentUser?.username||'admin'};
+    return cur;
+  });
+  if(!tx.committed)return toast('No se pudo modificar el capital.','error');
+  state.capital=tx.snapshot.val()||swCapitalDefaults;
+  await root.child('ledger').child(id).update({movement:'EDICIÓN',amount:Number(amount.toFixed(2)),updatedAt:now(),by:currentUser?.username||'admin'}).catch(()=>{});
+  localSave();swRenderCapital();closeModal('swCapitalModal');renderAll();toast('Capital modificado y conciliable en contabilidad.','success');
+}
+function swEditCapital(id){swCapitalModal('Editar capital',id,'edit')}
+function swCreditCapital(id){swEditCapital(id)}
+function swViewCapital(id){const r=state.capital?.movements?.[id];if(!r)return;alert('Capital\\nMonto: '+money(r.amount)+'\\nFecha: '+(r.createdAt||'—')+'\\nAdministrador: '+(r.by||'Administrador')+'\\nNota: '+(r.note||''))}
+function swDownloadCapital(id){const r=state.capital?.movements?.[id];if(!r)return;const blob=new Blob([JSON.stringify(r,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='capital-'+id+'.json';a.click();URL.revokeObjectURL(a.href)}
+async function swDeleteCapital(id){
+  if(!swCapitalIsAdmin())return;
+  const r=state.capital?.movements?.[id];if(!r)return;
+  if(!confirm('¿Eliminar este movimiento de capital?'))return;
+  const root=firebase.database().ref(DB_PATH);
+  const tx=await root.child('capital').transaction(v=>{
+    if(!v?.movements?.[id])return;
+    const x={...v,movements:{...v.movements}},amt=Number(x.movements[id].amount||0);
+    delete x.movements[id];x.balance=Math.max(0,Number((Number(x.balance||0)-amt).toFixed(2)));x.totalAcreditado=Math.max(0,Number((Number(x.totalAcreditado||0)-amt).toFixed(2)));x.updatedAt=now();x.updatedBy=currentUser?.username||'admin';return x;
+  });
+  if(!tx.committed)return toast('No se pudo eliminar el capital.','error');
+  state.capital=tx.snapshot.val()||swCapitalDefaults;
+  await root.child('ledger').child(id).update({movement:'ELIMINACIÓN',amount:0,updatedAt:now(),by:currentUser?.username||'admin'}).catch(()=>{});
+  localSave();swRenderCapital();renderAll();toast('Movimiento eliminado y registrado en contabilidad.','success');
+}
+window.swSaveCapital=swSaveCapital;window.swOpenCapitalModal=swOpenCapitalModal;window.swEditCapital=swEditCapital;window.swUpdateCapital=swUpdateCapital;window.swCreditCapital=swCreditCapital;window.swViewCapital=swViewCapital;window.swDownloadCapital=swDownloadCapital;window.swDeleteCapital=swDeleteCapital;
+
 window.swOpenCapitalModal=swOpenCapitalModal;
 
 function swInstallCapitalUI(){
