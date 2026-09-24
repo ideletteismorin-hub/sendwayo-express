@@ -1145,67 +1145,9 @@ async function realizarLoginOriginal(){
  }
 }
 async function realizarLogin(){
- const status=document.getElementById('login-status');
- const setStatus=(msg,kind='')=>{if(status){status.textContent=msg;status.className='login-status '+kind}};
- const identifier=(document.getElementById('login-user')?.value||'').trim();
- const password=document.getElementById('login-pass')?.value||'';
- const ADMIN_EMAIL='sendwayoexpress@gmail.com';
- if(!identifier||!password){setStatus('Escriba usuario y contraseña.','warn');return}
- const isAdminLogin=identifier.toLowerCase()==='admin'||identifier.toLowerCase()===ADMIN_EMAIL;
- if(!isAdminLogin){
-   try{
-     await initFirebase();
-     const normalized=normalizeUsername(identifier);
-     const usersRef=firebase.database().ref(DB_PATH+'/users');
-     let vals={};
-     if(identifier.includes('@')){
-       const snap=await usersRef.orderByChild('authEmail').equalTo(identifier.toLowerCase()).once('value');
-       vals=snap.val()||{};
-     }else{
-       const snap=await usersRef.orderByChild('username').equalTo(identifier).once('value');
-       vals=snap.val()||{};
-       if(!Object.keys(vals).length){
-         const snap2=await usersRef.orderByChild('username').equalTo(normalized).once('value');
-         vals=snap2.val()||{};
-       }
-     }
-     const remote=Object.values(vals).find(u=>u && u.active!==false);
-     if(remote){ state.users=state.users||{}; state.users[remote.id]=remote; }
-   }catch(e){ console.warn('Prelogin profile lookup:',e); }
- }
- if(!isAdminLogin)return realizarLoginOriginal();
- const btn=document.querySelector('#login-screen button[onclick="realizarLogin()"]');
- if(btn){btn.disabled=true;btn.textContent='Entrando…'}
- try{
-   setStatus('Conectando con Firebase…');
-   const ready=await initFirebase();
-   if(!ready)throw new Error('FIREBASE_UNAVAILABLE');
-   setStatus('Verificando credenciales…');
-   const cred=await Promise.race([
-     firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL,password),
-     new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
-   ]);
-   const authUser=cred.user;
-   currentUser={id:'admin',role:'Administrador',name:'Administración SENDWAYO EXPRESS',username:'admin',authEmail:ADMIN_EMAIL,authUid:authUser.uid,active:true,balance:0,commission:0,staffId:'ADMIN',accountSchemaV3:1};
-   state.users=state.users||{};
-   state.users.admin=currentUser;
-   lastActivity=Date.now();sessionStartedAt=Date.now();
-   try{saveSession()}catch(e){}
-   showAppForUser(currentUser);
-   applyRoleVisibility();
-   setStatus('Acceso autorizado.','ok');
-   toast('Bienvenido a SENDWAYO EXPRESS.','success');
-   try{
-     await Promise.race([loadAuthorizedState(authUser),new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))]);
-     const fresh=Object.values(state.users||{}).find(u=>u.id==='admin');
-     if(fresh){fresh.authUid=authUser.uid;fresh.authEmail=ADMIN_EMAIL;currentUser=fresh}
-     attachRealtimeListeners();applyRoleVisibility();renderAll();
-   }catch(e){console.warn('Sincronización posterior:',e)}
- }catch(e){
-   console.warn('Login admin:',e);
-   const msg=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Usuario o contraseña incorrectos.':e.code==='auth/operation-not-allowed'?'Correo/contraseña no está habilitado en Firebase.':e.code==='auth/network-request-failed'?'No hay comunicación con Firebase.':e.message==='AUTH_TIMEOUT'?'Firebase tardó demasiado en responder.':'No se pudo iniciar sesión: '+(e.code||e.message||'error');
-   setStatus(msg,'error');toast(msg,'error');
- }finally{if(btn){btn.disabled=false;btn.textContent='Ingresar al Sistema'}}
+ // Acceso directo y único: no consultar RTDB antes de autenticar.
+ // Esto evita que permisos/red o datos del perfil bloqueen el inicio de sesión.
+ return realizarLoginOriginal();
 }
 window.realizarLogin=realizarLogin;
 async function repairApprovedDeposits(){
