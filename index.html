@@ -1722,6 +1722,7 @@ async function guardarComision(){
  if(!isAdmin()&&targetId!==currentUser.id)return toast('Solo puede aplicar su propia comisión.','warn');
  const amount=Number(document.getElementById('com-monto').value);
  const available=reconcileCommissionDisplay(target.id);
+ const availableBefore=available;
  if(!Number.isFinite(amount)||amount<=0||amount>available)return toast('El monto debe ser menor o igual a la comisión disponible.','warn');
  if(!firebaseReady||!firebase.auth().currentUser)return toast('La sesión de Firebase no está activa.','error');
  if(!beginFormSubmit('comisionModal'))return;
@@ -1729,7 +1730,7 @@ async function guardarComision(){
    const ref=firebase.database().ref(DB_PATH+'/users/'+target.id);
    const tx=await ref.transaction(u=>{
      if(!u)return undefined;
-     const available=Math.max(0,Number(u.commission||0),Number(u.commissionAccrued||0));
+     const available=Math.max(0,Number(u.commission||0),Number(availableBefore||0));
      if(available<amount)return undefined;
      const next={...u,commission:Number((available-amount).toFixed(2)),balance:Number(u.balance||0)+amount};
      const credits={...(u.commissionCredits||{})};
