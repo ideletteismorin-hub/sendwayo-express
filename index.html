@@ -1008,7 +1008,7 @@ function openRequest(type){
 async function submitRequest(){
  let firstName=document.getElementById('req-first-name').value.trim(),lastName=document.getElementById('req-last-name').value.trim(),name=(firstName+' '+lastName).trim(),phone=fullPhone('req-country',document.getElementById('req-phone').value.trim()),doc=document.getElementById('req-doc').value.trim(),type=document.getElementById('req-type').value;
  if(!firstName||!lastName||!phone||!doc)return toast('Complete nombre, apellido, número de celular y cédula o pasaporte.','warn');
- let id=uid('req');state.requests[id]={id,name,phone,doc,type,note:document.getElementById('req-note').value.trim(),status:'Pendiente',createdAt:now()};
+ let id=uid('req');state.requests[id]={id,name,phone,doc,type,note:document.getElementById('req-note').value.trim(),status:'Pendiente',createdAt:now(),requesterUserId:currentUser?.id||null,requesterAuthUid:firebase.auth().currentUser?.uid||null};
  await addNotification('Administrador','Nueva solicitud: '+type+' de '+name,'requests',id);
  await persist();closeModal('requestModal');toast('Solicitud enviada al Administrador.');showWelcome()
 }
@@ -2585,8 +2585,8 @@ function renderCommissions(){
  }).join("")||"<tr><td colspan='7' class='muted'>No hay pagos de comisión.</td></tr>";
 }
 function renderRequests(){
- let rows=newestFirst(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
- document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${isAdmin()?'<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\'requests\',\''+r.id+'\')"><i class="fa-solid fa-trash"></i></button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\''+r.id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\''+r.id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\''+r.id+'\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
+ let rows=newestFirst(state.requests).filter(r=>isAdmin()||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid).filter(r=>requestFilter==='Todos'||r.status===requestFilter);
+ document.querySelector('#reqTable tbody').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.phone)}</td><td>${escapeHtml(r.doc)}</td><td>${escapeHtml(r.type)}</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td data-record-id="${r.id}"><div class="actions"><button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('requests','${r.id}')"><i class="fa-solid fa-eye"></i></button>${(isAdmin()||(r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid))&&['Rechazado','No coincide'].includes(r.status)?'<button class="btn btn-danger btn-sm" title="Eliminar solicitud rechazada" onclick="deleteRecord(\'requests\',\'${r.id}\')"><i class="fa-solid fa-trash"></i> Eliminar</button>':''}${isAdmin()&&r.status==='Pendiente'?'<button class="btn btn-success btn-sm" onclick="approveRequest(\'${r.id}\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="approveRequest(\'${r.id}\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="approveRequest(\'${r.id}\',\'No coincide\')">NO COINCIDE</button>':''}</div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No hay solicitudes.</td></tr>'
 }
 function renderSecrets(){
  if(!isAdmin())return;
@@ -2684,7 +2684,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(document.activeElem
 }
 async function deleteRecord(collection,id){
  const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
- const admin=isAdmin(),owner=r.userId===currentUser?.id;
+ const admin=isAdmin(),owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid;
  if(!admin&&(!owner||!['Rechazado','No coincide'].includes(r.status)))return toast('No tiene permiso para eliminar este registro.','warn');
  const financial=['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','credits'].includes(collection);
  if(r.status==='Aprobado'||(financial&&r.status==='Pagado'))return toast('Una operación financiera ya aprobada/pagada no se elimina. Use el proceso contable correspondiente.','warn');
@@ -2990,6 +2990,23 @@ async function guardarDepositoAdministrativo(){
   window.ensureAdminStartAtZero=async function(){return false};
 })();
 
+</script><script>
+/* SENDWAYO — acceso estable: espera la función real sin mostrar un falso error de módulo. */
+(function(){
+  var status=document.getElementById('login-status');
+  function set(m,c){if(status){status.textContent=m;status.className='login-status '+(c||'')}}
+  window.sendwayoLogin=async function(){
+    var user=(document.getElementById('login-user')?.value||'').trim(),pass=document.getElementById('login-pass')?.value||'';
+    if(!user||!pass){set('Escriba usuario y contraseña.','warn');return}
+    for(var tries=0;tries<60;tries++){
+      if(typeof window.realizarLogin==='function')return window.realizarLogin();
+      if(typeof window.realizarLoginOriginal==='function')return window.realizarLoginOriginal();
+      set('Preparando el acceso…');
+      await new Promise(function(resolve){setTimeout(resolve,100)});
+    }
+    set('No se pudo inicializar el acceso. Recargue la página e intente nuevamente.','error');
+  };
+})();
 </script><script>
 /* SENDWAYO — puente de acceso: espera a que el módulo principal termine de cargar. */
 (function(){
