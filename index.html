@@ -3394,7 +3394,7 @@ function swRenderCapital(){
   document.querySelectorAll('[data-capital-balance]').forEach(el=>el.textContent=money(bal));
   const k=document.getElementById('kpi-capital');if(k)k.textContent=money(bal);
   const v=document.getElementById('capital-view-balance');if(v)v.textContent=money(bal);
-  const t=document.getElementById('capital-total-acreditado');if(t)t.textContent=money(c.totalAcreditado||0);
+  const t=document.getElementById('capital-total-acreditado');if(t)t.textContent=money(c.totalAcreditado||0);const tv=document.getElementById('capital-total-acreditado-view');if(tv)tv.textContent=money(c.totalAcreditado||0);
   const body=document.querySelector('#capitalTable tbody');
   if(body){
     const rows=Object.values(c.movements||{}).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
@@ -3538,7 +3538,7 @@ if(typeof attachRealtimeListeners==='function'){
     }catch(e){console.warn('Capital realtime:',e)}
   };
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',swInstallCapitalUI,{once:true});else setTimeout(swInstallCapitalUI,0);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',swInstallCapitalUI,{once:true});else setTimeout(swInstallCapitalUI,0);setTimeout(()=>{swEnsureHtml2Canvas().catch(()=>{})},3000);
 
 async function swEnsureHtml2Canvas(){
   if(window.html2canvas)return true;
