@@ -114,7 +114,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     <div class="form-group"><label>Usuario o correo electrónico</label><input id="login-user" type="text" class="form-control" autocomplete="username" placeholder="nombre.apellido"></div>
     <div class="form-group"><label>Contraseña</label><input id="login-pass" type="password" class="form-control" autocomplete="current-password"></div>
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="window.sendwayoLogin()">Ingresar al Sistema</button><button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="window.sendwayoResetAdminPassword()">Olvidé la contraseña del administrador</button><div id="login-status" class="login-status" role="status" aria-live="polite"></div>
-    <button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="showWelcome()">Volver a bienvenida</button>
+    <button class="btn btn-light" style="width:100%;justify-content:center;margin-top:8px" onclick="window.sendwayoOpenWelcome()">Volver a bienvenida</button>
   </div>
 </div>
 
@@ -982,7 +982,7 @@ async function boot(){
   try{showWelcome()}catch(e){console.error('SENDWAYO welcome:',e)}
   // Si existe una sesión válida (<30 min de inactividad), la restauramos
   // automáticamente al recargar. No se solicitan usuario/contraseña otra vez.
-  try{await restoreSession()}catch(e){console.warn('Restauración de sesión:',e)}
+  // No bloquear la bienvenida intentando restaurar Firebase al abrir la página. El acceso se inicializa al pulsar Entrar.
 }
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
@@ -1188,7 +1188,7 @@ async function realizarLogin(){
    setStatus(msg,'error');toast(msg,'error');
  }finally{if(btn){btn.disabled=false;btn.textContent='Ingresar al Sistema'}}
 }
-window.realizarLogin=realizarLoginOriginal;
+window.realizarLogin=realizarLogin;
 async function repairApprovedDeposits(){
   // PRODUCCIÓN: no se recalculan ni se vuelven a acreditar depósitos históricos automáticamente.
   // Esto evita duplicar balances cuando un registro antiguo no trae balanceCredited/depositCredits.
@@ -2765,9 +2765,7 @@ const _deleteRecordOriginal=deleteRecord;
       u.name=name;u.username=newUser;u.usernameCustomized=false;u.staffId=u.staffId||makePermanentId();
       if(isAdmin()){
         const phone=prompt('WhatsApp / celular:',u.phone||''); if(phone!==null)u.phone=phone.trim();
-        u.active=confirm('¿Desea mantener este remitente ACTIVO?\
-Aceptar = Activo\
-Cancelar = Inactivo');
+        u.active=confirm('¿Desea mantener este remitente ACTIVO?\nAceptar = Activo\nCancelar = Inactivo');
       }
       if(!u.authEmail)u.authEmail=authEmailFor(u);
       state.users[id]=u; const ok=await persist();
