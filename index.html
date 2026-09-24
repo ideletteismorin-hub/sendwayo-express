@@ -1139,11 +1139,27 @@ async function realizarLoginOriginal(){
      );
      if(!found){
        try{
-         const snap=await firebase.database().ref(DB_PATH+'/users').orderByChild('authUid').equalTo(authUser.uid).once('value');
-         const vals=snap.val()||{};
+         const usersRef=firebase.database().ref(DB_PATH+'/users');
+         let snap=await usersRef.orderByChild('authUid').equalTo(authUser.uid).once('value');
+         let vals=snap.val()||{};
          found=Object.values(vals).find(u=>u&&u.role==='Remitente')||null;
+         if(!found && authUser.email){
+           snap=await usersRef.orderByChild('authEmail').equalTo(String(authUser.email).toLowerCase()).once('value');
+           vals=snap.val()||{};
+           found=Object.values(vals).find(u=>u&&u.role==='Remitente')||null;
+         }
+         if(!found && identifier && !identifier.includes('@')){
+           snap=await usersRef.orderByChild('username').equalTo(identifier.toLowerCase()).once('value');
+           vals=snap.val()||{};
+           found=Object.values(vals).find(u=>u&&u.role==='Remitente')||null;
+         }
+         if(!found && identifier){
+           snap=await usersRef.orderByChild('staffId').equalTo(identifier.toUpperCase()).once('value');
+           vals=snap.val()||{};
+           found=Object.values(vals).find(u=>u&&u.role==='Remitente')||null;
+         }
        }catch(profileLookupError){
-         console.warn('SENDWAYO perfil por authUid:',profileLookupError);
+         console.warn('SENDWAYO perfil por identidad:',profileLookupError);
        }
      }
      if(!found)throw new Error('PROFILE_NOT_FOUND');
