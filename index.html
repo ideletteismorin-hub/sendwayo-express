@@ -2571,9 +2571,7 @@ async function editUser(id){
  let newUser=normalizeUsername(clean);
  if(!newUser)return toast('El usuario no puede quedar vacío.','warn');if(newUser!==u.username&&Object.values(state.users||{}).some(x=>x.id!==u.id&&String(x.username||'').toLowerCase()===newUser.toLowerCase()))return toast('Ese usuario ya existe.','warn');
  u.name=clean;u.username=newUser;u.usernameCustomized=isAdmin()&&newUser!==normalizeUsername(clean);
- if(isAdmin()){const phone=prompt('WhatsApp / celular:',u.phone||'');if(phone!==null)u.phone=phone.trim();u.active=confirm('¿Desea mantener este usuario ACTIVO?
-Aceptar = Activo
-Cancelar = Inactivo')}
+ if(isAdmin()){const phone=prompt('WhatsApp / celular:',u.phone||'');if(phone!==null)u.phone=phone.trim();u.active=confirm('¿Desea mantener este usuario ACTIVO?\nAceptar = Activo\nCancelar = Inactivo')}
  u.staffId=permanentId;if(!u.authEmail)u.authEmail=authEmailFor(u);state.users[id]=u;await persist();renderAll();toast('Usuario actualizado. El ID permanente '+permanentId+' y el acceso de Firebase se conservaron.');
 }
 function deleteUser(id){if(id==='admin')return;if(!confirm('¿Eliminar usuario?'))return;delete state.users[id];persist();renderAll();toast('Usuario eliminado.')}
@@ -2651,27 +2649,14 @@ async function adminChangePassword(id){
  }
 }
 
-function sendWhatsAppCredentials(u,password=INITIAL_PASSWORD,targetWindow=null){if(!u||!u.phone)return;const link=generateLink(u.username),msg='SENDWAYO EXPRESS
-DATOS DE ACCESO
-Rol: '+u.role+'
-ID: '+u.staffId+'
-Usuario: '+u.username+'
-Contraseña: '+password+'
-Enlace: '+link+'
-Puede cambiar su nombre, usuario y contraseña después de ingresar.';const url='https://wa.me/'+String(u.phone).replace(/\D/g,'')+'?text='+encodeURIComponent(msg);if(targetWindow&&!targetWindow.closed){targetWindow.location.href=url;}else{window.open(url,'_blank')}}
+function sendWhatsAppCredentials(u,password=INITIAL_PASSWORD,targetWindow=null){if(!u||!u.phone)return;const link=generateLink(u.username),msg='SENDWAYO EXPRESS\nDATOS DE ACCESO\nRol: '+u.role+'\nID: '+u.staffId+'\nUsuario: '+u.username+'\nContraseña: '+password+'\nEnlace: '+link+'\nPuede cambiar su nombre, usuario y contraseña después de ingresar.';const url='https://wa.me/'+String(u.phone).replace(/\D/g,'')+'?text='+encodeURIComponent(msg);if(targetWindow&&!targetWindow.closed){targetWindow.location.href=url;}else{window.open(url,'_blank')}}
 
-function sendWhatsApp(id){const u=state.users[id];if(!u)return;const email=u.authEmail||authEmailFor(u),link=generateLink(u.username),msg='SENDWAYO EXPRESS
-ID: '+(u.staffId||'')+'
-Usuario: '+u.username+'
-Correo de acceso: '+email+'
-Link: '+link+'
-La contraseña se configura o recupera mediante Firebase Authentication.';window.open('https://wa.me/'+String(u.phone||'').replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank')}
+function sendWhatsApp(id){const u=state.users[id];if(!u)return;const email=u.authEmail||authEmailFor(u),link=generateLink(u.username),msg='SENDWAYO EXPRESS\nID: '+(u.staffId||'')+'\nUsuario: '+u.username+'\nCorreo de acceso: '+email+'\nLink: '+link+'\nLa contraseña se configura o recupera mediante Firebase Authentication.';window.open('https://wa.me/'+String(u.phone||'').replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank')}
 
 function renderProfile(){document.getElementById('profile-name').value=currentUser.name||'';document.getElementById('profile-username').value=currentUser.username||'';document.getElementById('profile-phone').value=currentUser.phone||'';document.getElementById('profile-staff-id').value=currentUser.staffId||'';document.getElementById('profile-pass').value='';document.getElementById('profile-preview').src=currentUser.avatar||LOGO_DATA}
 async function exportData(format,tableId){
  let table=document.getElementById(tableId);if(!table)return;
- if(format==='CSV'){let rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(c=>`"${c.innerText.replace(/"/g,'""')}"`).join(',')).join('
-');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows],{type:'text/csv;charset=utf-8'}));a.download=tableId+'.csv';a.click();return}
+ if(format==='CSV'){let rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(c=>`"${c.innerText.replace(/"/g,'""')}"`).join(',')).join('\\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows],{type:'text/csv;charset=utf-8'}));a.download=tableId+'.csv';a.click();return}
  if((format==='Excel'&&!window.XLSX)||(format==='PDF'&&!window.jspdf)){const ok=await loadExportLibraries();if(!ok)return toast('No se pudo cargar la biblioteca de exportación. Revise Internet e inténtelo nuevamente.','error')}
  if(format==='Excel'&&window.XLSX){let wb=XLSX.utils.table_to_book(table,{sheet:'SENDWAYO'});XLSX.writeFile(wb,tableId+'.xlsx');return}
  if(format==='PDF'&&window.jspdf){let {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape'});doc.text('SENDWAYO EXPRESS',12,12);doc.text(new Date().toLocaleString('es-DO'),12,19);let y=30;[...table.rows].forEach((tr,ri)=>{let cells=[...tr.cells].map(c=>c.innerText).join(' | ');doc.setFontSize(ri===0?8:7);let lines=doc.splitTextToSize(cells,270);doc.text(lines,10,y);y+=lines.length*4+2;if(y>195){doc.addPage();y=15}});doc.save(tableId+'.pdf');return}
