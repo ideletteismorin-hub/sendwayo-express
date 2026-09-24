@@ -172,12 +172,23 @@ aside{height:100vh;min-height:0;overflow:hidden}
       <div class="kpi admin-only" id="kpi-remitters-card"><b>Total de Remitentes</b><h2 id="kpi-remitters">0</h2></div>
       <div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
     </div>
-    <div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Ajustes financieros de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Permite acreditar un saldo exacto a la Administración o agregar/quitar dinero del balance administrativo. Los cambios se guardan directamente en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div><div id="admin-finance-control" class="info-box" style="margin-top:10px"></div></div>
+    <div class="card admin-only" id="admin-capital-card-static" data-sw-static-capital-card style="margin-top:18px;border-top:5px solid #d4a017;background:linear-gradient(135deg,#fff,#fffdf3)">
+<div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">CAPITAL</h2><p class="muted" style="margin-top:4px">Partida exclusiva de Administración para el capital ingresado y destinado a beneficios mensuales. No se mezcla con depósitos, comisiones ni balance operativo.</p></div>
+<div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()"><i class="fa-solid fa-circle-plus"></i> Acreditar capital</button></div></div>
+<div class="kpis" style="margin-top:8px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="kpi-capital-static">RD$ 0.00</h2><small class="muted">Permanece reservado hasta que Administración decida utilizarlo.</small></div>
+<div class="kpi" style="border-top-color:#64748b"><b>Total acreditado histórico</b><h2 id="capital-total-acreditado-static">RD$ 0.00</h2></div></div></div><div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Ajustes financieros de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Permite acreditar un saldo exacto a la Administración o agregar/quitar dinero del balance administrativo. Los cambios se guardan directamente en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div><div id="admin-finance-control" class="info-box" style="margin-top:10px"></div></div>
     <div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.35rem">Acreditaciones de Administración</h2><p class="muted" style="margin-top:4px">Solo Administración. Acreditar Balance y Acreditar Bono suman el monto directamente al balance. El Bono es manual y exclusivo de Administración. Acreditar Comisiones pasa el monto desde la comisión disponible al balance.</p></div></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button></div></div>
     <div class="card admin-only" data-sw-static-capital-dashboard style="margin-top:18px;border-top:5px solid #d4a017;background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h2 style="color:#0f2c59;font-size:1.3rem">CAPITAL</h2><p class="muted" style="margin-top:4px">Partida exclusiva de Administración para el capital ingresado y destinado a beneficios mensuales. No se mezcla con depósitos, comisiones ni balance operativo.</p></div><div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()"><i class="fa-solid fa-circle-plus"></i> Acreditar capital</button></div></div><div class="kpis" style="margin-top:8px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="kpi-capital-static">RD$ 0.00</h2><small class="muted">Permanece reservado hasta que Administración decida utilizarlo.</small></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado histórico</b><h2 id="capital-total-acreditado-static">RD$ 0.00</h2></div></div></div><div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><p class="muted" style="margin-top:8px">Las transacciones nuevas, depósitos y solicitudes generan notificación en la campana y aquí. Al abrirla, desaparece automáticamente.</p><div id="dashboard-notifications" style="margin-top:12px"></div></div>
   </section>
 
-  <section id="view-capital" class="view-section admin-only"><div class="card"><div class="card-header"><div><h2>Capital de Administración</h2><p class="muted">Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.</p></div><div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()">Acreditar capital</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTable')">CSV</button></div></div><div class="kpis" style="margin-bottom:14px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="capital-view-balance">RD$ 0.00</h2></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado</b><h2 id="capital-total-acreditado-view">RD$ 0.00</h2></div></div><div class="table-toolbar"><input class="search-box" placeholder="Buscar movimiento de capital..." oninput="filterTable(this,'capitalTable')"></div><div class="table-wrap"><table id="capitalTable"><thead><tr><th>Fecha</th><th>Período</th><th>Tipo</th><th>Monto</th><th>Administrador</th><th>Nota</th></tr></thead><tbody></tbody></table></div></div></section><section id="view-informes" class="view-section">
+  <section id="view-capital" class="view-section admin-only"><div class="card"><div class="card-header"><div><h2>Capital de Administración</h2><p class="muted">Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.</p></div><div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()">Acreditar capital</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTable')">CSV</button></div></div><div class="kpis" style="margin-bottom:14px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="capital-view-balance">RD$ 0.00</h2></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado</b><h2 id="capital-total-acreditado-view">RD$ 0.00</h2></div></div><div class="table-toolbar"><input class="search-box" placeholder="Buscar movimiento de capital..." oninput="filterTable(this,'capitalTable')"></div><div class="table-wrap"><table id="capitalTable"><thead><tr><th>Fecha</th><th>Período</th><th>Tipo</th><th>Monto</th><th>Administrador</th><th>Nota</th></tr></thead><tbody></tbody></table></div></div></section><section id="view-capital-static" class="view-section admin-only" data-sw-static-capital-view>
+<div class="card"><div class="card-header"><div><h2>Capital de Administración</h2><p class="muted">Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.</p></div>
+<div class="actions"><button class="btn btn-primary" onclick="swOpenCapitalModal()">Acreditar capital</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTableStatic')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTableStatic')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTableStatic')">CSV</button></div></div>
+<div class="kpis" style="margin-bottom:14px"><div class="kpi" style="border-top-color:#d4a017"><b>Capital disponible</b><h2 id="capital-view-balance-static">RD$ 0.00</h2></div><div class="kpi" style="border-top-color:#64748b"><b>Total acreditado</b><h2 id="capital-total-acreditado-view-static">RD$ 0.00</h2></div></div>
+<div class="table-toolbar"><input class="search-box" placeholder="Buscar movimiento de capital..." oninput="filterTable(this,'capitalTableStatic')"></div>
+<div class="table-wrap"><table id="capitalTableStatic"><thead><tr><th>Fecha</th><th>Período</th><th>Tipo</th><th>Monto</th><th>Administrador</th><th>Nota</th></tr></thead><tbody><tr><td colspan="6" class="muted">No hay movimientos de capital registrados.</td></tr></tbody></table></div></div></section>
+
+<section id="view-informes" class="view-section">
     <div class="card">
       <div class="card-header">
         <div><h2>Informes del Día</h2><p class="muted" style="margin-top:5px">Consolidación de la actividad de SENDWAYO EXPRESS por fecha y por remitente.</p></div>
@@ -1292,7 +1303,7 @@ function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
  let el=document.getElementById('view-'+id);if(el)el.classList.add('active');
  document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
- let title={dashboard:'Tablero Principal',informes:'Informes del Día',credito:'Crédito',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',contabilidad:'Contabilidad Financiera',bonos:'Bonos de Administración',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
+ let title={dashboard:'Tablero Principal',informes:'Informes del Día',credito:'Crédito',capital:'Capital de Administración',envios:'Envíos',beneficiarios:'Beneficiarios',paquetes:'Paquetes',remitentes:'Remitentes',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Facturas y Servicios',cuentas_depositos:'Cuentas Bancarias y Depósitos',mi_cuenta:'Mi Cuenta',contacto:'Contactarnos',comisiones:'Retiro / Pago de Comisiones',solicitudes:'Solicitudes y Aprobaciones',secretas:'Información Secreta',contabilidad:'Contabilidad Financiera',bonos:'Bonos de Administración',perfil:'Mi Perfil'}[id]||'SENDWAYO EXPRESS';
  document.getElementById('page-title').textContent=title;
  if(window.innerWidth<=800)toggleMobileMenu();
  renderAll()
@@ -3606,6 +3617,60 @@ window.showReceipt=async function(collection,id){
   return result;
 };
 
+})();
+</script>
+
+<script>
+/* SENDWAYO EXPRESS — LOCALIZACIÓN COMPLETA */
+(function(){
+'use strict';
+const SW_EXTRA={
+fr:{
+'Capital':'Capital','Capital de Administración':'Capital de l’administration','CAPITAL':'CAPITAL','Acreditar capital':'Créditer le capital','Capital disponible':'Capital disponible','Total acreditado histórico':'Total historique crédité','Total acreditado':'Total crédité','Partida exclusiva de Administración para el capital ingresado y destinado a beneficios mensuales. No se mezcla con depósitos, comisiones ni balance operativo.':'Compte réservé à l’administration pour le capital apporté et destiné aux bénéfices mensuels. Il ne se mélange pas avec les dépôts, commissions ou le solde opérationnel.','Permanece reservado hasta que Administración decida utilizarlo.':'Il reste réservé jusqu’à ce que l’administration décide de l’utiliser.','Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.':'Registre indépendant de l’argent destiné au capital. Seule l’administration peut l’augmenter.','Buscar movimiento de capital...':'Rechercher un mouvement de capital...','Fecha':'Date','Período':'Période','Tipo':'Type','Monto':'Montant','Administrador':'Administrateur','Nota':'Note','No hay movimientos de capital registrados.':'Aucun mouvement de capital enregistré.'},
+en:{
+'Capital':'Capital','Capital de Administración':'Administrative Capital','CAPITAL':'CAPITAL','Acreditar capital':'Credit Capital','Capital disponible':'Available capital','Total acreditado histórico':'Historical total credited','Total acreditado':'Total credited','Partida exclusiva de Administración para el capital ingresado y destinado a beneficios mensuales. No se mezcla con depósitos, comisiones ni balance operativo.':'An administrative-only account for capital contributed and intended for monthly benefits. It is separate from deposits, commissions, and operating balance.','Permanece reservado hasta que Administración decida utilizarlo.':'It remains reserved until Administration decides to use it.','Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.':'Independent record of money allocated to the capital account. Only Administration can increase it.','Buscar movimiento de capital...':'Search capital movement...','Fecha':'Date','Período':'Period','Tipo':'Type','Monto':'Amount','Administrador':'Administrator','Nota':'Note','No hay movimientos de capital registrados.':'No capital movements recorded.'},
+ht:{
+'Capital':'Kapital','Capital de Administración':'Kapital Administrasyon','CAPITAL':'KAPITAL','Acreditar capital':'Kredite kapital','Capital disponible':'Kapital disponib','Total acreditado histórico':'Total istorik kredite','Total acreditado':'Total kredite','Partida exclusiva de Administración para el capital ingresado y destinado a beneficios mensuales. No se mezcla con depósitos, comisiones ni balance operativo.':'Kont ki se sèlman pou Administrasyon pou kapital ki antre epi ki fèt pou benefis chak mwa. Li pa melanje ak depo, komisyon oswa balans operasyonèl.','Permanece reservado hasta que Administración decida utilizarlo.':'Li rete rezève jiskaske Administrasyon deside sèvi avè l.','Registro independiente del dinero destinado a la partida de capital. Solo Administración puede aumentarlo.':'Dosye endepandan pou lajan ki nan kapital la. Se sèlman Administrasyon ki ka ogmante li.','Buscar movimiento de capital...':'Chèche mouvman kapital...','Fecha':'Dat','Período':'Peryòd','Tipo':'Kalite','Monto':'Montan','Administrador':'Administratè','Nota':'Nòt','No hay movimientos de capital registrados.':'Pa gen mouvman kapital anrejistre.'}
+}};
+const swOrigTranslate=window.translateInterface;
+window.translateInterface=function(){
+ try{swOrigTranslate();}catch(e){}
+ const lang=localStorage.getItem('sendwayo_language')||'es',map=SW_EXTRA[lang]||{};
+ if(!Object.keys(map).length){swSyncStaticCapital();return}
+ const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+ nodes.forEach(n=>{if(!n.parentElement||n.parentElement.closest('script,style'))return;let original=n.__sendwayoOriginalExtra||n.nodeValue||'';if(n.__sendwayoOriginalExtra===undefined)n.__sendwayoOriginalExtra=n.nodeValue||'';let out=original;Object.entries(map).sort((a,b)=>b[0].length-a[0].length).forEach(([from,to])=>{if(out.includes(from))out=out.split(from).join(to)});n.nodeValue=out});
+ document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{const a='placeholder',m='swLangOriginalPlaceholder';if(el[m]===undefined)el[m]=el.getAttribute(a)||'';if(map[el[m]])el.setAttribute(a,map[el[m]])});
+ swSyncStaticCapital();
+};
+const swOrigSetLanguage=window.setLanguage;
+window.setLanguage=function(lang){swOrigSetLanguage(lang);setTimeout(()=>window.translateInterface(),0);};
+function swSyncStaticCapital(){
+ const c=window.state?.capital||{},bal=Number(c.balance||0),tot=Number(c.totalAcreditado||0);
+ ['kpi-capital-static','capital-view-balance-static','kpi-capital'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=money(bal)});
+ ['capital-total-acreditado-static','capital-total-acreditado-view-static','capital-total-acreditado'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=money(tot)});
+ const body=document.querySelector('#capitalTableStatic tbody');if(body){
+   const rows=Object.values(c.movements||{}).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+   body.innerHTML=rows.map(r=>'<tr><td>'+escapeHtml(r.createdAt||'—')+'</td><td>'+escapeHtml(r.period||'—')+'</td><td>'+escapeHtml(r.type||'ACREDITACIÓN DE CAPITAL')+'</td><td><b>'+money(r.amount)+'</b></td><td>'+escapeHtml(r.by||'Administrador')+'</td><td>'+escapeHtml(r.note||'')+'</td></tr>').join('')||'<tr><td colspan="6" class="muted">No hay movimientos de capital registrados.</td></tr>';
+ }
+ const sec=document.getElementById('view-capital-static');if(sec&&window.isAdmin)sec.style.display=isAdmin()?'':'none';
+ const card=document.getElementById('admin-capital-card-static');if(card&&window.isAdmin)card.style.display=isAdmin()?'':'none';
+ const menu=document.querySelector('[data-sw-static-capital-menu]');if(menu&&window.isAdmin)menu.style.display=isAdmin()?'':'none';
+}
+const swOldSwitch=window.switchView;
+window.switchView=function(id){
+ if(id==='capital'){
+   document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
+   const sec=document.getElementById('view-capital-static');if(sec)sec.classList.add('active');
+   document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.remove('active'));
+   const a=document.querySelector('[data-sw-static-capital-menu] a');if(a)a.classList.add('active');
+   const title=document.getElementById('page-title');if(title)title.textContent='Capital de Administración';
+   if(window.innerWidth<=800)toggleMobileMenu();
+   renderAll();swSyncStaticCapital();return;
+ }
+ return swOldSwitch.apply(this,arguments);
+};
+const swOldRenderAll=window.renderAll;
+window.renderAll=function(){swOldRenderAll.apply(this,arguments);setTimeout(swSyncStaticCapital,0);setTimeout(()=>window.translateInterface(),0)};
 })();
 </script>
 </html>
