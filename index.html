@@ -1093,12 +1093,29 @@ async function realizarLoginOriginal(){
        new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
      ]);
    }catch(firstError){
-     const legacy=found?.legacyAuthEmail||((found&&!String(found.authEmail||'').endsWith('@sendwayoexpress.com'))?found.authEmail:legacyAuthEmailFor(found));
-     if(!legacy||legacy.toLowerCase()===String(email).toLowerCase())throw firstError;
-     cred=await Promise.race([
-       firebase.auth().signInWithEmailAndPassword(legacy,password),
-       new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
-     ]);
+     const candidates=[];
+     const addCandidate=e=>{if(e&& !candidates.some(x=>x.toLowerCase()===String(e).toLowerCase()))candidates.push(String(e).toLowerCase())};
+     addCandidate(found?.legacyAuthEmail);
+     addCandidate(found?legacyAuthEmailFor(found):'');
+     if(!identifier.includes('@')){
+       const base=normalizeUsername(identifier);
+       addCandidate(base+'@gmail.com');
+       addCandidate(base+'@sendwayoexpress.com');
+     }
+     let lastError=firstError;
+     let recovered=null;
+     for(const candidate of candidates){
+       if(candidate===String(email).toLowerCase())continue;
+       try{
+         recovered=await Promise.race([
+           firebase.auth().signInWithEmailAndPassword(candidate,password),
+           new Promise((_,reject)=>setTimeout(()=>reject(new Error('AUTH_TIMEOUT')),15000))
+         ]);
+         break;
+       }catch(e){lastError=e}
+     }
+     if(!recovered)throw lastError;
+     cred=recovered;
    }
 
    const authUser=cred.user;
