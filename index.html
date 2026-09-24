@@ -1033,9 +1033,10 @@ function openRequest(type){
  document.getElementById('welcome-screen').classList.add('hidden');
 }
 async function submitRequest(){
- let firstName=document.getElementById('req-first-name').value.trim(),lastName=document.getElementById('req-last-name').value.trim(),name=(firstName+' '+lastName).trim(),phone=fullPhone('req-country',document.getElementById('req-phone').value.trim()),doc=document.getElementById('req-doc').value.trim(),type=document.getElementById('req-type').value;
- if(!firstName||!lastName||!phone||!doc)return toast('Complete nombre, apellido, número de celular y cédula o pasaporte.','warn');
- let id=uid('req');state.requests[id]={id,name,phone,doc,type,note:document.getElementById('req-note').value.trim(),status:'Pendiente',createdAt:now(),requesterUserId:currentUser?.id||null,requesterAuthUid:firebase.auth().currentUser?.uid||null};
+ let firstName=document.getElementById('req-first-name')?.value.trim(),lastName=document.getElementById('req-last-name')?.value.trim(),name=(firstName+' '+lastName).trim(),email=document.getElementById('req-email')?.value.trim(),phone=fullPhone('req-country',document.getElementById('req-phone')?.value.trim()||''),type=document.getElementById('req-type')?.value,note=document.getElementById('req-note')?.value.trim()||'';
+ if(!firstName||!lastName||!email||!phone||!type)return toast('Complete nombre, apellido, correo, WhatsApp y tipo de solicitud.','warn');
+ if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return toast('Escriba un correo electrónico válido.','warn');
+ let id=uid('req');state.requests[id]={id,name,phone,email,type,note,status:'Pendiente',createdAt:now(),requesterUserId:currentUser?.id||null,requesterAuthUid:firebase.auth().currentUser?.uid||null};
  await addNotification('Administrador','Nueva solicitud: '+type+' de '+name,'requests',id);
  await persist();closeModal('requestModal');toast('Solicitud enviada al Administrador.');showWelcome()
 }
