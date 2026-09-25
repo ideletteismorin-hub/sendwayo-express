@@ -4852,4 +4852,157 @@ setTimeout(forceRealLogo,300);setTimeout(forceRealLogo,1200);
 })();
 </script>
 
+
+<style id="sendwayo-vip-menu-logo-final-2026-09-25">
+/* SENDWAYO: sin imagen de fondo decorativa */
+html,body,#welcome-screen,#login-screen,.main-container,.content-body,header,
+.view-section,.card,.table-wrap,.modal-content,.receipt-shell,.receipt-compact,.receipt-final{
+  background-image:none!important;
+}
+#sendwayo-brand-background{display:none!important;background:none!important;background-image:none!important;}
+aside#app-sidebar{
+  display:flex!important;flex-direction:column!important;
+}
+#app-sidebar .sidebar-brand{
+  width:100%!important;min-height:120px!important;padding:8px!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:flex-start!important;box-sizing:border-box!important;
+}
+#app-sidebar .sidebar-brand a{
+  width:100%!important;height:96px!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;
+}
+#app-sidebar .sidebar-brand img{
+  width:100%!important;height:96px!important;max-width:none!important;max-height:none!important;
+  object-fit:contain!important;object-position:center!important;display:block!important;
+}
+#app-sidebar .sidebar-menu{
+  flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+#app-sidebar .sidebar-menu li:last-child{
+  margin-top:10px!important;padding-top:10px!important;border-top:1px solid rgba(255,255,255,.15)!important;
+}
+#app-sidebar > div:last-child{
+  flex:0 0 auto!important;position:sticky!important;bottom:0!important;
+}
+@media(max-width:800px){
+  header{min-height:145px!important;padding:7px 9px 8px!important}
+  header>div:first-child{display:flex!important;align-items:center!important;gap:8px!important}
+  header .mobile-toggle-btn{
+    order:3!important;position:absolute!important;left:9px!important;top:100px!important;
+    width:42px!important;height:38px!important;z-index:16000!important;
+  }
+  header .header-title{order:1!important;padding-left:0!important}
+  header .mobile-brand-strip{
+    position:absolute!important;left:58px!important;right:8px!important;top:49px!important;
+    width:auto!important;height:47px!important;margin:0!important;padding:0!important;
+    border:0!important;display:flex!important;align-items:center!important;
+  }
+  header .mobile-brand-strip img{
+    width:100px!important;height:47px!important;flex:0 0 100px!important;
+    max-width:100px!important;object-fit:contain!important;object-position:center!important;
+  }
+  header .mobile-brand-strip b{font-size:.82rem!important}
+  .content-body{height:calc(100dvh - 145px)!important}
+  aside#app-sidebar .sidebar-brand{min-height:150px!important}
+  aside#app-sidebar .sidebar-brand a{height:115px!important}
+  aside#app-sidebar .sidebar-brand img{height:115px!important}
+}
+@media(min-width:801px){
+  aside#app-sidebar .sidebar-brand{min-height:150px!important}
+  aside#app-sidebar .sidebar-brand a{height:125px!important}
+  aside#app-sidebar .sidebar-brand img{height:125px!important}
+}
+</style>
+<script id="sendwayo-vip-admin-final-2026-09-25">
+(function(){
+'use strict';
+function adminVIP(){
+  const u=window.currentUser||null;
+  return !!u && (
+    u.id==='admin' ||
+    String(u.role||'').trim().toLowerCase()==='administrador' ||
+    String(u.username||'').trim().toLowerCase()==='admin' ||
+    String(u.authEmail||'').trim().toLowerCase()==='sendwayoexpress@gmail.com'
+  );
+}
+window.sendwayoAdminVIP=adminVIP;
+window.isAdmin=function(){return adminVIP();};
+window.canTransact=function(){return !!window.currentUser && (adminVIP() || String(window.currentUser.role||'')==='Remitente');};
+if(typeof window.guardBalance==='function'){
+  const oldGB=window.guardBalance;
+  window.guardBalance=async function(amount){if(adminVIP())return true;return oldGB(amount);}
+}
+const oldSetStatus=window.setTransactionStatus;
+window.setTransactionStatus=async function(collection,id,status){
+  if(!adminVIP())return oldSetStatus.apply(this,arguments);
+  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
+  if(collection==='deposits')return approveDeposit(id,status);
+  let r=state[collection]?.[id];
+  if(!r||r.status!=='Pendiente')return;
+  let reviewReason='';
+  if(status!=='Aprobado'){
+    reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';
+    if(!reviewReason)return toast('Debe escribir un motivo.','warn');
+  }
+  const u=state.users?.[r.userId] || (r.userId==='admin'||r.userId===currentUser.id?currentUser:null);
+  if(!u)return toast('No se encontró la cuenta de la operación.','error');
+  if(status==='Aprobado'){
+    /* VIP Administración: una operación propia no requiere balance, crédito ni cuenta de remitente. */
+    if(u.id==='admin'||u.role==='Administrador'||r.userId===currentUser.id){
+      r.balanceDebited=false;r.balanceSettledAt=now();
+    }else{
+      if(!r.balanceDebited){
+        if(!await debitTransactionBalance(u.id,r.id,r.amount,r.creditUsed))return toast('No hay balance/crédito suficiente o Firebase no confirmó el débito. La operación seguirá pendiente.','error');
+        r.balanceDebited=true;r.balanceSettledAt=now();
+      }
+    }
+    const commission=Number(r.commission??(Number(r.amount||0)*commissionRateFor(collection,r)));
+    const userShare=(u.id==='admin'||u.role==='Administrador')?0:commission*0.50;
+    const adminShare=(u.id==='admin'||u.role==='Administrador')?commission:commission*0.50;
+    if(userShare>0&&!await applyTransactionCommissionShare(u.id,r.id,userShare))return toast('No se pudo completar la comisión del Remitente.','error');
+    if(adminShare>0&&!await applyTransactionCommissionShare('admin',r.id,adminShare))return toast('No se pudo completar la comisión de Administración.','error');
+    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
+    const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{
+      ...v,status:'Aprobado',reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason:'',
+      commissionUser:userShare,commissionAdmin:adminShare,commissionTotal:commission,
+      commissionRate:commissionRateFor(collection,v||r),
+      commissionAccount:'ADMIN VIP / 50% REMITENTE / 50% ADMINISTRADOR',
+      balanceDebited:!!r.balanceDebited,balanceSettledAt:r.balanceSettledAt||now(),
+      net:Number(v.amount||0)-Number(v.commission||0)
+    });
+    if(!tx.committed)return toast('Firebase no confirmó la aprobación. Puede reintentarse sin duplicar comisiones.','warn');
+    r=tx.snapshot.val();state[collection][id]=r;
+    try{
+      const ledgerRef=firebase.database().ref(DB_PATH+'/ledger/'+collection+'/'+id);
+      const ledgerTx=await ledgerRef.transaction(v=>v||{...r,recordId:id,sourceCollection:collection,sourceId:id,ledgerEvent:'APROBACION',ledgerLocked:true,ledgerAt:firebase.database.ServerValue.TIMESTAMP});
+      if(ledgerTx.committed){state.ledger=state.ledger||{};state.ledger[collection]=state.ledger[collection]||{};state.ledger[collection][id]=ledgerTx.snapshot.val();}
+    }catch(e){console.warn('Ledger VIP:',e)}
+    generateReceipt(collection,id);r=state[collection][id];
+    if(r?.receipt)await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt});
+  }else{
+    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
+    const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status,reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason});
+    if(!tx.committed)return toast('Firebase no confirmó el cambio de estado.','warn');
+    r=tx.snapshot.val();state[collection][id]=r;
+  }
+  await addNotification(u.id==='admin'?'Administrador':u.id,'Transacción '+id+' '+status.toUpperCase()+'.',collection,id);
+  await persist();renderAll();
+  if(status==='Aprobado'&&r.receipt)setTimeout(()=>showReceipt(collection,id),180);
+  toast('Estado actualizado: '+status,'success');
+};
+function markVIP(){
+  if(!adminVIP())return;
+  document.documentElement.dataset.sendwayoAdminVip='true';
+  const label=document.getElementById('sidebar-role-label');
+  if(label)label.textContent='ADMINISTRADOR · VIP';
+  const role=document.querySelector('#app-sidebar > div:last-child');
+  if(role&&!role.dataset.vip){role.dataset.vip='1';role.innerHTML='<span style="font-weight:900;color:#f3b51b">ADMINISTRADOR · VIP</span>';}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',markVIP,{once:true});else markVIP();
+setTimeout(markVIP,500);setTimeout(markVIP,1500);
+})();
+</script>
+
 </html>
