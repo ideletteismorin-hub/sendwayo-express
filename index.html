@@ -634,9 +634,13 @@ function installSendwayoReceiptBrand(){
     if(logo)document.documentElement.style.setProperty('--sendwayo-logo-bg','url("'+logo+'")');
   }catch(e){console.warn('SENDWAYO receipt brand:',e)}
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSendwayoReceiptBrand,{once:true});
-else installSendwayoReceiptBrand();
-else installSendwayoBrandBackground();
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',installSendwayoReceiptBrand,{once:true});
+  document.addEventListener('DOMContentLoaded',installSendwayoBrandBackground,{once:true});
+}else{
+  installSendwayoReceiptBrand();
+  installSendwayoBrandBackground();
+}
 window.sendwayoOpenLogin=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(w)w.classList.add('hidden');if(l)l.classList.remove('hidden');var u=document.getElementById('login-user');if(u)setTimeout(function(){u.focus()},50)};
 window.sendwayoOpenRequest=function(type){
   var tries=0;
