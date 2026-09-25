@@ -915,9 +915,9 @@ async function crearAccesosIniciales(){
 }
 function renderRealtimeView(){
  if(!currentUser)return;
- try{renderDashboard()}catch(e){console.warn('SENDWAYO realtime dashboard:',e)}
  const id=document.querySelector('.view-section.active')?.id||'view-dashboard';
  try{
+  if(id==='view-dashboard')renderDashboard();
   switch(id){
    case 'view-informes':renderDailyReports();break;
    case 'view-contabilidad':renderAccounting();break;
@@ -1972,7 +1972,26 @@ function filterTable(input,id){let q=input.value.toLowerCase();document.querySel
 function setStatusFilter(view,s,btn){statusFilter=s;document.querySelectorAll('#envio-statusbar button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderEnvios()}
 function filterRequests(s){requestFilter=s;renderRequests()}
 function downloadRecord(collection,id){const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');const blob=new Blob([JSON.stringify({sistema:'SENDWAYO EXPRESS',coleccion:collection,exportadoEn:now(),registro:r},null,2)],{type:'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SENDWAYO_'+collection+'_'+id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function actionButtons(collection,id,status){let admin=isAdmin(),rec=state[collection]?.[id],ownerId=rec?.userId,arr=[];if(admin||status!=="Pendiente"){arr.push(`<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord('${collection}','${id}')"><i class="fa-solid fa-eye"></i></button>`);arr.push(`<button class="btn btn-primary btn-sm" title="Descargar" onclick="downloadRecord('${collection}','${id}')">Descargar</button>`);}if(status==="Aprobado")arr.push(`<button class="btn btn-primary btn-sm" title="Ver comprobante" onclick="showReceipt('${collection}','${id}')">COMPROBANTE</button>`);if(admin){arr.push(`<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord('${collection}','${id}')"><i class="fa-solid fa-pen"></i></button>`);arr.push(`<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord('${collection}','${id}')"><i class="fa-solid fa-trash"></i></button>`)}else if(ownerId===currentUser?.id&&status!=="Pendiente"){if(status==="No coincide")arr.push(`<button class="btn btn-warning btn-sm" onclick="editRecord('${collection}','${id}')">Editar</button><button class="btn btn-primary btn-sm" onclick="resubmitTransaction('${collection}','${id}')">Reenviar</button>`);if(status==="Rechazado")arr.push(`<button class="btn btn-danger btn-sm" onclick="deleteRecord('${collection}','${id}')">Eliminar</button>`)}if(admin&&status==="Pendiente"&&collection==="accountWithdrawals")arr.push(`<button class="btn btn-success btn-sm" onclick="reviewAccountWithdrawal('${id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="reviewAccountWithdrawal('${id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="reviewAccountWithdrawal('${id}','No coincide')">NO COINCIDE</button>`);else if(admin&&status==="Pendiente")arr.push(`<button class="btn btn-success btn-sm" onclick="setTransactionStatus('${collection}','${id}','Aprobado')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus('${collection}','${id}','Rechazado')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus('${collection}','${id}','No coincide')">NO COINCIDE</button>`);return '<div class="actions">'+arr.join('')+'</div>'}
+function actionButtons(collection,id,status){
+ let admin=isAdmin(),rec=state[collection]?.[id],ownerId=rec?.userId,arr=[];
+ if(status==="Aprobado"){
+   arr.push('<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')"><i class="fa-solid fa-eye"></i></button>');
+   arr.push('<button class="btn btn-primary btn-sm" title="Ver comprobante oficial" onclick="showReceipt(\''+collection+'\',\''+id+'\')">COMPROBANTE</button>');
+ }else if(admin||status!=="Pendiente"){
+   arr.push('<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')"><i class="fa-solid fa-eye"></i></button>');
+   arr.push('<button class="btn btn-primary btn-sm" title="Descargar registro" onclick="downloadRecord(\''+collection+'\',\''+id+'\')">Descargar</button>');
+ }
+ if(admin){
+   arr.push('<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord(\''+collection+'\',\''+id+'\')"><i class="fa-solid fa-pen"></i></button>');
+   arr.push('<button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\''+collection+'\',\''+id+'\')"><i class="fa-solid fa-trash"></i></button>');
+ }else if(ownerId===currentUser?.id&&status!=="Pendiente"){
+   if(status==="No coincide")arr.push('<button class="btn btn-warning btn-sm" onclick="editRecord(\''+collection+'\',\''+id+'\')">Editar</button><button class="btn btn-primary btn-sm" onclick="resubmitTransaction(\''+collection+'\',\''+id+'\')">Reenviar</button>');
+   if(status==="Rechazado")arr.push('<button class="btn btn-danger btn-sm" onclick="deleteRecord(\''+collection+'\',\''+id+'\')">Eliminar</button>');
+ }
+ if(admin&&status==="Pendiente"&&collection==="accountWithdrawals")arr.push('<button class="btn btn-success btn-sm" onclick="reviewAccountWithdrawal(\''+id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="reviewAccountWithdrawal(\''+id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="reviewAccountWithdrawal(\''+id+'\',\'No coincide\')">NO COINCIDE</button>');
+ else if(admin&&status==="Pendiente")arr.push('<button class="btn btn-success btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'No coincide\')">NO COINCIDE</button>');
+ return '<div class="actions">'+arr.join('')+'</div>';
+}
 async function adjustReservedBalance(userId,delta){
  if(!delta)return true;
  if(firebaseReady){
@@ -2407,30 +2426,32 @@ function scheduleCommissionDayRefresh(){
  window.__sendwayoCommissionTimer=setTimeout(()=>{if(currentUser){renderDashboard();}scheduleCommissionDayRefresh()},Math.max(1000,next.getTime()-Date.now()));
 }
 function commissionTodayFor(userId){
- // "Comisión de hoy" se calcula por operaciones APROBADAS HOY,
- // no por el balance ni por un campo acumulado que pueda quedar vacío.
  const today=todayDateKey();
  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
  let total=0;
- for(const col of cols){
-   for(const r of Object.values(state[col]||{})){
-     if(!r)continue;
-     const status=String(r.status||'').trim().toLowerCase();
-     if(status!=='aprobado')continue;
-     // La fecha de aprobación tiene prioridad. Los demás campos son respaldo
-     // para operaciones antiguas que no tengan reviewedAt.
-     const stamp=r.reviewedAt||r.approvedAt||r.balanceSettledAt||r.createdAt||r.date;
-     if(commissionDateKey(stamp)!==today)continue;
-     let share=0;
-     if(userId==='admin'){
-       share=Number(r.commissionAdmin);
-       if(!Number.isFinite(share))share=Number(r.commission||0)*0.50;
-     }else if(r.userId===userId){
-       share=Number(r.commissionUser);
-       if(!Number.isFinite(share))share=Number(r.commission||0)*0.50;
-     }
-     if(Number.isFinite(share)&&share>0)total+=share;
+ // Comisión de hoy = TODO beneficio de comisión generado HOY por operaciones APROBADAS.
+ // Depósitos y retiros no generan comisión.
+ for(const col of cols)for(const r of Object.values(state[col]||{})){
+   if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
+   const stamp=r.reviewedAt||r.approvedAt||r.balanceSettledAt||r.createdAt||r.date;
+   if(commissionDateKey(stamp)!==today)continue;
+   let share=0;
+   if(userId==='admin'){
+     share=Number(r.commissionAdmin);
+     if(!Number.isFinite(share))share=Number(r.commissionTotal??r.commission??0)*0.50;
+   }else if(r.userId===userId){
+     share=Number(r.commissionUser);
+     if(!Number.isFinite(share))share=Number(r.commissionTotal??r.commission??0)*0.50;
    }
+   if(Number.isFinite(share)&&share>0)total+=share;
+ }
+ // Acreditaciones manuales de COMISIÓN hechas hoy también cuentan como beneficio de hoy.
+ const u=state.users?.[userId];
+ for(const x of Object.values(u?.commissionCredits||{})){
+   if(String(x?.type||'').toUpperCase()!=='COMISION_ACREDITADA')continue;
+   if(commissionDateKey(x.creditedAt||x.createdAt)!==today)continue;
+   const n=Number(x.amount||0);
+   if(Number.isFinite(n)&&n>0)total+=n;
  }
  return Number(total.toFixed(2));
 }
@@ -3909,7 +3930,11 @@ function swTranslateFinal(){
 let swFinalTimer=0;
 function swScheduleFinal(){
   clearTimeout(swFinalTimer);
-  swFinalTimer=setTimeout(()=>{try{swTranslateFinal()}catch(e){}},20);
+  swFinalTimer=setTimeout(()=>{try{
+    if(document.hidden)return;
+    const lang=localStorage.getItem('sendwayo_language')||'es';
+    if(lang!=='es')swTranslateFinal();
+  }catch(e){}},180);
 }
 const observer=new MutationObserver(swScheduleFinal);
 if(document.body)observer.observe(document.body,{subtree:true,childList:true});
