@@ -55,7 +55,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 .status-bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 13px}.status-bar button.active{outline:3px solid rgba(243,181,27,.35)}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.64);justify-content:center;align-items:center;z-index:11000;padding:20px}.modal.public-request{z-index:20000;background:rgba(3,18,45,.78)}.modal-content{background:#fff;padding:22px;border-radius:12px;width:min(720px,96vw);max-height:92vh;overflow:auto;position:relative}.modal-close-x{position:absolute;right:15px;top:10px;background:none;border:0;font-size:1.6rem;color:var(--gray);cursor:pointer}
 .toast{position:fixed;right:18px;bottom:18px;z-index:9000;background:#071a36;color:#fff;padding:13px 16px;border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:380px}.toast.success{border-left:5px solid var(--accent)}.toast.warn{border-left:5px solid var(--secondary)}.toast.error{border-left:5px solid var(--danger)}
-.notif-panel{display:none;position:fixed;right:20px;top:66px;width:min(390px,92vw);max-height:65vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.2);z-index:4500;border:1px solid #dce3eb}.notif-panel.show{display:block}.notif-item{padding:11px;border-bottom:1px solid #edf1f5}.notif-item small{color:var(--gray)}
+.notif-panel{display:none;position:fixed;right:20px;top:66px;width:min(390px,92vw);max-height:65vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.2);z-index:4500;border:1px solid #dce3eb}.notif-panel.show{display:block}.notif-item{padding:11px;border-bottom:1px solid #edf1f5}.notif-item small{color:var(--gray)}.notif-item.unread{background:#fffaf0}.sendwayo-live-notification{position:fixed;right:18px;bottom:18px;z-index:15000;max-width:min(430px,calc(100vw - 36px));padding:12px 15px;border-radius:10px;background:#071a36;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.24);border-left:4px solid var(--secondary);font-size:.82rem;line-height:1.35;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .2s,transform .2s}.sendwayo-live-notification.show{opacity:1;transform:translateY(0)}.notification-bell.sendwayo-notif-pulse{animation:sendwayoNotifPulse .9s ease}.notification-bell.sendwayo-notif-pulse i{color:var(--secondary)}@keyframes sendwayoNotifPulse{0%,100%{transform:scale(1)}45%{transform:scale(1.18)}}
 .info-box{padding:12px;border-left:4px solid var(--secondary);background:#fffbeb;border-radius:6px;font-size:.8rem}.secret-divider{height:2px;background:#dbe3ec;margin:18px 0 12px;border-radius:2px;width:100%}.report-controls{display:grid;grid-template-columns:minmax(180px,260px) minmax(240px,1fr);gap:12px;margin:12px 0}.report-kpis{margin-top:10px}.report-person-card{display:none;padding:13px 15px;border:1px solid #dbe7f3;border-radius:10px;background:linear-gradient(135deg,#f8fbff,#fffdf3);margin-bottom:12px}.report-person-card.show{display:block}.report-person-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.report-person-grid>div{font-size:.78rem}.report-person-grid b{display:block;color:#52606d;font-size:.68rem;margin-bottom:2px}@media(max-width:800px){.report-controls{grid-template-columns:1fr}.report-person-grid{grid-template-columns:1fr 1fr}}
 .mobile-toggle-btn{display:none;background:none;border:0;color:var(--primary);font-size:1.4rem;cursor:pointer}
 .qr-link{word-break:break-all;font-size:.76rem;color:#1d4ed8}
@@ -527,13 +527,20 @@ function translateInterface(){
  });
 }
 function setLanguage(lang){
- if(!LANG[lang])lang='es'; localStorage.setItem('sendwayo_language',lang);
- const s=document.getElementById('language-selector');if(s)s.value=lang;const ws=document.getElementById('welcome-language-selector');if(ws)ws.value=lang;
+ if(!LANG[lang])lang='es';
+ localStorage.setItem('sendwayo_language',lang);
+ const s=document.getElementById('language-selector');if(s)s.value=lang;
+ const ws=document.getElementById('welcome-language-selector');if(ws)ws.value=lang;
  document.documentElement.lang=lang==='ht'?'ht':lang;
- translateInterface();
- // En bienvenida/login no hay datos de usuario que renderizar.
- if(currentUser){try{if(typeof renderAll==='function')renderAll()}catch(e){}}
- setTimeout(()=>translateInterface(),0);
+ // Siempre reconstruimos la vista primero y traducimos DESPUÉS.
+ // Así ningún campo dinámico conserva el idioma anterior.
+ if(currentUser){
+   try{renderAll()}catch(e){console.warn('SENDWAYO setLanguage render:',e)}
+ }else{
+   try{translateInterface()}catch(e){}
+ }
+ setTimeout(()=>{try{translateInterface()}catch(e){}},80);
+ setTimeout(()=>{try{translateInterface()}catch(e){}},350);
 }
 function initLanguage(){setLanguage(localStorage.getItem('sendwayo_language')||'es')}
 const FINANCIAL_COLLECTIONS=['envios','recargas','paqueticos','pagos','paquetes','deposits'];
@@ -886,6 +893,37 @@ function renderRealtimeView(){
  }catch(e){console.warn('SENDWAYO realtime view:',e)}
  if(typeof ensureDownloadActions==='function')setTimeout(()=>ensureDownloadActions(),0);
 }
+/* SENDWAYO NOTIFICATIONS — recepción inmediata y alerta no invasiva */
+function playBell(){
+ try{
+   const bell=document.querySelector('.notification-bell');
+   if(bell){bell.classList.remove('sendwayo-notif-pulse');void bell.offsetWidth;bell.classList.add('sendwayo-notif-pulse');setTimeout(()=>bell.classList.remove('sendwayo-notif-pulse'),900);}
+   if(navigator.vibrate)navigator.vibrate([90,45,90]);
+ }catch(_){}
+}
+function showNotificationToast(message){
+ try{
+   let el=document.getElementById('sendwayo-live-notification');
+   if(!el){
+     el=document.createElement('div');
+     el.id='sendwayo-live-notification';
+     el.className='sendwayo-live-notification';
+     document.body.appendChild(el);
+   }
+   el.textContent=String(message||'Nueva notificación');
+   el.classList.add('show');
+   clearTimeout(window.__sendwayoNotifToastTimer);
+   window.__sendwayoNotifToastTimer=setTimeout(()=>el.classList.remove('show'),5000);
+ }catch(_){}
+}
+function showNonBlockingNotification(n){
+ if(!n||!currentUser)return;
+ const isMine=n.targetUserId===currentUser.id||(isAdmin()&&n.target==='Administrador');
+ if(!isMine)return;
+ showNotificationToast(n.msg);
+ playBell();
+}
+
 function attachRealtimeListeners(){
  if(!firebaseReady||!firebase.auth().currentUser)return;
  // PRODUCCIÓN / ANTI-CONGELAMIENTO:
@@ -920,6 +958,7 @@ function attachRealtimeListeners(){
          if(fresh&&fresh.active!==false)currentUser=fresh;
        }
        renderRealtimeView();
+         try{translateInterface()}catch(_){}
      }catch(e){console.warn('SENDWAYO render realtime:',e)}
    },220);
  };
@@ -1008,11 +1047,12 @@ function attachRealtimeListeners(){
    const existed=!!state.notifications[n.id];
    state.notifications[n.id]=n;
    if(notificationHydrated&&!existed&&(n.targetUserId===currentUser?.id||(isAdmin()&&n.target==='Administrador'))){
-     playBell();
+     showNonBlockingNotification(n);
      if(n.collection&&n.recordId&&state[n.collection]?.[n.recordId]?.status==='Aprobado'&&state[n.collection]?.[n.recordId]?.receipt)
        setTimeout(()=>showReceipt(n.collection,n.recordId),180);
    }
    renderNotifications();
+   try{translateInterface()}catch(_){};
  });
  nref.on('child_changed',snap=>{
    const n=snap.val();if(n){state.notifications=state.notifications||{};state.notifications[n.id]=n;renderNotifications()}
@@ -1037,6 +1077,27 @@ async function boot(){
 }
 // Arranque seguro: esperar a que todo el HTML exista antes de inicializar la aplicación.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else setTimeout(()=>boot(),0);
+/* Re-traducción segura de elementos dinámicos; no bloquea la interfaz. */
+(function installSendwayoLanguageObserver(){
+ let timer=0,locked=false;
+ const run=()=>{
+   if(locked)return;
+   locked=true;
+   try{translateInterface()}catch(_){}
+   locked=false;
+ };
+ const start=()=>{
+   if(!document.body||window.__sendwayoLanguageObserver)return;
+   const obs=new MutationObserver(()=>{
+     clearTimeout(timer);
+     timer=setTimeout(run,120);
+   });
+   obs.observe(document.body,{subtree:true,childList:true});
+   window.__sendwayoLanguageObserver=obs;
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else setTimeout(start,0);
+})();
+
 
 function showWelcome(){document.getElementById('welcome-screen').classList.remove('hidden');document.getElementById('login-screen').classList.add('hidden');document.body.style.overflow='';closeMobileMenu()}
 function showLogin(){
@@ -1400,7 +1461,16 @@ async function notificationClick(id){
  }
 }
 function toggleNotifications(){let p=document.getElementById('notif-panel');p.classList.toggle('show');renderNotifications()}
-function renderNotifications(){const arr=Object.values(state.notifications||{}).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));const mine=arr.filter(x=>x.targetUserId===currentUser?.id||(isAdmin()&&x.target==='Administrador'));const unread=mine.filter(x=>!x.read).length;document.getElementById('notif-count').textContent=unread;document.getElementById('notif-list').innerHTML=mine.slice(0,30).map(x=>`<div class="notif-item unread" data-notification-id="${x.id}" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small><br><span class="muted">Clic para abrir la operación y quitar esta notificación</span></div>`).join('')||'<div class="notif-item muted">No hay notificaciones.</div>'}
+function renderNotifications(){
+ const arr=Object.values(state.notifications||{}).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+ const mine=arr.filter(x=>x.targetUserId===currentUser?.id||(isAdmin()&&x.target==='Administrador'));
+ const unread=mine.filter(x=>!x.read).length;
+ const count=document.getElementById('notif-count');if(count)count.textContent=unread;
+ const list=document.getElementById('notif-list');if(!list)return;
+ const lang=localStorage.getItem('sendwayo_language')||'es';
+ const clickHint={es:'Clic para abrir la operación',fr:'Cliquez pour ouvrir l’opération',en:'Click to open the operation',ht:'Klike pou louvri operasyon an'}[lang]||'Clic para abrir la operación';
+ list.innerHTML=mine.slice(0,30).map(x=>`<div class="notif-item ${x.read?'':'unread'}" data-notification-id="${x.id}" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small><br><span class="muted">${clickHint}</span></div>`).join('')||`<div class="notif-item muted">${{es:'No hay notificaciones.',fr:'Aucune notification.',en:'No notifications.',ht:'Pa gen notifikasyon.'}[lang]||'No hay notificaciones.'}</div>`;
+}
 
 function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,targetUserId:typeof detail==='string'&&state.users?.[detail]?detail:(state.users?.[currentUser?.id]?currentUser.id:null),createdByAuthUid:firebase.auth().currentUser?.uid||null,createdAt:now()}}
 const SENDWAYO_OFFICIAL_HTI_TARIFF=[[50,500,50],[501,1000,100],[1001,2000,150],[2001,3000,200],[3001,4000,250],[4001,5000,300],[5001,6000,350],[6001,7000,400],[7001,8000,450],[8001,9000,500],[9001,10000,550],[10001,11000,600],[11001,12000,650],[12001,13000,700],[13001,14000,750],[14001,15000,800],[15001,16000,850],[16001,17000,900],[17001,18000,950],[18001,19000,1000],[19001,20000,1050],[20001,21000,1100],[21001,22000,1150],[22001,23000,1200],[23001,24000,1250],[24001,25000,1300],[25001,26000,1350],[26001,27000,1400],[27001,28000,1500],[28001,29000,1550],[29001,30000,1600],[30001,31000,1650],[31001,32000,1700],[32001,33000,1750],[33001,34000,1800],[34001,35000,1850],[35001,36000,1900]];
@@ -2267,11 +2337,11 @@ function ensureStandardStatusBars(){Object.entries(SENDWAYO_STATUS_CONFIG).forEa
 function renderAll(){
  if(!currentUser)return;
  setTimeout(()=>{
-   try{translateInterface()}catch(e){}
    try{updateSelectors()}catch(e){}
    try{renderRealtimeView()}catch(e){console.warn('SENDWAYO renderAll:',e)}
    try{ensureStandardStatusBars()}catch(e){}
    try{renderNotifications()}catch(e){}
+   try{translateInterface()}catch(e){}
    const dt=document.getElementById('header-datetime');if(dt)dt.textContent=new Date().toLocaleString('es-DO');
    if(typeof ensureDownloadActions==='function')setTimeout(()=>ensureDownloadActions(),0);
  },0);
