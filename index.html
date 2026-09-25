@@ -4284,10 +4284,16 @@ setTimeout(swScheduleFinal,500);
 </script>
 
 <style id="sendwayo-brand-name-final-fix">
+/* Logo primero; nombre después, grande y alineado al mismo nivel */
 .sidebar-brand{justify-content:flex-start!important;gap:10px!important;overflow:hidden!important}
-.sidebar-business-name{color:#f3b51b;font-weight:900;font-size:.78rem;line-height:1.05;letter-spacing:.5px;white-space:nowrap;flex:0 0 auto;text-align:right}
-.sidebar-brand>a{display:block;flex:1 1 auto;min-width:0}
-.sidebar-brand>a img{width:100%!important;max-width:190px!important;object-fit:contain!important;object-position:center!important}
-@media(max-width:800px){.sidebar-business-name{font-size:.68rem;letter-spacing:.3px}.sidebar-brand{padding-left:10px!important;padding-right:8px!important;gap:6px!important}.sidebar-brand>a img{max-width:165px!important;height:62px!important}}
+.sidebar-brand>a{order:1;display:block;flex:0 0 auto;min-width:0}
+.sidebar-brand>a img{width:190px!important;height:68px!important;object-fit:contain!important;object-position:center!important;display:block}
+.sidebar-business-name{order:2;color:#f3b51b;font-weight:900;font-size:1.05rem;line-height:1.05;letter-spacing:.4px;white-space:nowrap;flex:1 1 auto;text-align:left;display:flex;align-items:center;height:68px}
+@media(max-width:800px){
+  .sidebar-brand{padding-left:10px!important;padding-right:8px!important;gap:7px!important}
+  .sidebar-brand>a{flex:0 0 155px}
+  .sidebar-brand>a img{width:155px!important;height:62px!important}
+  .sidebar-business-name{font-size:.82rem;line-height:1.05;height:62px;white-space:normal;overflow:hidden}
+}
 </style>
 </html>
