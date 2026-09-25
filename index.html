@@ -5003,3 +5003,75 @@ setTimeout(markVIP,500);setTimeout(markVIP,1500);
 </script>
 
 </html>
+
+<style id="sendwayo-final-entry-panel-fix-2026-09-25">
+/* Entrada: el menú pertenece al panel de la aplicación y no debe aparecer fuera de él. */
+#app-sidebar.hidden{display:none!important}
+#app-shell.hidden{display:none!important}
+
+/* Panel izquierdo: todo el menú queda contenido dentro de la pantalla de la aplicación. */
+#app-sidebar{box-sizing:border-box;overflow:hidden}
+#app-sidebar .sidebar-menu{box-sizing:border-box;overflow-y:auto;overflow-x:hidden;min-width:0}
+#app-sidebar .sidebar-menu a{box-sizing:border-box;max-width:100%;white-space:normal}
+
+/* Logo oficial: completo, sin recorte ni deformación, aprovechando al máximo el cuadro. */
+#app-sidebar .sidebar-brand{
+  width:100%!important;
+  min-height:160px!important;
+  height:160px!important;
+  padding:6px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+#app-sidebar .sidebar-brand-main{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+#app-sidebar .sidebar-brand-main>a{
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+}
+#app-sidebar .sidebar-brand-main>a img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
+#app-sidebar .sidebar-brand-services{
+  flex:0 0 43%!important;
+  max-width:43%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+@media(max-width:800px){
+  #app-sidebar{
+    left:-280px!important;
+    width:280px!important;
+    max-width:86vw!important;
+  }
+  #app-sidebar.active{left:0!important}
+  #app-sidebar .sidebar-brand{
+    min-height:150px!important;
+    height:150px!important;
+    padding:5px!important;
+  }
+  #app-sidebar .sidebar-brand-main>a img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:contain!important;
+  }
+}
+</style>
