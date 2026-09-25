@@ -3755,6 +3755,13 @@ function swIntegrity(){
       if(String(r.accountingType||'').toUpperCase()==='DEPOSITO_CAPITAL'&&swNum(r.commission)!==0)issues.push(col+': depósito con comisión en '+id);
     }
   }
+  for(const col of cols){
+    const live=Object.assign({},(window.state&&state[col])||{});
+    const ledger=(window.state&&state.ledger&&state.ledger[col])||{};
+    for(const [id,r] of Object.entries(live)){
+      if(swApproved(r)&&!ledger[id])issues.push(col+': operación aprobada sin asiento de libro mayor '+id);
+    }
+  }
   const u=window.state&&state.users||{};
   for(const [id,x] of Object.entries(u)){
     if(!x)continue;
@@ -3795,7 +3802,7 @@ function swEnsureHealthCard(){
   const anchor=document.getElementById('ganancias-dia-card')||document.querySelector('#view-dashboard .card');
   if(!anchor||!anchor.parentNode)return;
   const card=document.createElement('div');card.id='sendwayo-health-card';card.className='card';
-  card.innerHTML='<div class="card-header"><h3>Salud de SENDWAYO</h3><button class="btn btn-light btn-sm" type="button" onclick="SENDWAYO_HARDENING.health()">Actualizar</button></div><div id="sendwayo-health-body"></div>';
+  card.innerHTML='<div class="card-header"><h3>Salud de SENDWAYO</h3><div class="actions"><button class="btn btn-light btn-sm" type="button" onclick="SENDWAYO_HARDENING.health()">Actualizar</button><button class="btn btn-light btn-sm" type="button" onclick="SENDWAYO_HARDENING.exportLocalBackup()">Respaldo local</button></div></div><div id="sendwayo-health-body"></div>';
   anchor.parentNode.insertBefore(card,anchor.nextSibling);swHealth();
 }
 function swAdminPanel(){setTimeout(swEnsureHealthCard,80)}
