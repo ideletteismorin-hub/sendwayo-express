@@ -830,12 +830,12 @@ function buildFirebaseUpdates(){const updates={},USER_PROFILE_FIELDS=['name','us
    ids.forEach(id=>{
     const currentRecord=id in cur?cur[id]:null,previousRecord=id in prev?prev[id]:null;
     if(JSON.stringify(currentRecord??null)!==JSON.stringify(previousRecord??null)&&canPersistOwnRecord(k,currentRecord,previousRecord)){
-     if(currentRecord===null){if(isAdmin())updates[k+'/'+id]=null}else{updates[k+'/'+id]=currentRecord;if(isAdmin()&&FINANCIAL_COLLECTIONS.includes(k))updates['ledger/'+k+'/'+id]=currentRecord}
+     if(currentRecord===null){if(isAdmin())updates[k+'/'+id]=null}else{updates[k+'/'+id]=currentRecord}
     }
    });
   }else if(JSON.stringify(cur??null)!==JSON.stringify(prev??null)){if(isAdmin()&&k!=='users')updates[k]=cur??null}
  });
- if(isAdmin())FINANCIAL_COLLECTIONS.forEach(k=>Object.entries(state[k]||{}).forEach(([id,record])=>{if(record)updates['ledger/'+k+'/'+id]=record}));
+ /* El libro mayor es append-only: solo se escribe en la aprobación idempotente. Nunca se replica por persist(). */
  return updates;
 }
 async function persist(){localSave();if(!firebaseReady)return Promise.resolve(true);const updates=buildFirebaseUpdates();if(!Object.keys(updates).length)return Promise.resolve(true);persistQueue=persistQueue.then(async()=>{try{
@@ -1535,7 +1535,7 @@ function renderNotifications(){
  list.innerHTML=mine.slice(0,30).map(x=>`<div class="notif-item ${x.read?'':'unread'}" data-notification-id="${x.id}" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small><br><span class="muted">${clickHint}</span></div>`).join('')||`<div class="notif-item muted">${{es:'No hay notificaciones.',fr:'Aucune notification.',en:'No notifications.',ht:'Pa gen notifikasyon.'}[lang]||'No hay notificaciones.'}</div>`;
 }
 
-function addAudit(action,detail){let id=uid('a');state.audit[id]={id,user:currentUser?.username||'public',action,detail,targetUserId:typeof detail==='string'&&state.users?.[detail]?detail:(state.users?.[currentUser?.id]?currentUser.id:null),createdByAuthUid:firebase.auth().currentUser?.uid||null,createdAt:now()}}
+function addAudit(action,detail){const id=uid('a'),entry={id,user:currentUser?.username||'public',action:String(action||''),detail:String(detail??''),targetUserId:typeof detail==='string'&&state.users?.[detail]?detail:(state.users?.[currentUser?.id]?currentUser.id:null),createdByAuthUid:firebase.auth().currentUser?.uid||null,createdAt:now()};state.audit=state.audit||{};state.audit[id]=entry;try{if(firebaseReady&&firebase.auth().currentUser)firebase.database().ref(DB_PATH+'/audit/'+id).set(entry).catch(e=>console.warn('Audit SENDWAYO:',e))}catch(e){console.warn('Audit SENDWAYO:',e)}}
 const SENDWAYO_OFFICIAL_HTI_TARIFF=[[50,500,50],[501,1000,100],[1001,2000,150],[2001,3000,200],[3001,4000,250],[4001,5000,300],[5001,6000,350],[6001,7000,400],[7001,8000,450],[8001,9000,500],[9001,10000,550],[10001,11000,600],[11001,12000,650],[12001,13000,700],[13001,14000,750],[14001,15000,800],[15001,16000,850],[16001,17000,900],[17001,18000,950],[18001,19000,1000],[19001,20000,1050],[20001,21000,1100],[21001,22000,1150],[22001,23000,1200],[23001,24000,1250],[24001,25000,1300],[25001,26000,1350],[26001,27000,1400],[27001,28000,1500],[28001,29000,1550],[29001,30000,1600],[30001,31000,1650],[31001,32000,1700],[32001,33000,1750],[33001,34000,1800],[34001,35000,1850],[35001,36000,1900]];
 function isOfficialHtiCashRoute(type){const t=String(type||'').trim().toUpperCase().replace(/\s+/g,' ');return t==='RD A HTI MONCASH'||t==='RD A HTI NATCASH'}
 function officialHtiCashFee(amount,type){if(!isOfficialHtiCashRoute(type))return null;const m=Number(amount||0);if(!Number.isFinite(m)||m<50||m>36000)return null;const whole=Math.floor(m);const row=SENDWAYO_OFFICIAL_HTI_TARIFF.find(([min,max])=>whole>=min&&whole<=max);return row?Number(row[2]):null}
@@ -3784,7 +3784,7 @@ function swIntegrity(){
   }
   return issues;
 }
-function swHealth(){
+function swReconciliation(){\n  const cols=['envios','recargas','paqueticos','pagos','paquetes'],approved=[],missingLedger=[],orphanLedger=[];\n  for(const col of cols){\n    const live=(window.state&&state[col])||{},ledger=(window.state&&state.ledger&&state.ledger[col])||{};\n    for(const [id,r] of Object.entries(live)){if(swApproved(r)){approved.push({col,id,r});if(!ledger[id])missingLedger.push(col+':'+id)}}\n    for(const id of Object.keys(ledger)){if(!live[id])orphanLedger.push(col+':'+id)}\n  }\n  let gross=0,userShare=0,adminShare=0;\n  approved.forEach(({r})=>{const g=swNum(r.commissionTotal??r.commission??r.commissionAmount??r.fee);gross+=g;userShare+=swNum(r.commissionUser??g*.5);adminShare+=swNum(r.commissionAdmin??g*.5)});\n  const admin=window.state?.users?.admin||{},storedAdmin=swNum(admin.commissionAccrued);\n  return {approved:approved.length,missingLedger,orphanLedger,gross:Number(gross.toFixed(2)),userShare:Number(userShare.toFixed(2)),adminShare:Number(adminShare.toFixed(2)),storedAdmin:Number(storedAdmin.toFixed(2)),adminDifference:Number((storedAdmin-adminShare).toFixed(2))};\n}\nwindow.SENDWAYO_HARDENING.reconciliation=swReconciliation;\nfunction swHealth(){
   const el=document.getElementById('sendwayo-health-body');if(!el)return;
   const issues=swIntegrity();
   const hasFirebase=!!(window.firebase||window.firebaseConfig||window.db);
@@ -3801,7 +3801,7 @@ function swHealth(){
     '<div class="sw-health-grid">'+
       '<div><b>Firebase / sincronización</b><span class="sw-health-value">'+swEsc(connected)+'</span></div>'+
       '<div><b>Integridad financiera</b><span class="sw-health-value '+(ok?'ok':'bad')+'">'+(ok?'OK':'Revisar '+issues.length+' alerta(s)')+'</span></div>'+
-      '<div><b>Operaciones aprobadas hoy</b><span class="sw-health-value">'+swNum(swRecords('envios').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('recargas').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paqueticos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('pagos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paquetes').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length)+'</span></div>'+
+      '<div><b>Operaciones aprobadas hoy</b><span class="sw-health-value">'+swNum(swRecords('envios').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('recargas').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paqueticos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('pagos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paquetes').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length)+'</span></div>'+\n      '<div><b>Libro mayor</b><span class="sw-health-value '+(rec.missingLedger.length?'bad':'ok')+'">'+(rec.missingLedger.length?'Faltan '+rec.missingLedger.length:'Cuadra')+'</span></div>'+\n      '<div><b>Comisión Administración derivada</b><span class="sw-health-value">'+swMoney(rec.adminShare)+'</span></div>'+
       '<div><b>Última comprobación</b><span class="sw-health-value">'+new Date().toLocaleTimeString('es-DO')+'</span></div>'+
     '</div>'+
     (issues.length?'<details class="sw-health-alert"><summary>Ver inconsistencias detectadas</summary><ul>'+issues.slice(0,30).map(x=>'<li>'+swEsc(x)+'</li>').join('')+'</ul></details>':'<div class="sw-health-ok">No se detectaron inconsistencias financieras en los datos cargados en este dispositivo.</div>');
