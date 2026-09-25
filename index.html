@@ -2441,7 +2441,15 @@ function renderDashboardNotifications(){
  const arr=Object.values(state.notifications||{}).filter(x=>x.targetUserId===currentUser.id||(isAdmin()&&x.target==='Administrador')).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
  box.innerHTML=arr.slice(0,5).map(x=>`<div class="notif-item unread" style="margin-bottom:6px" onclick="notificationClick('${x.id}')"><b>${escapeHtml(x.msg)}</b><br><small>${escapeHtml(x.createdAt)}</small></div>`).join('')||'<div class="muted">No hay notificaciones nuevas.</div>';
 }
-function commissionDateKey(v){const t=parseSendwayoDate(v);if(!t)return '';const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function commissionDateKey(v){
+ if(v===null||v===undefined||v==='')return '';
+ let t=0;
+ if(typeof v==='number'&&Number.isFinite(v))t=v<100000000000?v*1000:v;
+ else t=parseSendwayoDate(v);
+ if(!t)return '';
+ const d=new Date(t);if(isNaN(d.getTime()))return '';
+ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+}
 function todayDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function scheduleCommissionDayRefresh(){
  if(window.__sendwayoCommissionTimer)clearTimeout(window.__sendwayoCommissionTimer);
@@ -2780,31 +2788,37 @@ async function saveAdminBalanceAdjustment(){
 function renderGananciasDia(){
  const box=document.getElementById('ganancias-dia-lista'),totalEl=document.getElementById('ganancias-dia-total');
  if(!box||!totalEl||!currentUser)return;
- const today=todayDateKey(), cols=['envios','recargas','paqueticos','pagos','paquetes'];
+ const today=todayDateKey(),cols=['envios','recargas','paqueticos','pagos','paquetes'];
  const labels={envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'};
- const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
- const roleId=isAdmin()?'admin':currentUser.id;
+ const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0},counts={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
+ const roleId=isAdmin()?'admin':currentUser.id,sources=[state,lastSyncedState].filter(Boolean);
  for(const col of cols){
    const records=new Map();
-   Object.entries(state[col]||{}).forEach(([id,r])=>records.set(id,r));
-   Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>{if(!records.has(id))records.set(id,r)});
-   for(const r of records.values()){
-     if(String(r?.status||'').trim().toLowerCase()!=='aprobado')continue;
-     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt].map(commissionDateKey).filter(Boolean);
+   for(const src of sources){
+     Object.entries(src[col]||{}).forEach(([id,r])=>{if(!records.has(id))records.set(id,r)});
+     Object.entries(src.ledger?.[col]||{}).forEach(([id,r])=>{if(!records.has(id))records.set(id,r)});
+   }
+   for(const [id,r] of records){
+     if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
+     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt,r.timestamp].map(commissionDateKey).filter(Boolean);
      if(!dates.includes(today))continue;
-     const base=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
      if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
+     const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
      let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(share))share=base*0.50;
-     if(Number.isFinite(share)&&share>0)sums[col]+=share;
+     if(!Number.isFinite(share))share=Number.isFinite(gross)?gross*0.50:0;
+     if(Number.isFinite(share)&&share>=0){counts[col]++;sums[col]+=share}
    }
  }
- const creditRows=Object.values(state.users?.[roleId]?.commissionCredits||{}).filter(x=>String(x?.type||'').toUpperCase()==='COMISION_ACREDITADA'&&[x.creditedAt,x.createdAt,x.processedAt,x.date].map(commissionDateKey).includes(today));
- sums.paqueticos+=creditRows.reduce((a,x)=>a+Math.max(0,Number(x.amount||0)),0);
- const total=Object.values(sums).reduce((a,n)=>a+n,0);
- box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span>'+escapeHtml(labels[col])+'</span><span class="detalles-tipo"><span class="titulo-label">'+escapeHtml(labels[col])+'</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
+ const user=state.users?.[roleId]||lastSyncedState?.users?.[roleId];
+ const creditRows=Object.values(user?.commissionCredits||{}).filter(x=>String(x?.type||'').toUpperCase()==='COMISION_ACREDITADA'&&[x.creditedAt,x.createdAt,x.processedAt,x.date,x.timestamp].map(commissionDateKey).includes(today));
+ const manual=creditRows.reduce((n,x)=>n+Math.max(0,Number(x.amount||0)),0);
+ if(manual){sums.paqueticos+=manual;counts.paqueticos+=creditRows.length}
+ const total=Object.values(sums).reduce((a,n)=>a+n,0),ops=Object.values(counts).reduce((a,n)=>a+n,0);
+ box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
+ if(!ops)box.innerHTML+='<div class="muted" style="padding-top:10px">No hay operaciones aprobadas registradas para hoy en los datos cargados.</div>';
  totalEl.textContent=money(total);
+ const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · '+money(total)+' de ganancia';
 }
 
 function renderDashboard(){
