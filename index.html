@@ -2429,27 +2429,33 @@ function commissionTodayFor(userId){
  const today=todayDateKey();
  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
  let total=0;
- // Comisión de hoy = TODO beneficio de comisión generado HOY por operaciones APROBADAS.
- // Depósitos y retiros no generan comisión.
+ // OBLIGATORIO: Comisión de hoy = toda comisión realmente generada hoy
+ // por operaciones APROBADAS. Se aceptan todas las marcas de fecha válidas
+ // del registro para evitar que una diferencia de formato deje el KPI en cero.
  for(const col of cols)for(const r of Object.values(state[col]||{})){
    if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
-   const stamp=r.reviewedAt||r.approvedAt||r.balanceSettledAt||r.createdAt||r.date;
-   if(commissionDateKey(stamp)!==today)continue;
+   const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt]
+     .map(commissionDateKey).filter(Boolean);
+   if(!dates.includes(today))continue;
+   const commissionBase=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
    let share=0;
    if(userId==='admin'){
      share=Number(r.commissionAdmin);
-     if(!Number.isFinite(share))share=Number(r.commissionTotal??r.commission??0)*0.50;
-   }else if(r.userId===userId){
+     if(!Number.isFinite(share))share=commissionBase*0.50;
+   }else{
+     const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
+     if(String(ownerId)!==String(userId))continue;
      share=Number(r.commissionUser);
-     if(!Number.isFinite(share))share=Number(r.commissionTotal??r.commission??0)*0.50;
+     if(!Number.isFinite(share))share=commissionBase*0.50;
    }
    if(Number.isFinite(share)&&share>0)total+=share;
  }
- // Acreditaciones manuales de COMISIÓN hechas hoy también cuentan como beneficio de hoy.
+ // Acreditaciones manuales de COMISIÓN hechas hoy también cuentan.
  const u=state.users?.[userId];
  for(const x of Object.values(u?.commissionCredits||{})){
    if(String(x?.type||'').toUpperCase()!=='COMISION_ACREDITADA')continue;
-   if(commissionDateKey(x.creditedAt||x.createdAt)!==today)continue;
+   const dates=[x.creditedAt,x.createdAt,x.processedAt].map(commissionDateKey).filter(Boolean);
+   if(!dates.includes(today))continue;
    const n=Number(x.amount||0);
    if(Number.isFinite(n)&&n>0)total+=n;
  }
