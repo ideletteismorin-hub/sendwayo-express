@@ -510,30 +510,78 @@ const UI_TRANSLATIONS={
 'Más que distancias conectamos confianza con la calidad y seguridad que llegan a donde estás':'Plis pase distans, nou konekte konfyans ak kalite ak sekirite ki rive kote ou ye a',
 'Enviar':'Voye','Cancelar':'Anile','Buscar':'Chèche','Agregar Nuevo':'Ajoute nouvo'
 }};
+function restoreSpanishCanonicalText(){
+ const lang=localStorage.getItem('sendwayo_language')||'es';
+ const map=UI_TRANSLATIONS[lang]||{};
+ if(lang==='es')return;
+ const reverse=Object.entries(map).filter(([es,tr])=>es&&tr&&es!==tr).sort((a,b)=>b[1].length-a[1].length);
+ const reverseText=(value)=>{
+   let out=String(value??'');
+   for(const [es,tr] of reverse)if(out.includes(tr))out=out.split(tr).join(es);
+   return out;
+ };
+ const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),nodes=[];
+ while(walker.nextNode())nodes.push(walker.currentNode);
+ nodes.forEach(n=>{
+   if(!n.parentElement||n.parentElement.closest('script,style'))return;
+   n.nodeValue=reverseText(n.nodeValue||'');
+   n.__sendwayoOriginal=n.nodeValue||'';
+ });
+ document.querySelectorAll('input[placeholder],textarea[placeholder],button[title],select[title],option').forEach(el=>{
+   ['placeholder','title'].forEach(a=>{
+     if(!el.hasAttribute(a))return;
+     el.setAttribute(a,reverseText(el.getAttribute(a)||''));
+     el['sendwayoOriginal'+a.charAt(0).toUpperCase()+a.slice(1)]=el.getAttribute(a)||'';
+   });
+   if(el.tagName==='OPTION'){
+     el.textContent=reverseText(el.textContent||'');
+     el.__sendwayoOriginal=el.textContent||'';
+   }
+ });
+}
 function translateInterface(){
  const lang=localStorage.getItem('sendwayo_language')||'es', map=UI_TRANSLATIONS[lang]||{};
  const entries=Object.entries(map).filter(([k,v])=>k&&v&&k!==v).sort((a,b)=>b[0].length-a[0].length);
  const translateText=(original)=>{
-   if(lang==='es')return original;
-   const trimmed=String(original||'').trim(); if(!trimmed)return original;
-   if(map[trimmed])return String(original).replace(trimmed,map[trimmed]);
-   let out=String(original); for(const [from,to] of entries)if(out.includes(from))out=out.split(from).join(to); return out;
+   const base=String(original??'');
+   if(lang==='es')return base;
+   const trimmed=base.trim();
+   if(map[trimmed])return base.replace(trimmed,map[trimmed]);
+   let out=base;
+   for(const [from,to] of entries)if(out.includes(from))out=out.split(from).join(to);
+   return out;
  };
- const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
- nodes.forEach(n=>{if(!n.parentElement||n.parentElement.closest('script,style'))return;if(n.__sendwayoOriginal===undefined)n.__sendwayoOriginal=n.nodeValue||'';n.nodeValue=translateText(n.__sendwayoOriginal)});
+ const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),nodes=[];
+ while(walker.nextNode())nodes.push(walker.currentNode);
+ nodes.forEach(n=>{
+   if(!n.parentElement||n.parentElement.closest('script,style'))return;
+   // Siempre se traduce desde la versión canónica en español.
+   if(n.__sendwayoOriginal===undefined)n.__sendwayoOriginal=n.nodeValue||'';
+   n.nodeValue=translateText(n.__sendwayoOriginal);
+ });
  document.querySelectorAll('input[placeholder],textarea[placeholder],button[title],select[title],option').forEach(el=>{
-   ['placeholder','title'].forEach(a=>{if(!el.hasAttribute(a))return;const marker='sendwayoOriginal'+a.charAt(0).toUpperCase()+a.slice(1);if(el[marker]===undefined)el[marker]=el.getAttribute(a)||'';el.setAttribute(a,translateText(el[marker]))});
-   if(el.tagName==='OPTION'){if(el.__sendwayoOriginal===undefined)el.__sendwayoOriginal=el.textContent||'';el.textContent=translateText(el.__sendwayoOriginal)}
+   ['placeholder','title'].forEach(a=>{
+     if(!el.hasAttribute(a))return;
+     const marker='sendwayoOriginal'+a.charAt(0).toUpperCase()+a.slice(1);
+     if(el[marker]===undefined)el[marker]=el.getAttribute(a)||'';
+     el.setAttribute(a,translateText(el[marker]));
+   });
+   if(el.tagName==='OPTION'){
+     if(el.__sendwayoOriginal===undefined)el.__sendwayoOriginal=el.textContent||'';
+     el.textContent=translateText(el.__sendwayoOriginal);
+   }
  });
 }
 function setLanguage(lang){
  if(!LANG[lang])lang='es';
+ // Antes de cambiar, convertimos lo visible al texto canónico en español.
+ // Esto evita que un texto que quedó en francés se convierta accidentalmente
+ // en el "original" y permanezca en francés al seleccionar español.
+ try{restoreSpanishCanonicalText()}catch(e){console.warn('SENDWAYO language restore:',e)}
  localStorage.setItem('sendwayo_language',lang);
  const s=document.getElementById('language-selector');if(s)s.value=lang;
  const ws=document.getElementById('welcome-language-selector');if(ws)ws.value=lang;
  document.documentElement.lang=lang==='ht'?'ht':lang;
- // Siempre reconstruimos la vista primero y traducimos DESPUÉS.
- // Así ningún campo dinámico conserva el idioma anterior.
  if(currentUser){
    try{renderAll()}catch(e){console.warn('SENDWAYO setLanguage render:',e)}
  }else{
@@ -2359,17 +2407,28 @@ function scheduleCommissionDayRefresh(){
  window.__sendwayoCommissionTimer=setTimeout(()=>{if(currentUser){renderDashboard();}scheduleCommissionDayRefresh()},Math.max(1000,next.getTime()-Date.now()));
 }
 function commissionTodayFor(userId){
+ // "Comisión de hoy" se calcula por operaciones APROBADAS HOY,
+ // no por el balance ni por un campo acumulado que pueda quedar vacío.
  const today=todayDateKey();
  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
  let total=0;
  for(const col of cols){
    for(const r of Object.values(state[col]||{})){
-     if(!r||r.status!=='Aprobado')continue;
-     const day=commissionDateKey(r.reviewedAt||r.balanceSettledAt||r.createdAt||r.date);
-     if(day!==today)continue;
-     const share=userId==='admin'
-       ?Number(r.commissionAdmin??(Number(r.commission||0)*0.5))
-       :(r.userId===userId?Number(r.commissionUser??(Number(r.commission||0)*0.5)):0);
+     if(!r)continue;
+     const status=String(r.status||'').trim().toLowerCase();
+     if(status!=='aprobado')continue;
+     // La fecha de aprobación tiene prioridad. Los demás campos son respaldo
+     // para operaciones antiguas que no tengan reviewedAt.
+     const stamp=r.reviewedAt||r.approvedAt||r.balanceSettledAt||r.createdAt||r.date;
+     if(commissionDateKey(stamp)!==today)continue;
+     let share=0;
+     if(userId==='admin'){
+       share=Number(r.commissionAdmin);
+       if(!Number.isFinite(share))share=Number(r.commission||0)*0.50;
+     }else if(r.userId===userId){
+       share=Number(r.commissionUser);
+       if(!Number.isFinite(share))share=Number(r.commission||0)*0.50;
+     }
      if(Number.isFinite(share)&&share>0)total+=share;
    }
  }
