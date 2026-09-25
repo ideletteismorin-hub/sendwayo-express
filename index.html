@@ -2827,8 +2827,12 @@ function renderGananciasDia(){
  if(manual)buckets['comisiones-acreditadas']={label:'Comisiones acreditadas',operations:creditRows.length,amount:0,gain:manual};
  const rows=Object.values(buckets).filter(x=>x.operations>0),total=rows.reduce((n,x)=>n+x.gain,0),processed=rows.reduce((n,x)=>n+x.amount,0),ops=rows.reduce((n,x)=>n+x.operations,0);
  box.innerHTML=rows.map(x=>'<div class="item-ganancia"><span><b>'+escapeHtml(x.label)+'</b><br><small>'+x.operations+' operación'+(x.operations===1?'':'es')+' aprobada'+(x.operations===1?'':'s')+' · Monto: '+money(x.amount)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(x.gain)+'</span></span></div>').join('');
- if(!rows.length)box.innerHTML='<div class="muted" style="padding-top:10px">No hay operaciones aprobadas registradas para hoy en los datos cargados.</div>';
- totalEl.textContent=money(total);const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · Monto procesado '+money(processed)+' · Ganancia '+money(total);
+ const cacheKey='sendwayo_ganancia_dia_'+today;
+ const cached=(()=>{try{return JSON.parse(localStorage.getItem(cacheKey)||'null')}catch(e){return null}})();
+ if(rows.length){box.innerHTML=rows.map(x=>'<div class="item-ganancia"><span><b>'+escapeHtml(x.label)+'</b><br><small>'+x.operations+' operación'+(x.operations===1?'':'es')+' aprobada'+(x.operations===1?'':'s')+' · Monto: '+money(x.amount)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(x.gain)+'</span></span></div>').join('');totalEl.textContent=money(total);try{localStorage.setItem(cacheKey,JSON.stringify({total,html:box.innerHTML,processed,ops,savedAt:Date.now()}))}catch(e){}}
+ else if(cached&&Number.isFinite(Number(cached.total))){box.innerHTML=cached.html||'<div class="muted" style="padding-top:10px">Sincronizando datos financieros…</div>';totalEl.textContent=money(Number(cached.total));const card=document.getElementById('ganancias-dia-card');if(card)card.title='Último valor financiero confirmado: '+money(Number(cached.total))+' · Sincronizando…';return}
+ else{box.innerHTML='<div class="muted" style="padding-top:10px">Sincronizando datos financieros…</div>';totalEl.textContent=money(0)}
+ const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · Monto procesado '+money(processed)+' · Ganancia '+money(total);
 }
 function renderDashboard(){
  scheduleCommissionDayRefresh();
