@@ -13,10 +13,18 @@
 :root{--primary:#0f2c59;--primary2:#123b78;--secondary:#f3b51b;--accent:#1f9d55;--danger:#c0392b;--warning:#d97706;--light:#f4f6f9;--dark:#243447;--gray:#7b8794;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,sans-serif}
 body{background:var(--light);color:var(--dark);display:flex;height:100vh;overflow:hidden;overscroll-behavior-y:auto;touch-action:pan-y}
-#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:min(96vw,1500px) auto;opacity:.075;filter:saturate(.9);}
+#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.075;filter:saturate(1.08) contrast(1.05);}
 .main-container{position:relative;z-index:51}
 aside{position:relative;z-index:100}
-@media(max-width:800px){#sendwayo-brand-background{background-size:125vw auto;opacity:.065}}
+.main-container .card,.main-container .modal-content,.main-container .form-control,.main-container table{position:relative}
+.main-container .card{background:rgba(255,255,255,.94);backdrop-filter:blur(2px)}
+.main-container .table-wrap{background:rgba(255,255,255,.96)}
+.main-container .form-control{background:rgba(255,255,255,.97);color:#102a43;font-weight:600}
+.main-container label,.main-container th,.main-container td,.main-container h1,.main-container h2,.main-container h3,.main-container h4{color:#102a43}
+.receipt-compact,.receipt-final,.receipt-shell{position:relative;overflow:hidden;background:rgba(255,255,255,.97)!important}
+.receipt-compact::before,.receipt-final::before,.receipt-shell::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.055}
+.receipt-compact>* ,.receipt-final>* ,.receipt-shell>*{position:relative;z-index:1}
+@media(max-width:800px){#sendwayo-brand-background{background-size:cover;opacity:.065}}
 
 button,input,select,textarea{font:inherit}
 #login-screen,#welcome-screen{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;z-index:9999;background:linear-gradient(135deg,#071a36,#123b78)}
@@ -608,11 +616,19 @@ function installSendwayoBrandBackground(){
   try{
     let el=document.getElementById('sendwayo-brand-background');
     if(!el){el=document.createElement('div');el.id='sendwayo-brand-background';document.body.prepend(el);}
-    const icon=document.querySelector('link[rel="icon"]')?.href;
-    if(icon)el.style.backgroundImage='url("'+icon+'")';
+    const logo=document.querySelector('.brand-logo')?.getAttribute('src') || document.querySelector('.sidebar-brand img')?.getAttribute('src');
+    if(logo)el.style.backgroundImage='url("'+logo+'")';
   }catch(e){console.warn('SENDWAYO brand background:',e)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSendwayoBrandBackground,{once:true});
+function installSendwayoReceiptBrand(){
+  try{
+    const logo=document.querySelector('.brand-logo')?.getAttribute('src') || document.querySelector('.sidebar-brand img')?.getAttribute('src');
+    if(logo)document.documentElement.style.setProperty('--sendwayo-logo-bg','url("'+logo+'")');
+  }catch(e){console.warn('SENDWAYO receipt brand:',e)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSendwayoReceiptBrand,{once:true});
+else installSendwayoReceiptBrand();
 else installSendwayoBrandBackground();
 window.sendwayoOpenLogin=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(w)w.classList.add('hidden');if(l)l.classList.remove('hidden');var u=document.getElementById('login-user');if(u)setTimeout(function(){u.focus()},50)};
 window.sendwayoOpenRequest=function(type){
@@ -3773,39 +3789,47 @@ window.actionButtons=function(collection,id,status){
 const swOriginalDeleteRecord=window.deleteRecord;
 window.deleteRecord=async function(collection,id){
   const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
-  const admin=isAdmin(),owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid;
-  if(!admin&&(!owner||!['Rechazado','No coincide'].includes(r.status)))return toast('No tiene permiso para eliminar este registro.','warn');
-  if(admin&&r.status==='Aprobado')return swAdminDeleteApproved(collection,id);
-  return swOriginalDeleteRecord(collection,id);
+  const authUser=firebase.auth().currentUser;
+  if(!firebaseReady||!authUser)return toast('Firebase no está conectado. No se puede borrar.','error');
+  const admin=isAdmin();
+  const owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===authUser.uid;
+  const status=String(r.status||'').trim().toLowerCase();
+
+  if(!admin && (!owner || !['rechazado','no coincide'].includes(status))){
+    return toast('No tiene permiso para eliminar este registro.','warn');
+  }
+  if(!admin && status==='aprobado'){
+    return toast('Una operación aprobada no puede ser eliminada por el Remitente.','warn');
+  }
+  if(!confirm('¿ELIMINAR DEFINITIVAMENTE este registro? Esta acción no se puede deshacer.'))return;
+
+  try{
+    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
+    await ref.remove();
+    const check=await ref.once('value');
+    if(check.exists())throw new Error('Firebase todavía devuelve el registro después de remove()');
+
+    if(state[collection])delete state[collection][id];
+    if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
+
+    const aid=uid('del'),audit={
+      id:aid,action:'ELIMINAR DEFINITIVAMENTE',collection,recordId:id,
+      processedBy:currentUser?.username||'public',statusBefore:r.status||'',
+      amount:Number(r.amount||0),createdAt:now(),createdByAuthUid:authUser.uid
+    };
+    try{await firebase.database().ref(DB_PATH+'/audit/'+aid).set(audit)}catch(ae){console.warn('Audit:',ae)}
+    state.audit=state.audit||{};state.audit[aid]=audit;
+    localSave();renderAll();
+    toast('Borrado definitivo realizado correctamente.','success');
+    return true;
+  }catch(e){
+    console.error('DELETE DEFINITIVO:',collection,id,e);
+    return toast('Firebase rechazó el borrado. Revise las reglas de seguridad publicadas.','error');
+  }
 };
 async function swAdminDeleteApproved(collection,id){
-  if(!isAdmin())return false;const r=state[collection]?.[id];if(!r)return false;
-  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado.','error');
-  if(!confirm('¿Eliminar definitivamente la operación aprobada '+id+'? Se realizará la reversión contable disponible y quedará una auditoría.'))return false;
-  const root=firebase.database().ref(DB_PATH);
-  try{
-    if(['envios','recargas','paqueticos','pagos','paquetes'].includes(collection)){
-      const userId=r.userId,amount=Number(r.amount||0),uShare=Number(r.commissionUser??Number(r.commission||0)*0.5),aShare=Number(r.commissionAdmin??Number(r.commission||0)*0.5);
-      const utx=await root.child('users').child(userId).transaction(u=>{if(!u)return undefined;const balance=Number(u.balance||0)+amount,commission=Number(u.commission||0)-uShare,accrued=Number(u.commissionAccrued||0)-uShare;if(commission<0||accrued<0)return undefined;const next={...u,balance,commission,commissionAccrued:accrued};if(next.transactionCommissionCredits?.[id]){next.transactionCommissionCredits={...next.transactionCommissionCredits};delete next.transactionCommissionCredits[id]}return next});
-      if(!utx.committed)return toast('No se puede eliminar: la conciliación del Remitente no permitiría revertir la comisión.','warn');
-      const atx=await root.child('users').child('admin').transaction(u=>{if(!u)return undefined;const balance=Number(u.balance||0)-aShare,accrued=Number(u.commissionAccrued||0)-aShare;if(balance<0||accrued<0||balance+0.000001<accrued)return undefined;const next={...u,balance,commissionAccrued:accrued};if(next.transactionCommissionCredits?.[id]){next.transactionCommissionCredits={...next.transactionCommissionCredits};delete next.transactionCommissionCredits[id]}return next});
-      if(!atx.committed){await root.child('users').child(userId).transaction(u=>u?{...u,balance:Number(u.balance||0)-amount,commission:Number(u.commission||0)+uShare,commissionAccrued:Number(u.commissionAccrued||0)+uShare}:undefined);return toast('No se puede eliminar: el balance administrativo no permite revertir la comisión sin romper la conciliación.','warn')}
-    }else if(collection==='deposits'){
-      const tx=await root.child('users').child(r.userId).transaction(u=>{if(!u)return undefined;const b=Number(u.balance||0)-Number(r.amount||0);if(b<0)return undefined;const next={...u,balance:b,depositCredits:{...(u.depositCredits||{})}};delete next.depositCredits[id];return next});
-      if(!tx.committed)return toast('No se puede eliminar el depósito: el balance del Remitente no permite revertirlo.','warn');
-    }else if(collection==='commissions'){
-      const tx=await root.child('users').child(r.userId).transaction(u=>{if(!u)return undefined;const b=Number(u.balance||0)-Number(r.amount||0);if(b<0)return undefined;return {...u,balance:b,commission:Number(u.commission||0)+Number(r.amount||0)}});
-      if(!tx.committed)return toast('No se puede eliminar el pago de comisión sin llevar el balance a un valor negativo.','warn');
-    }else if(collection==='accountWithdrawals'){
-      const tx=await root.child('users').child(r.userId).transaction(u=>u?{...u,balance:Number(u.balance||0)+Number(r.amount||0)}:undefined);
-      if(!tx.committed)return toast('No se pudo revertir el retiro aprobado.','warn');
-    }
-    await root.child(collection).child(id).remove();if(state[collection])delete state[collection][id];if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
-    const aid=uid('audit'),audit={id:aid,action:'ELIMINAR APROBADO Y REVERTIR',collection,recordId:id,processedBy:currentUser.username,createdAt:now(),createdByAuthUid:firebase.auth().currentUser.uid};
-    await root.child('audit').child(aid).set(audit);state.audit=state.audit||{};state.audit[aid]=audit;localSave();renderAll();toast('Operación aprobada eliminada y conciliación revertida.','success');return true;
-  }catch(e){console.warn('swAdminDeleteApproved:',e);toast('No se pudo eliminar la operación aprobada de forma segura.','error');return false}
+  return window.deleteRecord(collection,id);
 }
-
 
 function swCopyReceiptText(){
   const host=document.getElementById('detail-content');if(!host)return toast('No se encontró el comprobante.','warn');
