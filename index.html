@@ -13,16 +13,16 @@
 :root{--primary:#0f2c59;--primary2:#123b78;--secondary:#f3b51b;--accent:#1f9d55;--danger:#c0392b;--warning:#d97706;--light:#f4f6f9;--dark:#243447;--gray:#7b8794;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,sans-serif}
 body{background:var(--light);color:var(--dark);display:flex;height:100vh;overflow:hidden;overscroll-behavior-y:auto;touch-action:pan-y}
-#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.075;filter:saturate(1.08) contrast(1.05);}
+#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.22;filter:saturate(1.18) contrast(1.12);mix-blend-mode:multiply;}
 .main-container{position:relative;z-index:51}
 aside{position:relative;z-index:100}
 .main-container .card,.main-container .modal-content,.main-container .form-control,.main-container table{position:relative}
-.main-container .card{background:rgba(255,255,255,.94);backdrop-filter:blur(2px)}
-.main-container .table-wrap{background:rgba(255,255,255,.96)}
-.main-container .form-control{background:rgba(255,255,255,.97);color:#102a43;font-weight:600}
+.main-container .card{background:rgba(255,255,255,.86);backdrop-filter:blur(1.5px)}
+.main-container .table-wrap{background:rgba(255,255,255,.88)}
+.main-container .form-control{background:rgba(255,255,255,.94);color:#102a43;font-weight:600}
 .main-container label,.main-container th,.main-container td,.main-container h1,.main-container h2,.main-container h3,.main-container h4{color:#102a43}
 .receipt-compact,.receipt-final,.receipt-shell{position:relative;overflow:hidden;background:rgba(255,255,255,.97)!important}
-.receipt-compact::before,.receipt-final::before,.receipt-shell::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.055}
+.receipt-compact::before,.receipt-final::before,.receipt-shell::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.14;filter:saturate(1.15) contrast(1.08)}
 .receipt-compact>* ,.receipt-final>* ,.receipt-shell>*{position:relative;z-index:1}
 @media(max-width:800px){#sendwayo-brand-background{background-size:cover;opacity:.065}}
 
@@ -3020,7 +3020,8 @@ function renderGananciasDia(){
  const cached=(()=>{try{return JSON.parse(localStorage.getItem(cacheKey)||'null')}catch(e){return null}})();
  if(rows.length){box.innerHTML=rows.map(x=>'<div class="item-ganancia"><span><b>'+escapeHtml(x.label)+'</b><br><small>'+x.operations+' operación'+(x.operations===1?'':'es')+' aprobada'+(x.operations===1?'':'s')+' · Monto: '+money(x.amount)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(x.gain)+'</span></span></div>').join('');totalEl.textContent=money(total);try{localStorage.setItem(cacheKey,JSON.stringify({total,html:box.innerHTML,processed,ops,savedAt:Date.now()}))}catch(e){}}
  else if(cached&&Number.isFinite(Number(cached.total))){box.innerHTML=cached.html||'<div class="muted" style="padding-top:10px">Sincronizando datos financieros…</div>';totalEl.textContent=money(Number(cached.total));const card=document.getElementById('ganancias-dia-card');if(card)card.title='Último valor financiero confirmado: '+money(Number(cached.total))+' · Sincronizando…';return}
- else{box.innerHTML='<div class="muted" style="padding-top:10px">Sincronizando datos financieros…</div>';totalEl.textContent=money(0)}
+ else if(cached&&Number(cached.total)>0){box.innerHTML=cached.html||'<div class="muted" style="padding-top:10px">Sincronizando datos financieros…</div>';totalEl.textContent=money(Number(cached.total));const card=document.getElementById('ganancias-dia-card');if(card)card.title='Última ganancia confirmada: '+money(Number(cached.total))+' · Esperando confirmación de Firebase…';return}
+  else{box.innerHTML='<div class="muted" style="padding-top:10px">Sincronizando datos financieros…</div>';totalEl.textContent=money(0)}
  const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · Monto procesado '+money(processed)+' · Ganancia '+money(total);
 }
 function renderDashboard(){
