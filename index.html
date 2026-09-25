@@ -378,7 +378,7 @@ header{
     <div class="sidebar-brand"><div class="sidebar-brand-main"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-logo-real.jpg?v=20260925" alt="SENDWAYO EXPRESS"></a><div class="sidebar-brand-services"><span>ENVÍOS DE DINERO</span><span>RECEPCIÓN Y ENVÍO DE PAQUETES</span><span>RECARGAS Y PAGOS DE SERVICIOS</span></div></div><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
     <ul class="sidebar-menu" id="sidebar-menu">
       <li><a href="#" onclick="switchView('dashboard')"><i class="fa-solid fa-chart-pie"></i> Tablero Principal</a></li>
-      <li><a href="#" onclick="switchView('informes')"><i class="fa-solid fa-file-lines"></i> Informes del Día</a></li><li><a href="#" onclick="switchView('credito')"><i class="fa-solid fa-hand-holding-dollar"></i> Crédito</a></li><li class="admin-only"><a href="#" onclick="switchView('contabilidad')"><i class="fa-solid fa-scale-balanced"></i> Contabilidad Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('bonos')"><i class="fa-solid fa-gift"></i> Bonos de Administración</a></li><li class="admin-only" data-sw-static-capital-menu><a href="#" onclick="switchView('capital');return false"><i class="fa-solid fa-coins"></i> Capital</a></li>
+      <li><a href="#" onclick="switchView('informes')"><i class="fa-solid fa-file-lines"></i> Informes del Día</a></li><li><a href="#" onclick="switchView('credito')"><i class="fa-solid fa-hand-holding-dollar"></i> Crédito</a></li><li class="admin-only"><a href="#" onclick="switchView('contabilidad')"><i class="fa-solid fa-scale-balanced"></i> Contabilidad Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('conciliacion')"><i class="fa-solid fa-arrows-rotate"></i> Conciliación Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('bonos')"><i class="fa-solid fa-gift"></i> Bonos de Administración</a></li><li class="admin-only" data-sw-static-capital-menu><a href="#" onclick="switchView('capital');return false"><i class="fa-solid fa-coins"></i> Capital</a></li>
       <li><a href="#" onclick="switchView('envios')"><i class="fa-solid fa-paper-plane"></i> Envíos (Transacciones Globales)</a></li>
       <li><a href="#" onclick="switchView('beneficiarios')"><i class="fa-solid fa-address-book"></i> Beneficiarios</a></li>
       <li><a href="#" onclick="switchView('paquetes')"><i class="fa-solid fa-box-open"></i> Paquetes Recepción y Envío</a></li>
@@ -411,17 +411,20 @@ header{
 </header>
 <div class="content-body">
     <section id="view-dashboard" class="view-section active">
-    <div class="kpis">
-      <div class="kpi"><b>Balance</b><h2 id="kpi-balance">RD$ 0.00</h2></div>
-      <div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2></div>
-      <div class="kpi admin-only" style="border-top-color:#d4a017"><b>Capital</b><h2 id="kpi-capital-static">RD$ 0.00</h2></div>
-    </div>
-    <div id="ganancias-dia-card" class="card-ganancias-dia">
-      <h3>Ganancias del día</h3>
-      <div id="ganancias-dia-lista"></div>
-      <div class="total-general-container"><span class="label-total">Total general:</span><span id="ganancias-dia-total" class="valor-total">RD$ 0.00</span></div>
-    </div>
-  </section>
+<div class="kpis">
+<div class="kpi"><b>Balance Disponible</b><h2 id="kpi-balance">RD$ 0.00</h2><small class="muted">Disponible para operaciones autorizadas</small></div>
+<div class="kpi" style="border-top-color:#1f9d55"><b>Comisión del Día (Hoy)</b><h2 id="kpi-commission-today">RD$ 0.00</h2></div>
+<div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2></div>
+<div class="kpi admin-only"><b>Comisión Administración · Hoy</b><h2 id="kpi-admin-commission-today">RD$ 0.00</h2></div>
+<div class="kpi admin-only"><b>Bono Administración</b><h2 id="kpi-admin-bonus">RD$ 0.00</h2></div>
+<div class="kpi admin-only" id="kpi-remitters-card"><b>Total de Remitentes</b><h2 id="kpi-remitters">0</h2></div>
+<div class="kpi"><b>Transacciones</b><h2 id="kpi-transactions">0</h2></div>
+</div>
+<div id="ganancias-dia-card" class="card-ganancias-dia" style="margin-top:18px"><h3>Ganancias del día</h3><div id="ganancias-dia-lista"></div><div class="total-general-container"><span class="label-total">Total general:</span><span id="ganancias-dia-total" class="valor-total">RD$ 0.00</span></div></div>
+<div class="card admin-only" id="admin-finance-card" style="margin-top:18px"><div class="card-header"><h3>Finanzas de la Administración</h3><div class="actions"><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal('admin','adjust')">Ajustar balance</button></div></div><p class="muted">Control del balance administrativo. Los cambios quedan registrados en Firebase.</p><div style="margin-top:10px"><b>Balance de la Administración:</b> <span id="admin-finance-balance">RD$ 0.00</span></div></div>
+<div class="card admin-only" id="admin-accreditations-card" style="margin-top:18px"><div class="card-header"><h2>Acreditaciones de Administración</h2><p class="muted">Solo Administración. Acreditar Balance, Bono y Comisiones.</p></div><div class="actions" style="gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success" onclick="openAdminCreditModal('bonus')"><i class="fa-solid fa-gift"></i> Acreditar Bono</button><button class="btn btn-warning" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button></div></div>
+<div class="card" style="margin-top:18px"><h3>Centro de actividad</h3><div id="dashboard-notifications" style="margin-top:12px"></div></div>
+</section>
 
 <section id="view-informes" class="view-section">
     <div class="card">
@@ -488,7 +491,8 @@ header{
     </div>
   </section>
 
-  <section id="view-envios" class="view-section">
+  <section id="view-conciliacion" class="view-section admin-only"><div class="card"><div class="card-header"><h2>Conciliación Financiera</h2><button class="btn btn-primary" onclick="renderConciliacion()">Actualizar</button></div><p class="muted">Control comparativo de balance, comisión disponible, comisión histórica y crédito pendiente.</p><div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','conciliacionTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','conciliacionTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','conciliacionTable')">CSV</button></div><input class="search-box" placeholder="Buscar persona..." oninput="filterTable(this,'conciliacionTable')"></div><div class="table-wrap"><table id="conciliacionTable"><thead><tr><th>ID</th><th>Persona</th><th>Balance</th><th>Comisión disponible</th><th>Comisión histórica</th><th>Crédito pendiente</th><th>Control</th></tr></thead><tbody></tbody></table></div></div></section>
+<section id="view-envios" class="view-section">
     <div class="card">
       <div class="card-header"><h3>Gestión de Envíos y Transacciones Globales</h3><button class="btn btn-primary" onclick="openModal('envioModal')"><i class="fa-solid fa-plus"></i> Agregar Nuevo</button></div>
       <div class="status-bar" id="envio-statusbar"><button class="btn btn-light btn-sm active" onclick="setStatusFilter('envios','Todos',this)">TODOS</button><button class="btn btn-success btn-sm" onclick="setStatusFilter('envios','Aprobado',this)">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setStatusFilter('envios','Rechazado',this)">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setStatusFilter('envios','No coincide',this)">NO COINCIDE</button></div>
@@ -1171,6 +1175,7 @@ async function crearAccesosIniciales(){
   await persist();renderAll();
   toast('Accesos: '+created+' creados, '+exists+' ya existentes'+(errors?', '+errors+' con error.':''),errors?'warn':'success');
 }
+function renderConciliacion(){const body=document.querySelector('#conciliacionTable tbody');if(!body||!isAdmin())return;const rows=Object.values(state.users||{}).filter(u=>u&&(u.id==='admin'||u.role==='Remitente'));body.innerHTML=rows.map(u=>{const balance=Number(u.balance||0),commission=Number(u.commission||0),historical=commissionTotalFor(u.id),credit=Math.max(0,Number(u.creditOutstanding||0)),control=commission>balance+0.005?'REVISAR: comisión disponible > balance':'CUADRADO';return '<tr><td>'+escapeHtml(u.id==='admin'?'ADMIN':(u.staffId||u.id))+'</td><td>'+escapeHtml(u.name||u.username||u.id)+'</td><td>'+money(balance)+'</td><td>'+money(commission)+'</td><td>'+money(historical)+'</td><td>'+money(credit)+'</td><td>'+control+'</td></tr>'}).join('')||'<tr><td colspan="7" class="muted">No hay personas.</td></tr>'}
 function renderRealtimeView(){
  if(!currentUser)return;
  const id=document.querySelector('.view-section.active')?.id||'view-dashboard';
@@ -1179,6 +1184,7 @@ function renderRealtimeView(){
   switch(id){
    case 'view-informes':renderDailyReports();break;
    case 'view-contabilidad':renderAccounting();break;
+   case 'view-conciliacion':renderConciliacion();break;
    case 'view-bonos':renderBonuses();break;
    case 'view-credito':renderCredit();break;
    case 'view-envios':renderEnvios();break;
