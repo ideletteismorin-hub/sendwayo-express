@@ -13,6 +13,11 @@
 :root{--primary:#0f2c59;--primary2:#123b78;--secondary:#f3b51b;--accent:#1f9d55;--danger:#c0392b;--warning:#d97706;--light:#f4f6f9;--dark:#243447;--gray:#7b8794;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,sans-serif}
 body{background:var(--light);color:var(--dark);display:flex;height:100vh;overflow:hidden;overscroll-behavior-y:auto;touch-action:pan-y}
+#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:min(96vw,1500px) auto;opacity:.075;filter:saturate(.9);}
+.main-container{position:relative;z-index:51}
+aside{position:relative;z-index:100}
+@media(max-width:800px){#sendwayo-brand-background{background-size:125vw auto;opacity:.065}}
+
 button,input,select,textarea{font:inherit}
 #login-screen,#welcome-screen{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;z-index:9999;background:linear-gradient(135deg,#071a36,#123b78)}
 #welcome-screen{z-index:10000}
@@ -599,6 +604,16 @@ header{
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+function installSendwayoBrandBackground(){
+  try{
+    let el=document.getElementById('sendwayo-brand-background');
+    if(!el){el=document.createElement('div');el.id='sendwayo-brand-background';document.body.prepend(el);}
+    const icon=document.querySelector('link[rel="icon"]')?.href;
+    if(icon)el.style.backgroundImage='url("'+icon+'")';
+  }catch(e){console.warn('SENDWAYO brand background:',e)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSendwayoBrandBackground,{once:true});
+else installSendwayoBrandBackground();
 window.sendwayoOpenLogin=function(){var w=document.getElementById('welcome-screen'),l=document.getElementById('login-screen');if(w)w.classList.add('hidden');if(l)l.classList.remove('hidden');var u=document.getElementById('login-user');if(u)setTimeout(function(){u.focus()},50)};
 window.sendwayoOpenRequest=function(type){
   var tries=0;
@@ -3167,7 +3182,16 @@ async function deleteRecord(collection,id){
  if(!confirm('¿Borrar definitivamente el registro '+String(id)+'?'))return;
  if(!firebaseReady||!authUser)return toast('Firebase no está conectado. No se borrará ningún registro.','error');
  try{
-   const root=firebase.database().ref(DB_PATH),recordRef=root.child(collection).child(id),ledgerRef=root.child('ledger').child(collection).child(id);
+   const root=firebase.database().ref(DB_PATH);
+   const recordRef=root.child(collection).child(id);
+   // El ledger es histórico/inmutable y NO se elimina. Solo desaparece el registro operativo.
+   await recordRef.remove();
+   const recordCheck=await recordRef.once('value');
+   if(recordCheck.exists())return toast('Firebase no confirmó el borrado. El registro se conserva por seguridad.','error');
+
+   if(state[collection])delete state[collection][id];
+   if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
+
    const auditId=uid('del'),audit={
      id:auditId,
      user:currentUser?.username||'public',
@@ -3179,20 +3203,12 @@ async function deleteRecord(collection,id){
      createdByAuthUid:authUser.uid,
      createdAt:now()
    };
-   await root.update({
-     [collection+'/'+id]:null,
-     ['ledger/'+collection+'/'+id]:null,
-     ['audit/'+auditId]:audit
-   });
-   const [recordCheck,ledgerCheck]=await Promise.all([recordRef.once('value'),ledgerRef.once('value')]);
-   if(recordCheck.exists()||ledgerCheck.exists()){
-     return toast('Firebase no confirmó el borrado completo. El registro se conserva por seguridad.','error');
-   }
-   if(state[collection])delete state[collection][id];
-   if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
-   if(state.ledger?.[collection])delete state.ledger[collection][id];
-   if(lastSyncedState?.ledger?.[collection])delete lastSyncedState.ledger[collection][id];
-   state.audit=state.audit||{};state.audit[auditId]=audit;
+   // La auditoría no debe bloquear el borrado si una regla futura la rechaza.
+   try{
+     await root.child('audit').child(auditId).set(audit);
+     state.audit=state.audit||{};state.audit[auditId]=audit;
+   }catch(auditError){console.warn('Audit after delete:',auditError)}
+
    localSave();renderAll();
    toast('Registro borrado definitivamente de Firebase.','success');
  }catch(e){
