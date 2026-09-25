@@ -202,7 +202,6 @@ aside{height:100vh;min-height:0;overflow:hidden}
     <section id="view-dashboard" class="view-section active">
     <div class="kpis">
       <div class="kpi"><b>Balance</b><h2 id="kpi-balance">RD$ 0.00</h2></div>
-      <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión de hoy</b><h2 id="kpi-commission-today">RD$ 0.00</h2></div>
       <div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2></div>
       <div class="kpi admin-only" style="border-top-color:#d4a017"><b>Capital</b><h2 id="kpi-capital-static">RD$ 0.00</h2></div>
     </div>
@@ -1605,7 +1604,7 @@ async function deleteCreditGrant(id){
  if(!isAdmin())return toast('Solo Administración puede eliminar créditos.','warn');const r=creditIndexRecords().find(x=>x.id===id),u=r&&state.users?.[r.userId];if(!r||!u)return;if(Number(u.creditOutstanding||0)>0)return toast('No se puede eliminar un crédito con deuda pendiente.','warn');if(!confirm('¿Eliminar este otorgamiento de crédito y revertir su cupo?'))return;
  try{const tx=await firebase.database().ref(DB_PATH+'/users/'+u.id).transaction(v=>{if(!v||!v.creditGrants?.[id])return undefined;const amt=Number(v.creditGrants[id].amount||0),limit=Number(v.creditLimit||0);if(limit<amt)return undefined;const next={...v,creditLimit:limit-amt,creditGrantedTotal:Math.max(0,Number(v.creditGrantedTotal||0)-amt),creditGrants:{...v.creditGrants}};delete next.creditGrants[id];return next});if(!tx.committed)return toast('No se pudo eliminar el crédito.','error');state.users[u.id]=tx.snapshot.val();delete state.credits[id];try{await firebase.database().ref(DB_PATH+'/credits/'+id).remove()}catch(_){}if(lastSyncedState?.users?.[u.id])lastSyncedState.users[u.id]=cloneState(state.users[u.id]);localSave();renderAll();toast('Crédito eliminado.','success')}catch(e){console.warn('deleteCreditGrant:',e);toast('No se pudo eliminar el crédito.','error')}
 }
-function creditActionButtons(r){return '<div class="actions"><button class="btn btn-light btn-sm" onclick="viewCreditRecord(\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadCreditRecord(\''+r.id+'\')">Descargar</button>'+(isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editCreditGrant(\''+r.id+'\')">Modificar</button><button class="btn btn-danger btn-sm" onclick="deleteCreditGrant(\''+r.id+'\')">Eliminar</button>':'')+'</div>'}
+function creditActionButtons(r){return '<div class="actions"><button class="btn btn-light btn-sm" onclick="viewCreditRecord(\''+r.id+'\')">Ver</button><button class="btn btn-primary btn-sm" onclick="downloadCreditRecord(\''+r.id+'\')">Descargar</button>'+(isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editCreditGrant(\''+r.id+'\')">Modificar</button><button class="btn btn-danger btn-sm" onclick="deleteCreditGrant(\''+r.id+'\')">BORRAR</button>':'')+'</div>'}
 function renderCredit(){
  const body=document.querySelector('#creditTable tbody'),summary=document.getElementById('credit-summary-kpis');if(!body||!currentUser)return;const q=normalizeSearchText(document.querySelector('#view-credito .search-box')?.value||'');
  const users=(isAdmin()?Object.values(state.users||{}).filter(u=>u?.role==='Remitente'):Object.values(state.users||{}).filter(u=>u?.id===currentUser.id));let rows=[];
@@ -2788,10 +2787,16 @@ async function saveAdminBalanceAdjustment(){
 function renderGananciasDia(){
  const box=document.getElementById('ganancias-dia-lista'),totalEl=document.getElementById('ganancias-dia-total');
  if(!box||!totalEl||!currentUser)return;
- const today=todayDateKey(),cols=['envios','recargas','paqueticos','pagos','paquetes'];
- const labels={envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'};
- const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0},counts={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
- const roleId=isAdmin()?'admin':currentUser.id,sources=[state,lastSyncedState].filter(Boolean);
+ const today=todayDateKey(),cols=['envios','recargas','paqueticos','pagos','paquetes'],sources=[state,lastSyncedState].filter(Boolean),roleId=isAdmin()?'admin':currentUser.id;
+ const buckets={};
+ const categoryKey=(col,r)=>{
+   if(col!=='envios')return col;
+   const t=String(r?.type||r?.service||'').trim().toUpperCase();
+   if(t.includes('RD A HTI')||t.includes('RD→HTI')||t.includes('RD A HAITI')||t.includes('MONCASH')||t.includes('NATCASH'))return 'envios-rd-hti';
+   if(t.includes('HTI A HTI')||t.includes('HTI→HTI'))return 'envios-hti-hti';
+   return 'envios-otros';
+ };
+ const categoryLabel=k=>({'envios-rd-hti':'Envíos RD → Haití','envios-hti-hti':'Envíos Haití → Haití','envios-otros':'Otros envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'}[k]||k);
  for(const col of cols){
    const records=new Map();
    for(const src of sources){
@@ -2804,29 +2809,30 @@ function renderGananciasDia(){
      if(!dates.includes(today))continue;
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
      if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
-     const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
-     let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(share))share=Number.isFinite(gross)?gross*0.50:0;
-     if(Number.isFinite(share)&&share>=0){counts[col]++;sums[col]+=share}
+     const key=categoryKey(col,r);if(!buckets[key])buckets[key]={label:categoryLabel(key),operations:0,amount:0,gain:0};
+     const b=buckets[key],amount=Math.max(0,Number(r.amount??r.monto??r.value??0));
+     let grossCommission=Number(r.commissionTotal??r.commission??r.commissionAmount);
+     if(!Number.isFinite(grossCommission)){const rate=Number(commissionRateFor(col,{...r,amount}));grossCommission=Number.isFinite(rate)?amount*rate:0}
+     let gain=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
+     if(!Number.isFinite(gain))gain=grossCommission*0.50;
+     if(!Number.isFinite(gain)||gain<0)gain=0;
+     b.operations++;b.amount+=amount;b.gain+=gain;
    }
  }
  const user=state.users?.[roleId]||lastSyncedState?.users?.[roleId];
  const creditRows=Object.values(user?.commissionCredits||{}).filter(x=>String(x?.type||'').toUpperCase()==='COMISION_ACREDITADA'&&[x.creditedAt,x.createdAt,x.processedAt,x.date,x.timestamp].map(commissionDateKey).includes(today));
  const manual=creditRows.reduce((n,x)=>n+Math.max(0,Number(x.amount||0)),0);
- if(manual){sums.paqueticos+=manual;counts.paqueticos+=creditRows.length}
- const total=Object.values(sums).reduce((a,n)=>a+n,0),ops=Object.values(counts).reduce((a,n)=>a+n,0);
- box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
- if(!ops)box.innerHTML+='<div class="muted" style="padding-top:10px">No hay operaciones aprobadas registradas para hoy en los datos cargados.</div>';
- totalEl.textContent=money(total);
- const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · '+money(total)+' de ganancia';
+ if(manual)buckets['comisiones-acreditadas']={label:'Comisiones acreditadas',operations:creditRows.length,amount:0,gain:manual};
+ const rows=Object.values(buckets).filter(x=>x.operations>0),total=rows.reduce((n,x)=>n+x.gain,0),processed=rows.reduce((n,x)=>n+x.amount,0),ops=rows.reduce((n,x)=>n+x.operations,0);
+ box.innerHTML=rows.map(x=>'<div class="item-ganancia"><span><b>'+escapeHtml(x.label)+'</b><br><small>'+x.operations+' operación'+(x.operations===1?'':'es')+' aprobada'+(x.operations===1?'':'s')+' · Monto: '+money(x.amount)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(x.gain)+'</span></span></div>').join('');
+ if(!rows.length)box.innerHTML='<div class="muted" style="padding-top:10px">No hay operaciones aprobadas registradas para hoy en los datos cargados.</div>';
+ totalEl.textContent=money(total);const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · Monto procesado '+money(processed)+' · Ganancia '+money(total);
 }
-
 function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
  const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
  document.getElementById('kpi-commission').textContent=money(commissionTotalFor(isAdmin()?'admin':u.id));
- const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id));
  renderGananciasDia();
  const ka=document.getElementById('kpi-admin-commission-today');if(ka)ka.textContent=money(commissionTodayFor('admin'));
  const kb=document.getElementById('kpi-admin-bonus');if(kb)kb.textContent=money(adminBonusTotal());
@@ -2990,18 +2996,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(document.activeElem
 }
 async function deleteRecord(collection,id){
  const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
- const admin=isAdmin(),owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===firebase.auth().currentUser?.uid;
- if(!admin&&(!owner||!['Rechazado','No coincide'].includes(r.status)))return toast('No tiene permiso para eliminar este registro.','warn');
+ const admin=isAdmin(),authUser=firebase.auth().currentUser,owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===authUser?.uid;
+ if(!admin&&(!owner||!['Rechazado','No coincide'].includes(r.status)))return toast('No tiene permiso para borrar este registro.','warn');
  const financial=['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','credits'].includes(collection);
- if(r.status==='Aprobado'||(financial&&r.status==='Pagado'))return toast('Una operación financiera ya aprobada/pagada no se elimina. Use el proceso contable correspondiente.','warn');
- if(!confirm('¿Eliminar el registro '+String(id)+'?'))return;
- if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. No se eliminará ningún registro financiero.','error');
+ if(r.status==='Aprobado'||(financial&&r.status==='Pagado'))return toast('Una operación financiera ya aprobada/pagada no se puede borrar. Use el proceso contable correspondiente.','warn');
+ if(!confirm('¿Borrar definitivamente el registro '+String(id)+'?'))return;
+ if(!firebaseReady||!authUser)return toast('Firebase no está conectado. No se borrará ningún registro.','error');
  try{
-  await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).remove();
-  if(state[collection])delete state[collection][id];
-  if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
-  localSave();renderAll();toast('Registro eliminado.','success');
- }catch(e){console.warn('deleteRecord:',e);toast('No se pudo eliminar el registro en Firebase.','error')}
+   const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);await ref.remove();
+   const check=await ref.once('value');if(check.exists())return toast('Firebase no confirmó el borrado. El registro se conserva por seguridad.','error');
+   if(state[collection])delete state[collection][id];if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
+   localSave();renderAll();toast('Registro borrado definitivamente.','success');
+ }catch(e){console.warn('deleteRecord:',e);toast('No se pudo borrar el registro en Firebase.','error')}
 }
 const _deleteRecordOriginal=deleteRecord;
  deleteRecord=async function(collection,id){
