@@ -3693,11 +3693,13 @@ function swDay(v){
 }
 function swApproved(r){return String(r&&r.status||'').trim().toLowerCase()==='aprobado'}
 function swRecords(col){
-  const a=Object.assign({},(window.state&&state[col])||{},(window.state&&state.ledger&&state.ledger[col])||{});
-  return Object.entries(a).map(([id,r])=>[id,r]).filter(x=>x[1]);
+  const merged=new Map();
+  Object.entries((window.state&&state.ledger&&state.ledger[col])||{}).forEach(([id,r])=>merged.set(id,{...(r||{})}));
+  Object.entries((window.state&&state[col])||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
+  return Array.from(merged.entries()).filter(x=>x[1]);
 }
 function swCommission(r,admin,uid){
-  const gross=Math.max(0,swNum(r.commissionTotal??r.commission??r.commissionAmount??r.fee));
+  const gross=Math.max(0,swNum(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee));
   // La comisión de cada operación aprobada se reparte 50/50.
   // Si un registro antiguo no trae commissionAdmin/commissionUser, o lo trae en cero,
   // se deriva la participación desde la comisión total para que Ganancias del día
