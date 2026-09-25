@@ -495,7 +495,7 @@ header{
 <section id="view-envios" class="view-section">
     <div class="card">
       <div class="card-header"><h3>Gestión de Envíos y Transacciones Globales</h3><button class="btn btn-primary" onclick="openModal('envioModal')"><i class="fa-solid fa-plus"></i> Agregar Nuevo</button></div>
-      <div class="status-bar" id="envio-statusbar"><button class="btn btn-light btn-sm active" onclick="setStatusFilter('envios','Todos',this)">TODOS</button><button class="btn btn-success btn-sm" onclick="setStatusFilter('envios','Aprobado',this)">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setStatusFilter('envios','Rechazado',this)">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setStatusFilter('envios','No coincide',this)">NO COINCIDE</button></div>
+      <div class="status-bar" id="envio-statusbar"><button class="btn btn-light btn-sm active" onclick="setStatusFilter('envios','Todos',this)">TODOS</button><button class="btn btn-warning btn-sm" onclick="setStatusFilter('envios','Pendiente',this)">PENDIENTE</button><button class="btn btn-success btn-sm" onclick="setStatusFilter('envios','Aprobado',this)">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setStatusFilter('envios','Rechazado',this)">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setStatusFilter('envios','No coincide',this)">NO COINCIDE</button></div>
       <div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','enviosTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','enviosTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','enviosTable')">CSV</button></div><input class="search-box" placeholder="Buscar por número o nombre..." oninput="filterTable(this,'enviosTable')"></div>
       <div class="table-wrap"><table id="enviosTable"><thead><tr><th>N°</th><th>Tipo</th><th>Remitente</th><th>Cantidad RD$</th><th>Beneficiario</th><th>Neto</th><th>Comisión</th><th>Destino</th><th>Estado</th><th>Factura / Recibo</th><th>Acciones</th></tr></thead><tbody></tbody></table></div>
     </div>
@@ -1682,7 +1682,7 @@ function cerrarSesion(){localStorage.removeItem(SESSION_KEY);if(firebaseReady&&f
 function applyRoleVisibility(){
  let admin=isAdmin();
  document.querySelectorAll('#sidebar-menu li').forEach(li=>{let txt=li.innerText;li.style.display=(!admin && (txt.includes('Solicitudes')||txt.includes('Información Secreta'))) ? 'none':''});
- let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display=admin?'flex':'none';
+ let sb=document.getElementById('envio-statusbar');if(sb)sb.style.display='flex';
  document.querySelectorAll('.admin-only').forEach(e=>{if(e.classList.contains('view-section'))return;e.style.setProperty('display',admin?(e.classList.contains('modal')?'flex':'block'):'none','important')});
  document.querySelectorAll('.remitente-only').forEach(e=>e.style.display=admin?'none':'');
  if(!admin)document.getElementById('sidebar-role-label').textContent=currentUser.role.toUpperCase();
@@ -1927,32 +1927,23 @@ function setEnvioPersonFields(kind,x,id){
 function chooseEnvioPerson(kind,id){const x=(kind==='remitente'?state.users:state.beneficiaries)[id];if(!x)return;setEnvioPersonFields(kind,x,id)}
 function updateEnvioSuggestions(kind){
  const input=document.getElementById('env-'+kind+'-input'),box=document.getElementById('env-'+kind+'-suggestions');if(!input||!box)return;
- let raw=String(input.value||'').trim();
- if(raw.includes('(')){box.innerHTML='';box.style.display='none';return;}
- // En Beneficiario, +509 es solo el prefijo de Haití: no se usa como criterio.
- // Se puede buscar con cualquier fragmento del número; no hace falta escribir el número completo.
- let q=raw.replace(/\s+/g,'').trim();
- if(kind==='beneficiario' && /^\+509$/i.test(q))q='';
- if(kind==='beneficiario' && /^\+509/.test(q))q=q.slice(4);
- const col=kind==='remitente'?state.users:state.beneficiaries;
- if(!q){box.innerHTML='';box.style.display='none';return;}
- const list=Object.values(col||{})
-   .filter(x=>x&&x.active!==false&&(kind==='remitente'?x.role==='Remitente':true))
+ const q=String(input.value||'').trim(),col=kind==='remitente'?state.users:state.beneficiaries;
+ let list=Object.values(col||{}).filter(x=>x&&x.active!==false&&(kind==='remitente'?x.role==='Remitente':true))
    .filter(x=>isAdmin()||kind!=='remitente'||x.id===currentUser?.id)
    .filter(x=>personMatchesQuery(x,q))
    .sort((a,b)=>{
-      const qa=normalizeSearchText(q),da=phoneDigits(q);
-      const score=x=>{
-        const ph=phoneDigits(personPhone(x)),name=normalizeSearchText(personName(x)),user=normalizeSearchText(x.username);
-        return (da&&ph===da?1000:0)+(da&&ph.includes(da)?500:0)+(name===qa?300:0)+(name.startsWith(qa)?200:0)+(user===qa?150:0)+(user.startsWith(qa)?100:0);
-      };
-      return score(b)-score(a)||personName(a).localeCompare(personName(b));
-   });
- // Solo una sugerencia: la coincidencia más relevante, sin listado y sin mostrar comisiones.
- const match=list[0];
- if(!match){box.innerHTML='';box.style.display='none';return;}
- box.innerHTML=`<button type="button" class="env-suggestion env-suggestion-single" onclick="chooseEnvioPerson('${escapeHtml(kind)}','${escapeHtml(match.id)}')"><b>${escapeHtml(personPhone(match)||'Sin número')}</b> <span>(${escapeHtml(personName(match)||'Sin nombre')})</span></button>`;
- box.style.display='block';
+     const qa=normalizeSearchText(q),aa=normalizeSearchText(personName(a)),bb=normalizeSearchText(personName(b));
+     const pa=phoneDigits(personPhone(a)),pb=phoneDigits(personPhone(b)),qd=phoneDigits(q);
+     const score=x=>{const n=normalizeSearchText(personName(x)),p=phoneDigits(personPhone(x)),u=normalizeSearchText(x.username);return (qd&&p===qd?0:n===qa?0:u===qa?1:(qd&&p.includes(qd)?2:n.includes(qa)?3:u.includes(qa)?4:5))};
+     return score(a)-score(b)||aa.localeCompare(bb);
+   }).slice(0,10);
+ box.innerHTML=list.map(x=>{
+   const phone=personPhone(x)||'Sin número',name=personName(x)||'Sin nombre';
+   return '<button type="button" class="env-suggestion" onclick="chooseEnvioPerson(\\''+escapeHtml(x.id)+'\\',\\''+escapeHtml(x.id)+'\\')"><b>'+escapeHtml(phone)+'</b> <span>('+escapeHtml(name)+')</span></button>';
+ }).join('');
+ // Correct the generated handler to preserve the requested kind argument.
+ box.innerHTML=box.innerHTML.replace(/chooseEnvioPerson\\('([^']+)','([^']+)'\\)/g,(m,a,b)=>'chooseEnvioPerson(\\''+kind+'\\',\\''+b+'\\')');
+ box.style.display=list.length?'block':'none';
 }
 function updateDepositSuggestions(){
  const input=document.getElementById('dep-remitente-search'),box=document.getElementById('dep-remitente-suggestions'),sel=document.getElementById('dep-remitente');if(!input||!box||!sel)return;
