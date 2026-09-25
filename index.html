@@ -4778,4 +4778,47 @@ window.realizarLogin=async function(){
 function boot(){logo();clean();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
-</script>\n</html>
+</script>\n
+<style id="sendwayo-final-mobile-fix-2026-09-25">
+@media(max-width:800px){
+header{position:relative;display:block;padding:8px 10px 10px;min-height:96px}
+header>div:first-child{display:flex!important;align-items:center!important;gap:9px!important;min-height:38px}
+header .mobile-toggle-btn{display:inline-flex!important;flex:0 0 38px;width:38px;height:38px;align-items:center;justify-content:center;font-size:1.25rem!important;background:#0f2c59!important;color:#fff!important;border-radius:8px!important}
+header .header-title{font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .header-date-box,header .header-balance-box,header .refresh-btn,header .language-selector,header .session-pill{display:none!important}
+header .mobile-brand-strip{display:flex!important;align-items:center;justify-content:flex-start;gap:9px;margin-top:6px;padding:5px 4px 0;border-top:1px solid #e5eaf0}
+header .mobile-brand-strip img{width:54px;height:36px;object-fit:contain;object-position:left center}
+header .mobile-brand-strip b{font-size:.78rem;color:#0f2c59;letter-spacing:.2px}
+.header-right{position:absolute;right:8px;top:10px;gap:7px!important}
+.header-right #header-username{display:none}
+}
+@media(min-width:801px){.mobile-brand-strip{display:none!important}}
+</style>
+<script id="sendwayo-final-fix-2026-09-25">
+(function(){
+'use strict';
+function ensureMobileBrand(){if(window.innerWidth>800)return;const h=document.querySelector('header');if(!h||h.querySelector('.mobile-brand-strip'))return;const d=document.createElement('div');d.className='mobile-brand-strip';d.innerHTML='<img src="assets/sendwayo-oficial-logo.svg" alt="SENDWAYO EXPRESS"><b>SENDWAYO EXPRESS</b>';h.appendChild(d)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureMobileBrand,{once:true});else ensureMobileBrand();
+window.addEventListener('resize',ensureMobileBrand);
+window.sendwayoAdminRole=function(){const u=window.currentUser||null;return !!u&&(String(u.role||'').trim().toLowerCase()==='administrador'||u.id==='admin')};
+if(typeof window.guardBalance==='function'){const oldGuard=window.guardBalance;window.guardBalance=async function(amount){if(window.sendwayoAdminRole())return true;return oldGuard(amount)}}
+window.guardarComision=async function(){
+const modal=document.getElementById('comisionModal');if(modal?.dataset.submitting==='1')return;if(!currentUser)return toast('Debe iniciar sesión.','error');
+const admin=String(currentUser.role||'').trim().toLowerCase()==='administrador'||currentUser.id==='admin';const targetId=admin?(document.getElementById('com-target')?.value||''):currentUser.id;const target=state.users?.[targetId];
+if(!target)return toast('No se encontró el usuario beneficiario.','error');if(!admin&&targetId!==currentUser.id)return toast('Solo puede aplicar su propia comisión.','warn');
+const amount=Number(document.getElementById('com-monto')?.value||0);if(!Number.isFinite(amount)||amount<=0)return toast('Indique un monto válido.','warn');
+if(!firebaseReady||!firebase.auth().currentUser)return toast('La sesión de Firebase no está activa.','error');if(!beginFormSubmit('comisionModal'))return;
+try{
+const ref=firebase.database().ref(DB_PATH+'/users/'+targetId);let availableBefore=0;
+const tx=await ref.transaction(u=>{if(!u)return undefined;const available=Math.max(0,Number(u.commission||0),Number(u.commissionAccrued||0));availableBefore=available;if(amount>available)return undefined;return {...u,commission:Number((available-amount).toFixed(2)),balance:Number(u.balance||0)+amount,commissionCredits:{...(u.commissionCredits||{}),[uid('cpay')]:{amount,processedAt:now(),processedBy:currentUser.id,type:'COMISION_PAGADA'}}}});
+if(!tx.committed){delete modal.dataset.submitting;return toast('La comisión disponible no cubre el monto solicitado o cambió durante la operación.','warn')}
+const updated=tx.snapshot.val();state.users[targetId]=updated;if(currentUser.id===targetId)currentUser=updated;const id=uid('com');
+const record={id,userId:targetId,username:updated.username||target.username,availableBefore,amount,date:now(),status:'Pagado',processedBy:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,accountingType:'COMISION_PAGADA',appliedImmediately:true,approvalRequired:false};
+await firebase.database().ref(DB_PATH+'/commissions/'+id).set(record);state.commissions[id]=record;markSynced(['commissions',id],record);if(lastSyncedState?.users?.[targetId])lastSyncedState.users[targetId]=cloneState(updated);
+localSave();closeModal('comisionModal');renderAll();toast('Pago/retiro de comisión aplicado correctamente: '+money(amount)+' pasó al balance.','success');
+}catch(e){console.warn('SENDWAYO comisión final:',e);delete modal.dataset.submitting;toast('No se pudo completar el pago/retiro de comisión en Firebase.','error')}
+};
+})();
+</script>
+
+</html>
