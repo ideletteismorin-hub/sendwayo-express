@@ -13,7 +13,7 @@
 :root{--primary:#0f2c59;--primary2:#123b78;--secondary:#f3b51b;--accent:#1f9d55;--danger:#c0392b;--warning:#d97706;--light:#f4f6f9;--dark:#243447;--gray:#7b8794;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,sans-serif}
 body{background:var(--light);color:var(--dark);display:flex;height:100vh;overflow:hidden;overscroll-behavior-y:auto;touch-action:pan-y}
-#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.22;filter:saturate(1.18) contrast(1.12);mix-blend-mode:multiply;}
+#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.075;filter:saturate(.82) contrast(.96) brightness(1.02);mix-blend-mode:multiply;}
 .main-container{position:relative;z-index:51}
 aside{position:relative;z-index:100}
 .main-container .card,.main-container .modal-content,.main-container .form-control,.main-container table{position:relative}
@@ -24,7 +24,7 @@ aside{position:relative;z-index:100}
 .receipt-compact,.receipt-final,.receipt-shell{position:relative;overflow:hidden;background:rgba(255,255,255,.97)!important}
 .receipt-compact::before,.receipt-final::before,.receipt-shell::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.14;filter:saturate(1.15) contrast(1.08)}
 .receipt-compact>* ,.receipt-final>* ,.receipt-shell>*{position:relative;z-index:1}
-@media(max-width:800px){#sendwayo-brand-background{background-size:cover;opacity:.18}}
+@media(max-width:800px){#sendwayo-brand-background{background-size:cover;opacity:.055}}
 
 button,input,select,textarea{font:inherit}
 #login-screen,#welcome-screen{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;z-index:9999;background:linear-gradient(135deg,#071a36,#123b78)}
@@ -63,7 +63,7 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
     radial-gradient(circle at 92% 80%,rgba(68,154,255,.10),transparent 30%),
     linear-gradient(135deg,rgba(232,243,255,.82),rgba(245,249,255,.80) 48%,rgba(225,240,255,.82));
 }
-.content-body::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.30;filter:saturate(1.22) contrast(1.10);}
+.content-body::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.07;filter:saturate(.82) contrast(.96) brightness(1.02);}
 .content-body>*{position:relative;z-index:1;}
 .view-section{display:none!important}.view-section.active{display:block!important}
 .card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 5px rgba(0,0,0,.035);margin-bottom:18px;border-top:4px solid var(--primary)}
