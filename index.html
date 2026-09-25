@@ -2103,7 +2103,15 @@ async function setTransactionStatus(collection,id,status){
    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
    const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status:'Aprobado',reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason:'',commissionUser:userShare,commissionAdmin:adminShare,commissionTotal:commission,commissionRate:commissionRateFor(collection,v||r),commissionAccount:'50% REMITENTE / 50% ADMINISTRADOR',balanceDebited:!!v.balanceDebited,balanceSettledAt:now(),net:Number(v.amount||0)-Number(v.commission||0)});
    if(!tx.committed)return toast('La operación sigue pendiente porque Firebase no confirmó el cambio de estado. Puede reintentarse sin duplicar comisiones.','warn');
-   r=tx.snapshot.val();state[collection][id]=r;generateReceipt(collection,id);r=state[collection][id];if(r?.receipt)await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt});state[collection][id]=r;
+   r=tx.snapshot.val();state[collection][id]=r;
+   // Libro mayor inmutable por operación aprobada: una sola clave por operación evita duplicados.
+   try{
+     const ledgerRef=firebase.database().ref(DB_PATH+'/ledger/'+collection+'/'+id);
+     const ledgerTx=await ledgerRef.transaction(v=>v||{...r,recordId:id,sourceCollection:collection,sourceId:id,ledgerEvent:'APROBACION',ledgerLocked:true,ledgerAt:firebase.database.ServerValue.TIMESTAMP});
+     if(!ledgerTx.committed)console.warn('SENDWAYO: no se pudo confirmar el asiento del libro mayor',collection,id);
+     else{state.ledger=state.ledger||{};state.ledger[collection]=state.ledger[collection]||{};state.ledger[collection][id]=ledgerTx.snapshot.val()}
+   }catch(e){console.warn('SENDWAYO: error registrando libro mayor',e)}
+   generateReceipt(collection,id);r=state[collection][id];if(r?.receipt)await firebase.database().ref(DB_PATH+'/'+collection+'/'+id).update({receipt:r.receipt});state[collection][id]=r;
  }else{
    if(r.balanceDebited&&!r.balanceRefunded){if(!await refundTransactionReservation(r.userId,r.id,r.amount,r.creditUsed))return toast('No se pudo devolver balance/crédito. La operación seguirá pendiente para reintento.','error')}
    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
