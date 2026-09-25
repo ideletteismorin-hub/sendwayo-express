@@ -3626,6 +3626,188 @@ const swStyle=document.createElement('style');swStyle.textContent='.request-comp
 })();
 </script>
 
+<script id="sendwayo-professional-hardening">
+(function(){
+'use strict';
+/* SENDWAYO EXPRESS — blindaje operativo v1
+   No crea dinero ni altera saldos. Recalcula indicadores desde operaciones aprobadas,
+   detecta inconsistencias y reduce renders repetidos. */
+const SWH={version:'1.0.0',lastRender:0,healthTimer:null,conn:null};
+window.SENDWAYO_HARDENING=SWH;
+
+function swNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function swMoney(v){try{return typeof money==='function'?money(v):'RD$ '+swNum(v).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2})}catch(e){return 'RD$ '+swNum(v).toFixed(2)}}
+function swEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function swToday(){
+  try{return typeof todayDateKey==='function'?todayDateKey():new Date().toLocaleDateString('en-CA')}
+  catch(e){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+}
+function swDate(v){
+  if(v==null||v==='')return null;
+  try{
+    if(typeof parseSendwayoDate==='function'){const d=parseSendwayoDate(v);if(d&&!isNaN(d.getTime()))return d}
+  }catch(e){}
+  if(typeof v==='number'){const d=new Date(v<1e12?v*1000:v);if(!isNaN(d.getTime()))return d}
+  const d=new Date(v);return isNaN(d.getTime())?null:d;
+}
+function swDay(v){
+  const d=swDate(v);if(!d)return '';
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+}
+function swApproved(r){return String(r&&r.status||'').trim().toLowerCase()==='aprobado'}
+function swRecords(col){
+  const a=Object.assign({},(window.state&&state[col])||{},(window.state&&state.ledger&&state.ledger[col])||{});
+  return Object.entries(a).map(([id,r])=>[id,r]).filter(x=>x[1]);
+}
+function swCommission(r,admin,uid){
+  const gross=swNum(r.commissionTotal??r.commission??r.commissionAmount??r.fee);
+  if(admin)return Math.max(0,swNum(r.commissionAdmin??(gross*.5)));
+  const owner=r.userId??r.remitterId??r.remitenteId??r.senderId;
+  if(String(owner)!==String(uid))return 0;
+  return Math.max(0,swNum(r.commissionUser??(gross*.5)));
+}
+function swRecordDay(r){
+  for(const k of ['reviewedAt','approvedAt','balanceSettledAt','createdAt','updatedAt','date']){
+    const d=swDay(r&&r[k]);if(d)return d;
+  }
+  return '';
+}
+function swDaily(uid,admin){
+  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={};
+  let total=0;
+  for(const col of cols){
+    let n=0,seen=new Set();
+    for(const [id,r] of swRecords(col)){
+      if(seen.has(id)||!swApproved(r)||swRecordDay(r)!==swToday())continue;
+      seen.add(id);n+=swCommission(r,admin,uid);
+    }
+    out[col]=Number(n.toFixed(2));total+=n;
+  }
+  const credits=Object.values((window.state&&state.commissionCredits)||{});
+  let manual=0;
+  for(const r of credits){
+    if(!r)continue;
+    const owner=r.userId??r.remitterId??r.remitenteId;
+    if((admin||String(owner)===String(uid))&&swDay(r.createdAt??r.date??r.timestamp)===swToday()&&String(r.type||r.accountingType||'').toUpperCase()==='COMISION_ACREDITADA')manual+=Math.max(0,swNum(r.amount));
+  }
+  if(manual){out.paqueticos=(out.paqueticos||0)+manual;total+=manual}
+  return {by:out,total:Number(total.toFixed(2))};
+}
+function swLabel(col){
+  return ({envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos / servicios',paquetes:'Paquetes'})[col]||col;
+}
+function swRenderGanancias(){
+  const card=document.getElementById('ganancias-dia-card'),list=document.getElementById('ganancias-dia-lista'),tot=document.getElementById('ganancias-dia-total');
+  if(!card||!list)return;
+  const admin=typeof isAdmin==='function'&&isAdmin(),uid=admin?'admin':(window.currentUser&&currentUser.id);
+  if(!uid){list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias del día.</div>';if(tot)tot.textContent=swMoney(0);return}
+  const d=swDaily(uid,admin);
+  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
+  list.innerHTML=cols.map(col=>'<div class="item-ganancia"><span class="titulo-label">'+swEsc(swLabel(col))+'</span><span class="detalles-tipo"><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('')+
+    (d.total<=0?'<div class="muted" style="padding-top:10px">No hay ganancias de operaciones aprobadas para hoy.</div>':'');
+  if(tot)tot.textContent=swMoney(d.total);
+  card.dataset.swUpdated=String(Date.now());
+}
+window.SENDWAYO_HARDENING.renderDaily=swRenderGanancias;
+
+/* Evita que un render repetido congele la interfaz. */
+let queued=false;
+function swQueue(){
+  if(queued)return;queued=true;
+  requestAnimationFrame(()=>{queued=false;try{swRenderGanancias();swHealth();}catch(e){console.warn('[SENDWAYO]',e)}})
+}
+window.addEventListener('load',()=>setTimeout(swQueue,250));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)swQueue()});
+window.addEventListener('focus',swQueue);
+setInterval(()=>{if(!document.hidden&&document.querySelector('.view-section.active#view-dashboard'))swQueue()},15000);
+
+/* Recalcula después de renderAll/renderRealtimeView sin reemplazar la contabilidad existente. */
+try{
+  if(typeof window.renderAll==='function'){
+    const oldRenderAll=window.renderAll;
+    window.renderAll=function(){const r=oldRenderAll.apply(this,arguments);setTimeout(swQueue,30);return r}
+  }
+}catch(e){}
+
+/* Integridad financiera de solo lectura. */
+function swIntegrity(){
+  const issues=[],cols=['envios','recargas','paqueticos','pagos','paquetes'];
+  const seen={};
+  for(const col of cols){
+    seen[col]=new Set();
+    for(const [id,r] of swRecords(col)){
+      if(seen[col].has(id))continue;seen[col].add(id);
+      if(swApproved(r)){
+        const gross=swNum(r.commissionTotal??r.commission??r.commissionAmount??r.fee);
+        const us=swNum(r.commissionUser),as=swNum(r.commissionAdmin);
+        if(gross<0||us<0||as<0)issues.push(col+': comisión negativa en '+id);
+        if(gross>0&&us>0&&as>0&&Math.abs((us+as)-gross)>0.02)issues.push(col+': reparto de comisión no cuadra en '+id);
+        if(swNum(r.amount)<=0)issues.push(col+': monto inválido en '+id);
+      }
+      if(String(r.accountingType||'').toUpperCase()==='DEPOSITO_CAPITAL'&&swNum(r.commission)!==0)issues.push(col+': depósito con comisión en '+id);
+    }
+  }
+  const u=window.state&&state.users||{};
+  for(const [id,x] of Object.entries(u)){
+    if(!x)continue;
+    if(swNum(x.balance)<-0.009)issues.push('Usuario '+id+': balance negativo');
+    if(swNum(x.commission)<-0.009||swNum(x.commissionAccrued)<-0.009)issues.push('Usuario '+id+': comisión negativa');
+  }
+  return issues;
+}
+function swHealth(){
+  const el=document.getElementById('sendwayo-health-body');if(!el)return;
+  const issues=swIntegrity();
+  const hasFirebase=!!(window.firebase||window.firebaseConfig||window.db);
+  let connected='No verificado';
+  try{
+    if(window.firebase&&typeof firebase.database==='function'){
+      const ref=firebase.database().ref('.info/connected');
+      if(!SWH.conn){SWH.conn=ref.on('value',s=>{SWH.connected=!!s.val();swHealth()})}
+      connected=SWH.connected?'Conectado':'Desconectado';
+    }else if(window.SENDWAYO_FIREBASE_DB)connected='Configurado';
+  }catch(e){connected='Error de conexión'}
+  const ok=issues.length===0;
+  el.innerHTML=
+    '<div class="sw-health-grid">'+
+      '<div><b>Firebase / sincronización</b><span class="sw-health-value">'+swEsc(connected)+'</span></div>'+
+      '<div><b>Integridad financiera</b><span class="sw-health-value '+(ok?'ok':'bad')+'">'+(ok?'OK':'Revisar '+issues.length+' alerta(s)')+'</span></div>'+
+      '<div><b>Operaciones aprobadas hoy</b><span class="sw-health-value">'+swNum(swRecords('envios').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('recargas').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paqueticos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('pagos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paquetes').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length)+'</span></div>'+
+      '<div><b>Última comprobación</b><span class="sw-health-value">'+new Date().toLocaleTimeString('es-DO')+'</span></div>'+
+    '</div>'+
+    (issues.length?'<details class="sw-health-alert"><summary>Ver inconsistencias detectadas</summary><ul>'+issues.slice(0,30).map(x=>'<li>'+swEsc(x)+'</li>').join('')+'</ul></details>':'<div class="sw-health-ok">No se detectaron inconsistencias financieras en los datos cargados en este dispositivo.</div>');
+}
+window.SENDWAYO_HARDENING.health=swHealth;
+
+/* Panel de salud: solo administración. */
+function swEnsureHealthCard(){
+  if(!document.querySelector('.view-section.active#view-dashboard'))return;
+  if(typeof isAdmin!=='function'||!isAdmin())return;
+  if(document.getElementById('sendwayo-health-card'))return;
+  const anchor=document.getElementById('ganancias-dia-card')||document.querySelector('#view-dashboard .card');
+  if(!anchor||!anchor.parentNode)return;
+  const card=document.createElement('div');card.id='sendwayo-health-card';card.className='card';
+  card.innerHTML='<div class="card-header"><h3>Salud de SENDWAYO</h3><button class="btn btn-light btn-sm" type="button" onclick="SENDWAYO_HARDENING.health()">Actualizar</button></div><div id="sendwayo-health-body"></div>';
+  anchor.parentNode.insertBefore(card,anchor.nextSibling);swHealth();
+}
+function swAdminPanel(){setTimeout(swEnsureHealthCard,80)}
+setInterval(swAdminPanel,3000);
+window.addEventListener('load',swAdminPanel);
+
+/* Errores globales: informa sin bloquear el negocio. */
+window.addEventListener('unhandledrejection',e=>{console.error('[SENDWAYO] Promesa rechazada',e.reason)});
+window.addEventListener('error',e=>{console.error('[SENDWAYO] Error',e.error||e.message)});
+
+/* Exportación local de respaldo: nunca sube datos a terceros. */
+window.SENDWAYO_HARDENING.exportLocalBackup=function(){
+  try{
+    const payload={app:'SENDWAYO EXPRESS',version:SWH.version,exportedAt:new Date().toISOString(),state:window.state||{}};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sendwayo-respaldo-'+swToday()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }catch(e){console.error(e)}
+};
+})();
+</script>
 </body>
 
 <script>
