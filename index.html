@@ -1376,7 +1376,7 @@ function attachRealtimeListeners(){
  window.__sendwayoRealtimeRefs.push(nref);
 }
 
-function isAdmin(){return !!currentUser && (currentUser.id==='admin' || String(currentUser.role||'').toLowerCase()==='administrador' || String(currentUser.username||'').toLowerCase()==='admin' || String(currentUser.authEmail||'').toLowerCase()==='sendwayoexpress@gmail.com');}
+function isAdmin(){return !!currentUser && (currentUser.id==='admin' || String(currentUser.role||'').trim().toLowerCase()==='administrador' || String(currentUser.role||'').trim().toLowerCase()==='admin' || String(currentUser.username||'').trim().toLowerCase()==='admin' || String(currentUser.authEmail||'').trim().toLowerCase()==='sendwayoexpress@gmail.com');}
 function applyBrandLogo(){document.querySelectorAll('img.brand-logo, .sidebar-brand img, #login-screen img, #header-avatar, #profile-preview').forEach(img=>{if(!img.dataset.userAvatar)img.src=LOGO_DATA});}
 function openBrandSite(){window.location.href='https://sendwayo-oficial.github.io/sendwayo-express/';}
 async function boot(){
@@ -1801,7 +1801,7 @@ function calcularEnvioModal(){const type=document.getElementById('env-tipo-trans
 function canTransact(){return currentUser&&['Remitente','Administrador'].includes(currentUser.role)}
 function owner(){return currentUser}
 function userById(id){return state.users[id]||{}}
-function isAdmin(){return currentUser?.role==='Administrador'}
+function isAdmin(){return !!currentUser && (currentUser.id==='admin' || String(currentUser.role||'').trim().toLowerCase()==='administrador' || String(currentUser.role||'').trim().toLowerCase()==='admin' || String(currentUser.username||'').trim().toLowerCase()==='admin' || String(currentUser.authEmail||'').trim().toLowerCase()==='sendwayoexpress@gmail.com');}
 async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
@@ -2247,7 +2247,7 @@ function setStatusFilter(view,s,btn){statusFilter=s;document.querySelectorAll('#
 function filterRequests(s){requestFilter=s;renderRequests()}
 function downloadRecord(collection,id){const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');const blob=new Blob([JSON.stringify({sistema:'SENDWAYO EXPRESS',coleccion:collection,exportadoEn:now(),registro:r},null,2)],{type:'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SENDWAYO_'+collection+'_'+id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function actionButtons(collection,id,status){
- let admin=isAdmin(),rec=state[collection]?.[id],ownerId=rec?.userId,arr=[];
+ let admin=!!(typeof adminVIP==='function'?adminVIP():isAdmin()),rec=state[collection]?.[id],ownerId=rec?.userId,arr=[];
  const normalizedActionStatus=String(status||"").trim().toLowerCase();
  if(normalizedActionStatus==="aprobado"){
    arr.push('<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')"><i class="fa-solid fa-eye"></i></button>');
