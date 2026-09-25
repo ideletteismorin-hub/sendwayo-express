@@ -2659,7 +2659,7 @@ function commissionAvailableForAdminCredit(u){
 }
 function openAdminCreditModal(type='balance'){
  if(!isAdmin())return toast('Solo el Administrador puede realizar acreditaciones.','warn');
- const titles={balance:'Acreditar Balance',bonus:'Acreditar Bono',commission:'Acreditar Comisiones'};
+ const titles={balance:'Acreditar Balance',bonus:'Acreditar Comisión',commission:'Acreditar Comisiones'};
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
   bonus:'La comisión es una acreditación manual exclusiva de Administración; se acredita directamente al balance administrativo y queda registrada en el historial.',
@@ -2711,7 +2711,7 @@ async function saveAdminCredit(){
  const amount=Number(document.getElementById('admin-credit-amount')?.value),u=state.users?.[id];
  if(!u||!['balance','bonus','commission'].includes(type))return toast('Seleccione una cuenta válida.','warn');
  if(type==='bonus'&&id!=='admin')return toast('La comisión indicada aquí solo puede acreditarse a la Administración.','warn');
- if(type==='commission'&&id==='admin')return toast('La comisión de Administración ya está integrada en su balance. Use Acreditar Balance o Acreditar Bono para una entrada manual.','warn');
+ if(type==='commission'&&id==='admin')return toast('La comisión de Administración ya está integrada en su balance. Use Acreditar Balance o Acreditar Comisión para una entrada manual.','warn');
  const availableCommission=commissionAvailableForAdminCredit(u);
  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
  if(type==='commission'&&id!=='admin'&&amount>availableCommission)return toast('El monto no puede superar la comisión disponible.','warn');
@@ -2925,7 +2925,7 @@ function renderSecrets(){
  document.querySelector('#secTable tbody').innerHTML=rows.map((u,i)=>{
    const admin=u.id==='admin';
    const actions=admin
-     ?'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\'admin\',\'set\')">Acreditar Admin</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\'admin\',\'adjust\')">Ajustar balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal(\'bonus\')">Acreditar Bono</button>'
+     ?'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\'admin\',\'set\')">Acreditar Admin</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\'admin\',\'adjust\')">Ajustar balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal(\'bonus\')">Acreditar Comisión</button>'
      :'<button class="btn btn-success btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'set\')">Acreditar</button><button class="btn btn-warning btn-sm" onclick="openAdminBalanceModal(\''+u.id+'\',\'adjust\')">Ajustar balance</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal(\'commission\');setTimeout(()=>{const x=document.getElementById(\'admin-credit-target\');if(x){x.value=\''+u.id+'\';refreshAdminCreditModal()}},50)">Acreditar comisión</button><button class="btn btn-light btn-sm" onclick="viewUser(\''+u.id+'\')">Ver</button><button class="btn btn-warning btn-sm" onclick="editUser(\''+u.id+'\')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteUser(\''+u.id+'\')">Borrar</button><button class="btn btn-success btn-sm" onclick="sendPasswordReset(\''+u.id+'\')">Restablecer acceso</button><button class="btn btn-success btn-sm" onclick="sendWhatsAppCredentials(state.users[\''+u.id+'\'],INITIAL_PASSWORD)">Enviar WhatsApp</button>';
    return '<tr style="'+(admin?'background:#fff8e1;font-weight:600':'')+'"><td>'+(i+1)+'</td><td>'+ (admin?'ADMINISTRACIÓN':'Remitente') +'</td><td><b>'+escapeHtml(admin?'ADMIN':(u.staffId||''))+'</b></td><td>'+escapeHtml(u.name||'Administración SENDWAYO EXPRESS')+'</td><td>'+escapeHtml(u.phone||'')+'</td><td>'+escapeHtml(u.username||'admin')+'</td><td>'+escapeHtml(u.authEmail||authEmailFor(u))+'</td><td><span class="status '+(u.active?'st-Activo':'st-Inactivo')+'">'+(u.active?'Activo':'Inactivo')+'</span></td><td>Firebase Auth</td><td><b>'+money(u.balance)+'</b></td><td><b>'+money(admin?commissionTotalFor('admin'):u.commission)+'</b></td><td><div class="actions">'+actions+'</div></td></tr>';
  }).join('')||'<tr><td colspan="12" class="muted">No hay cuentas registradas.</td></tr>';
