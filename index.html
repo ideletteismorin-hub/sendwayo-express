@@ -2426,35 +2426,39 @@ function scheduleCommissionDayRefresh(){
  window.__sendwayoCommissionTimer=setTimeout(()=>{if(currentUser){renderDashboard();}scheduleCommissionDayRefresh()},Math.max(1000,next.getTime()-Date.now()));
 }
 function commissionTodayFor(userId){
- const today=todayDateKey();
- const cols=['envios','recargas','paqueticos','pagos','paquetes'];
- let total=0;
- // OBLIGATORIO: Comisión de hoy = toda comisión realmente generada hoy
- // por operaciones APROBADAS. Se aceptan todas las marcas de fecha válidas
- // del registro para evitar que una diferencia de formato deje el KPI en cero.
- for(const col of cols)for(const r of Object.values(state[col]||{})){
-   if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
-   const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt]
-     .map(commissionDateKey).filter(Boolean);
-   if(!dates.includes(today))continue;
-   const commissionBase=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
-   let share=0;
-   if(userId==='admin'){
-     share=Number(r.commissionAdmin);
-     if(!Number.isFinite(share))share=commissionBase*0.50;
-   }else{
+ const today=todayDateKey(), cols=['envios','recargas','paqueticos','pagos','paquetes'];
+ let total=0, seen=new Set();
+ // FUENTE ÚNICA PARA EL KPI: operaciones aprobadas de HOY, tanto del estado
+ // activo como del ledger financiero. Se deduplica por ID para no contar dos veces.
+ for(const col of cols){
+   const records=new Map();
+   Object.entries(state[col]||{}).forEach(([id,r])=>records.set(id,r));
+   Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>{if(!records.has(id))records.set(id,r)});
+   for(const [id,r] of records){
+     if(seen.has(col+'|'+id)||!r)continue;
+     if(String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
+     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt]
+       .map(commissionDateKey).filter(Boolean);
+     if(!dates.includes(today))continue;
+     const base=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
-     if(String(ownerId)!==String(userId))continue;
-     share=Number(r.commissionUser);
-     if(!Number.isFinite(share))share=commissionBase*0.50;
+     let share=0;
+     if(userId==='admin'){
+       share=Number(r.commissionAdmin);
+       if(!Number.isFinite(share))share=base*0.50;
+     }else{
+       if(String(ownerId)!==String(userId))continue;
+       share=Number(r.commissionUser);
+       if(!Number.isFinite(share))share=base*0.50;
+     }
+     if(Number.isFinite(share)&&share>0){total+=share;seen.add(col+'|'+id)}
    }
-   if(Number.isFinite(share)&&share>0)total+=share;
  }
- // Acreditaciones manuales de COMISIÓN hechas hoy también cuentan.
+ // Acreditaciones manuales de comisión realizadas hoy.
  const u=state.users?.[userId];
  for(const x of Object.values(u?.commissionCredits||{})){
    if(String(x?.type||'').toUpperCase()!=='COMISION_ACREDITADA')continue;
-   const dates=[x.creditedAt,x.createdAt,x.processedAt].map(commissionDateKey).filter(Boolean);
+   const dates=[x.creditedAt,x.createdAt,x.processedAt,x.date].map(commissionDateKey).filter(Boolean);
    if(!dates.includes(today))continue;
    const n=Number(x.amount||0);
    if(Number.isFinite(n)&&n>0)total+=n;
