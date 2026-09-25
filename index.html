@@ -2801,53 +2801,73 @@ async function saveAdminBalanceAdjustment(){
 function renderGananciasDia(){
  const box=document.getElementById('ganancias-dia-lista'),totalEl=document.getElementById('ganancias-dia-total');
  if(!box||!totalEl||!currentUser)return;
- const today=todayDateKey(),cols=['envios','recargas','paqueticos','pagos','paquetes'];
+ const today=todayDateKey();
+ const d=new Date();
+ const todayLabel=d.toLocaleDateString('es-DO',{day:'2-digit',month:'2-digit',year:'numeric'});
+ const cols=['envios','recargas','paqueticos','pagos','paquetes'];
  const labels={envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'};
- const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0},counts={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
- const roleId=isAdmin()?'admin':currentUser.id,sources=[state,lastSyncedState].filter(Boolean);
+ const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
+ const counts={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
+ const roleId=isAdmin()?'admin':currentUser.id;
+
  for(const col of cols){
    const records=new Map();
-   // La operación aprobada actual tiene prioridad sobre copias antiguas.
-   // Esto evita que lastSyncedState (pendiente) borre visualmente una comisión ya aprobada.
-   for(const src of [state,lastSyncedState].filter(Boolean)){
-     Object.entries(src.ledger?.[col]||{}).forEach(([id,r])=>{
-       const prev=records.get(id);
-       if(!prev || String(prev.status||'').trim().toLowerCase()!=='aprobado' || String(r?.status||'').trim().toLowerCase()==='aprobado'){
-         records.set(id,{...(r||{})});
-       }
-     });
-     Object.entries(src[col]||{}).forEach(([id,r])=>{
-       const ledgerR=src.ledger?.[col]?.[id]||{};
-       const candidate={...ledgerR,...(r||{})};
-       const prev=records.get(id);
-       if(!prev || String(prev.status||'').trim().toLowerCase()!=='aprobado' || String(candidate.status||'').trim().toLowerCase()==='aprobado'){
-         records.set(id,candidate);
-       }
-     });
-   }
+   // Una sola fila por operación: se combina estado actual + libro mayor.
+   Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>records.set(id,{...(r||{})}));
+   Object.entries(state[col]||{}).forEach(([id,r])=>{
+     records.set(id,{...(state.ledger?.[col]?.[id]||{}),...(r||{})});
+   });
+
    for(const [id,r] of records){
-     if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
-     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp].map(commissionDateKey).filter(Boolean);
+     if(!r)continue;
+     if(String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
+
+     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp]
+       .map(commissionDateKey).filter(Boolean);
      if(!dates.includes(today))continue;
+
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
-     if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
-     const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
-     let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(share)||share<=0)share=Number.isFinite(gross)?gross*0.50:0;
-     if(Number.isFinite(share)&&share>=0){counts[col]++;sums[col]+=share}
+     if(roleId!=='admin' && String(ownerId)!==String(roleId))continue;
+
+     const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0);
+     let share=roleId==='admin'
+       ? Number(r.commissionAdmin??r.commissionAdministracion)
+       : Number(r.commissionUser??r.commissionRemitente);
+
+     // Compatibilidad con operaciones antiguas que solo guardaron la comisión total.
+     if(!Number.isFinite(share) || share<0)share=Number.isFinite(gross)&&gross>0?gross*0.50:0;
+
+     if(Number.isFinite(share)&&share>0){
+       counts[col]++;
+       sums[col]+=share;
+     }
    }
  }
- const user=state.users?.[roleId]||lastSyncedState?.users?.[roleId];
- const creditRows=Object.values(user?.commissionCredits||{}).filter(x=>String(x?.type||'').toUpperCase()==='COMISION_ACREDITADA'&&[x.creditedAt,x.createdAt,x.processedAt,x.date,x.timestamp].map(commissionDateKey).includes(today));
- const manual=creditRows.reduce((n,x)=>n+Math.max(0,Number(x.amount||0)),0);
- if(manual){sums.paqueticos+=manual;counts.paqueticos+=creditRows.length}
- const total=Object.values(sums).reduce((a,n)=>a+n,0),ops=Object.values(counts).reduce((a,n)=>a+n,0);
- box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
- if(!ops)box.innerHTML+='<div class="muted" style="padding-top:10px">No hay operaciones aprobadas registradas para hoy en los datos cargados.</div>';
- totalEl.textContent=money(total);
- const card=document.getElementById('ganancias-dia-card');if(card)card.title='Hoy: '+ops+' operaciones aprobadas · '+money(total)+' de ganancia';
-}
 
+ // Las acreditaciones manuales de comisión de HOY se muestran separadas:
+ // nunca se mezclan artificialmente con Recargas o Paqueticos.
+ const user=state.users?.[roleId];
+ const creditRows=Object.values(user?.commissionCredits||{}).filter(x=>{
+   if(String(x?.type||'').toUpperCase()!=='COMISION_ACREDITADA')return false;
+   return [x.creditedAt,x.createdAt,x.processedAt,x.date,x.timestamp].map(commissionDateKey).includes(today);
+ });
+ const manual=creditRows.reduce((n,x)=>n+Math.max(0,Number(x.amount||0)),0);
+
+ const totalBase=Object.values(sums).reduce((a,n)=>a+n,0);
+ const total=totalBase+manual;
+ const ops=Object.values(counts).reduce((a,n)=>a+n,0)+creditRows.length;
+
+ box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
+
+ if(creditRows.length){
+   box.innerHTML+='<div class="item-ganancia"><span><b>Acreditaciones de comisión</b><br><small>'+creditRows.length+' acreditación'+(creditRows.length===1?'':'es')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(manual)+'</span></span></div>';
+ }
+ if(!ops)box.innerHTML+='<div class="muted" style="padding-top:10px">No hay operaciones aprobadas ni acreditaciones de comisión registradas para hoy.</div>';
+
+ totalEl.textContent=money(total);
+ const card=document.getElementById('ganancias-dia-card');
+ if(card)card.title='Ganancia del día de hoy ('+todayLabel+'): '+ops+' movimientos · '+money(total);
+}
 function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
