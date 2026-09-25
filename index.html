@@ -2833,7 +2833,7 @@ function renderGananciasDia(){
      if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
      const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
      let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(share))share=Number.isFinite(gross)?gross*0.50:0;
+     if(!Number.isFinite(share)||share<=0)share=Number.isFinite(gross)?gross*0.50:0;
      if(Number.isFinite(share)&&share>=0){counts[col]++;sums[col]+=share}
    }
  }
@@ -3709,11 +3709,19 @@ function swRecords(col){
   return Object.entries(a).map(([id,r])=>[id,r]).filter(x=>x[1]);
 }
 function swCommission(r,admin,uid){
-  const gross=swNum(r.commissionTotal??r.commission??r.commissionAmount??r.fee);
-  if(admin)return Math.max(0,swNum(r.commissionAdmin??(gross*.5)));
+  const gross=Math.max(0,swNum(r.commissionTotal??r.commission??r.commissionAmount??r.fee));
+  // La comisión de cada operación aprobada se reparte 50/50.
+  // Si un registro antiguo no trae commissionAdmin/commissionUser, o lo trae en cero,
+  // se deriva la participación desde la comisión total para que Ganancias del día
+  // nunca quede en cero cuando realmente hubo comisión.
+  if(admin){
+    const stored=swNum(r.commissionAdmin);
+    return stored>0?stored:Number((gross*.50).toFixed(2));
+  }
   const owner=r.userId??r.remitterId??r.remitenteId??r.senderId;
   if(String(owner)!==String(uid))return 0;
-  return Math.max(0,swNum(r.commissionUser??(gross*.5)));
+  const stored=swNum(r.commissionUser);
+  return stored>0?stored:Number((gross*.50).toFixed(2));
 }
 function swRecordDay(r){
   for(const k of ['reviewedAt','approvedAt','balanceSettledAt','createdAt','updatedAt','date']){
