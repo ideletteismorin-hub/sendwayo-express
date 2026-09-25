@@ -4672,4 +4672,54 @@ document.addEventListener('DOMContentLoaded',capInstall,{once:true});
 setTimeout(capInstall,500);
 })();
 </script>
-</html>
+<script id="sendwayo-final-stability-2026-09-25">
+(function(){
+'use strict';
+const LOGO='assets/sendwayo-oficial-logo.svg';
+window.__sendwayoDeletedRecords=window.__sendwayoDeletedRecords||new Set();
+function logo(){
+  try{
+    document.querySelectorAll('.brand-logo,.sidebar-brand img,.receipt-logo,#profile-preview').forEach(x=>x.src=LOGO);
+    document.documentElement.style.setProperty('--sendwayo-logo-bg',"url('"+LOGO+"')");
+    const bg=document.getElementById('sendwayo-brand-background');if(bg)bg.style.backgroundImage="url('"+LOGO+"')";
+  }catch(e){}
+}
+function clean(){
+  for(const key of window.__sendwayoDeletedRecords){
+    const p=key.indexOf('::');if(p<1)continue;const c=key.slice(0,p),id=key.slice(p+2);
+    try{if(state[c]?.[id])delete state[c][id];if(lastSyncedState?.[c]?.[id])delete lastSyncedState[c][id]}catch(e){}
+    document.querySelectorAll('[data-record-id]').forEach(el=>{if(el.getAttribute('data-record-id')===id)el.closest('tr')?.remove()});
+  }
+}
+window.deleteRecord=async function(collection,id){
+  const r=state?.[collection]?.[id];if(!r)return toast('El registro ya no existe.','warn');
+  if(!isAdmin()){
+    const au=firebase?.auth?.().currentUser,s=String(r.status||'').trim().toLowerCase();
+    const owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===au?.uid;
+    if(!owner||!['rechazado','no coincide'].includes(s))return toast('No tiene permiso para borrar este registro.','warn');
+  }
+  if(!confirm('¿Borrar definitivamente el registro '+String(id)+'?'))return;
+  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. No se borrará ningún registro.','error');
+  const key=collection+'::'+id;window.__sendwayoDeletedRecords.add(key);
+  try{
+    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);await ref.remove();
+    if((await ref.once('value')).exists())throw new Error('DELETE_NOT_CONFIRMED');
+    delete state[collection][id];if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
+    clean();renderAll();[200,800,1800,3500].forEach(t=>setTimeout(clean,t));
+    toast('Registro borrado definitivamente de Firebase.','success');
+  }catch(e){window.__sendwayoDeletedRecords.delete(key);console.warn(e);toast('No se pudo confirmar el borrado en Firebase.','error')}
+};
+function warm(){try{if(typeof initFirebase==='function'&&!firebaseReady)window.__sendwayoFirebaseInitPromise=window.__sendwayoFirebaseInitPromise||initFirebase().catch(e=>false)}catch(e){}}
+const login=window.realizarLogin;
+window.realizarLogin=async function(){
+  if(window.__swLoginBusy)return;
+  window.__swLoginBusy=true;
+  try{
+    if(window.__sendwayoFirebaseInitPromise)await Promise.race([window.__sendwayoFirebaseInitPromise,new Promise(r=>setTimeout(r,9000))]);
+    return await login();
+  }finally{setTimeout(()=>window.__swLoginBusy=false,300)}
+};
+function boot(){logo();clean();warm();if(document.body){new MutationObserver(()=>{logo();clean()}).observe(document.body,{subtree:true,childList:true})}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>\n</html>
