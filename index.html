@@ -1099,20 +1099,32 @@ function ensureSeedData(){
   ensureStaffDirectory();
 }
 async function loadScript(src,timeout=8000){return new Promise((resolve,reject)=>{if(document.querySelector('script[data-src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.async=true;s.dataset.src=src;let done=false;const finish=(err)=>{if(done)return;done=true;clearTimeout(timer);s.onload=s.onerror=null;err?reject(err):resolve()};const timer=setTimeout(()=>finish(new Error('SCRIPT_TIMEOUT: '+src)),timeout);s.onload=()=>finish();s.onerror=()=>finish(new Error('SCRIPT_LOAD_ERROR: '+src));document.head.appendChild(s)})}
-async function initFirebase(){try{
-  if(typeof firebase==='undefined'||!firebase.initializeApp){
-    const base='https://www.gstatic.com/firebasejs/9.23.0/';
-    await loadScript(base+'firebase-app-compat.js',7000);
-    await loadScript(base+'firebase-auth-compat.js',7000);
-    await loadScript(base+'firebase-database-compat.js',7000);
-    // Firebase Functions no es necesaria para el acceso ni para RTDB.
-    // No debe bloquear Authentication si ese CDN no responde.
-  }
-  if(typeof firebase==='undefined'||!firebase.initializeApp)throw new Error('FIREBASE_SDK_NOT_LOADED');
-  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-  try{firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e=>console.warn('Persistencia Firebase:',e))}catch(e){console.warn('Persistencia Firebase:',e)}
-  firebaseReady=true;return true
-}catch(e){firebaseReady=false;console.warn('Firebase no disponible.',e);return false}}
+async function initFirebase(){
+  if(firebaseReady&&typeof firebase!=='undefined'&&firebase.auth)return true;
+  if(window.__sendwayoFirebaseInitPromise)return window.__sendwayoFirebaseInitPromise;
+  window.__sendwayoFirebaseInitPromise=(async()=>{
+    try{
+      if(typeof firebase==='undefined'||!firebase.initializeApp){
+        const base='https://www.gstatic.com/firebasejs/9.23.0/';
+        await loadScript(base+'firebase-app-compat.js',7000);
+        await loadScript(base+'firebase-auth-compat.js',7000);
+        await loadScript(base+'firebase-database-compat.js',7000);
+      }
+      if(typeof firebase==='undefined'||!firebase.initializeApp)throw new Error('FIREBASE_SDK_NOT_LOADED');
+      if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+      try{await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch(e){console.warn('Persistencia Firebase:',e)}
+      firebaseReady=true;
+      return true;
+    }catch(e){
+      firebaseReady=false;
+      console.warn('Firebase no disponible.',e);
+      return false;
+    }
+  })();
+  const ok=await window.__sendwayoFirebaseInitPromise;
+  if(!ok)window.__sendwayoFirebaseInitPromise=null;
+  return ok;
+}
 async function loadExportLibraries(){try{const base='https://cdnjs.cloudflare.com/ajax/libs/';await Promise.all([loadScript(base+'xlsx/0.18.5/xlsx.full.min.js',8000),loadScript(base+'jspdf/2.5.1/jspdf.umd.min.js',8000)]);return true}catch(e){console.warn('Librerías de exportación:',e);return false}}
 async function createFirebaseAccountForUser(user){
   if(!user||user.id==='admin')return {status:'skip'};
@@ -4755,17 +4767,14 @@ window.deleteRecord=async function(collection,id){
     toast('Registro borrado definitivamente de Firebase.','success');
   }catch(e){window.__sendwayoDeletedRecords.delete(key);console.warn(e);toast('No se pudo confirmar el borrado en Firebase.','error')}
 };
-function warm(){try{if(typeof initFirebase==='function'&&!firebaseReady)window.__sendwayoFirebaseInitPromise=window.__sendwayoFirebaseInitPromise||initFirebase().catch(e=>false)}catch(e){}}
 const login=window.realizarLogin;
 window.realizarLogin=async function(){
   if(window.__swLoginBusy)return;
   window.__swLoginBusy=true;
-  try{
-    if(window.__sendwayoFirebaseInitPromise)await Promise.race([window.__sendwayoFirebaseInitPromise,new Promise(r=>setTimeout(r,9000))]);
-    return await login();
-  }finally{setTimeout(()=>window.__swLoginBusy=false,300)}
+  try{return await login();}
+  finally{setTimeout(()=>window.__swLoginBusy=false,300)}
 };
-function boot(){logo();clean();warm();if(document.body){new MutationObserver(()=>{logo();clean()}).observe(document.body,{subtree:true,childList:true})}}
+function boot(){logo();clean();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>\n</html>
