@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1024">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024">
 <defs>
  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f5faff"/></linearGradient>
  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b8df5"/><stop offset="1" stop-color="#123b78"/></linearGradient>
@@ -12,5 +12,9 @@
 </g>
 <path d="M390 360 C520 150 850 120 900 260 C930 345 790 335 670 315" fill="none" stroke="url(#blue)" stroke-width="34" stroke-linecap="round"/>
 <path d="M670 560 C570 750 300 790 260 675 C230 590 340 595 440 615" fill="none" stroke="url(#orange)" stroke-width="34" stroke-linecap="round"/>
-
-</svg>
+<line x1="1030" y1="230" x2="1030" y2="730" stroke="#123b78" stroke-width="5"/>
+<g font-family="Arial,Helvetica,sans-serif" font-weight="800">
+ <circle cx="1100" cy="315" r="55" fill="#1675d1"/><text x="1180" y="300" font-size="38" fill="#123b78">ENVÍOS DE</text><text x="1180" y="350" font-size="50" fill="#123b78">DINERO</text>
+ <circle cx="1100" cy="490" r="55" fill="#f27a00"/><text x="1180" y="475" font-size="34" fill="#123b78">RECEPCIÓN Y ENVÍO</text><text x="1180" y="525" font-size="44" fill="#f27a00">DE PAQUETES</text>
+ <circle cx="1100" cy="665" r="55" fill="#21a52a"/><text x="1180" y="650" font-size="34" fill="#123b78">RECARGAS Y</text><text x="1180" y="700" font-size="40" fill="#198c25">PAGOS DE SERVICIOS</text>
+</g></svg>
