@@ -3813,12 +3813,14 @@ function swHealth(){
     }else if(window.SENDWAYO_FIREBASE_DB)connected='Configurado';
   }catch(e){connected='Error de conexión'}
   const ok=issues.length===0;
+  const todayOps=['envios','recargas','paqueticos','pagos','paquetes'].reduce((n,col)=>n+swRecords(col).filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length,0);
   el.innerHTML=
     '<div class="sw-health-grid">'+
       '<div><b>Firebase / sincronización</b><span class="sw-health-value">'+swEsc(connected)+'</span></div>'+
       '<div><b>Integridad financiera</b><span class="sw-health-value '+(ok?'ok':'bad')+'">'+(ok?'OK':'Revisar '+issues.length+' alerta(s)')+'</span></div>'+
-      '<div><b>Operaciones aprobadas hoy</b><span class="sw-health-value">'+swNum(swRecords('envios').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('recargas').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paqueticos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('pagos').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length+swRecords('paquetes').filter(x=>swApproved(x[1])&&swRecordDay(x[1])===swToday()).length)+'</span></div>'+\n      '<div><b>Libro mayor</b><span class="sw-health-value '+(rec.missingLedger.length?'bad':'ok')+'">'+(rec.missingLedger.length?'Faltan '+rec.missingLedger.length:'Cuadra')+'</span></div>'+\n      '<div><b>Comisión Administración derivada</b><span class="sw-health-value">'+swMoney(rec.adminShare)+'</span></div>'+
-      '<div><b>Libro mayor</b><span class="sw-health-value '+(rec.missingLedger.length?'bad':'ok')+'">'+(rec.missingLedger.length?'Faltan '+rec.missingLedger.length:'Cuadra')+'</span></div>'+\n      '<div><b>Comisión Administración derivada</b><span class="sw-health-value">'+swMoney(rec.adminShare)+'</span></div>'+
+      '<div><b>Operaciones aprobadas hoy</b><span class="sw-health-value">'+todayOps+'</span></div>'+
+      '<div><b>Libro mayor</b><span class="sw-health-value '+(rec.missingLedger.length?'bad':'ok')+'">'+(rec.missingLedger.length?'Faltan '+rec.missingLedger.length:'Cuadra')+'</span></div>'+
+      '<div><b>Comisión Administración derivada</b><span class="sw-health-value">'+swMoney(rec.adminShare)+'</span></div>'+
       '<div><b>Última comprobación</b><span class="sw-health-value">'+new Date().toLocaleTimeString('es-DO')+'</span></div>'+
     '</div>'+
     (issues.length?'<details class="sw-health-alert"><summary>Ver inconsistencias detectadas</summary><ul>'+issues.slice(0,30).map(x=>'<li>'+swEsc(x)+'</li>').join('')+'</ul></details>':'<div class="sw-health-ok">No se detectaron inconsistencias financieras en los datos cargados en este dispositivo.</div>');
