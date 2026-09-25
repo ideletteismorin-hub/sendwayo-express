@@ -1,0 +1,31 @@
+name: SENDWAYO CI - integrity check
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate Firebase rules JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('database.rules.json','utf8')); console.log('database.rules.json OK')"
+      - name: Validate inline JavaScript
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const blocks=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          let n=0;
+          for(const code of blocks){n++;try{new Function(code)}catch(e){console.error('Inline script #'+n+' invalido:',e.message);process.exit(1)}}
+          console.log('Inline JavaScript OK:',n,'bloques');
+          NODE
+      - name: Check critical hardening markers
+        run: |
+          grep -q 'sendwayo-professional-hardening' index.html
+          grep -q 'ganancias-dia-card' index.html
+          echo "SENDWAYO critical markers OK"
