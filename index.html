@@ -114,7 +114,116 @@ aside{height:100vh;min-height:0;overflow:hidden}
 .sidebar-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.55);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
 .sidebar-menu::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.82);background-clip:padding-box}
 @media(max-width:900px){aside{height:100dvh}.sidebar-menu{max-height:calc(100dvh - 98px);-webkit-overflow-scrolling:touch}}
-</style></head>
+</style>
+<style id="sendwayo-premium-background">
+/* SENDWAYO EXPRESS — FONDO PREMIUM / CIELO DIGITAL */
+:root{
+  --sw-sky-a:#071b3a;
+  --sw-sky-b:#0d3d78;
+  --sw-sky-c:#2b76c9;
+  --sw-sky-d:#8fd8ff;
+  --sw-sky-warm:#ffd76a;
+}
+body{
+  background:
+    radial-gradient(circle at 12% 18%,rgba(143,216,255,.22),transparent 28%),
+    radial-gradient(circle at 88% 12%,rgba(255,215,106,.17),transparent 24%),
+    radial-gradient(circle at 52% 88%,rgba(77,150,255,.16),transparent 34%),
+    linear-gradient(135deg,var(--sw-sky-a) 0%,var(--sw-sky-b) 42%,#0a4f92 70%,#071a36 100%);
+  background-attachment:fixed;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background:
+    radial-gradient(ellipse at 18% 10%,rgba(255,255,255,.11),transparent 22%),
+    radial-gradient(ellipse at 78% 24%,rgba(255,255,255,.08),transparent 24%),
+    radial-gradient(ellipse at 46% 58%,rgba(255,255,255,.05),transparent 30%);
+  opacity:.9;
+}
+body:after{
+  content:"";
+  position:fixed;
+  width:340px;height:340px;
+  right:-90px;top:74px;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:0;
+  background:radial-gradient(circle,rgba(255,226,132,.30) 0%,rgba(255,226,132,.11) 35%,transparent 72%);
+  filter:blur(10px);
+}
+#app-shell,#app-sidebar,#login-screen,#welcome-screen,header{
+  position:relative;
+  z-index:1;
+}
+.content-body{
+  position:relative;
+  background:
+    radial-gradient(circle at 8% 12%,rgba(255,255,255,.16),transparent 24%),
+    radial-gradient(circle at 92% 80%,rgba(68,154,255,.16),transparent 30%),
+    linear-gradient(135deg,rgba(232,243,255,.94),rgba(245,249,255,.91) 48%,rgba(225,240,255,.94));
+  background-attachment:local;
+}
+.content-body:before{
+  content:"";
+  position:fixed;
+  inset:74px 0 0 280px;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 25% 18%,rgba(255,255,255,.58),transparent 22%),
+    radial-gradient(ellipse at 73% 28%,rgba(255,255,255,.38),transparent 20%),
+    radial-gradient(ellipse at 50% 92%,rgba(92,174,255,.11),transparent 28%);
+  opacity:.7;
+  z-index:0;
+}
+.content-body>*{
+  position:relative;
+  z-index:1;
+}
+.card,.kpi,.account-card,.modal-content,.table-wrap{
+  box-shadow:0 10px 32px rgba(15,44,89,.10),0 2px 8px rgba(15,44,89,.05);
+}
+.card,.kpi{
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.sidebar-brand{
+  background:
+    radial-gradient(circle at 82% 15%,rgba(255,215,106,.16),transparent 30%),
+    linear-gradient(145deg,#06172f,#0c2d5a 60%,#123b78);
+}
+header{
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.welcome-card,.login-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(248,252,255,.95));
+  box-shadow:0 24px 70px rgba(3,22,52,.34);
+}
+#welcome-screen,#login-screen{
+  background:
+    radial-gradient(circle at 15% 20%,rgba(105,211,255,.22),transparent 25%),
+    radial-gradient(circle at 85% 18%,rgba(255,214,101,.20),transparent 22%),
+    radial-gradient(circle at 52% 82%,rgba(50,139,255,.20),transparent 32%),
+    linear-gradient(135deg,#04132e 0%,#0a2b59 42%,#0e4f92 73%,#06172f 100%);
+}
+@media(max-width:800px){
+  .content-body:before{left:0;inset:0 0 0 0}
+}
+@media(prefers-reduced-motion:no-preference){
+  body:after{animation:swSunGlow 7s ease-in-out infinite alternate}
+}
+@keyframes swSunGlow{
+  from{transform:scale(.96);opacity:.72}
+  to{transform:scale(1.06);opacity:1}
+}
+</style>
+</head>
 <body>
 <div id="welcome-screen">
   <div class="welcome-card">
