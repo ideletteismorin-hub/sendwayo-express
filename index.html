@@ -13,7 +13,7 @@
 :root{--primary:#0f2c59;--primary2:#123b78;--secondary:#f3b51b;--accent:#1f9d55;--danger:#c0392b;--warning:#d97706;--light:#f4f6f9;--dark:#243447;--gray:#7b8794;--white:#fff}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,sans-serif}
 body{background:var(--light);color:var(--dark);display:flex;height:100vh;overflow:hidden;overscroll-behavior-y:auto;touch-action:pan-y}
-#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.075;filter:saturate(.82) contrast(.96) brightness(1.02);mix-blend-mode:multiply;}
+#sendwayo-brand-background{position:fixed;inset:0;z-index:50;pointer-events:none;display:block;overflow:hidden;background-repeat:no-repeat;background-position:center center;background-size:cover;opacity:.045;filter:saturate(.55) contrast(.94) brightness(1.03);mix-blend-mode:multiply;}
 .main-container{position:relative;z-index:51}
 aside{position:relative;z-index:100}
 .main-container .card,.main-container .modal-content,.main-container .form-control,.main-container table{position:relative}
@@ -24,7 +24,7 @@ aside{position:relative;z-index:100}
 .receipt-compact,.receipt-final,.receipt-shell{position:relative;overflow:hidden;background:rgba(255,255,255,.97)!important}
 .receipt-compact::before,.receipt-final::before,.receipt-shell::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--sendwayo-logo-bg);background-position:center;background-repeat:no-repeat;background-size:cover;opacity:.14;filter:saturate(1.15) contrast(1.08)}
 .receipt-compact>* ,.receipt-final>* ,.receipt-shell>*{position:relative;z-index:1}
-@media(max-width:800px){#sendwayo-brand-background{background-size:cover;opacity:.055}}
+@media(max-width:800px){#sendwayo-brand-background{background-size:cover;opacity:.035}}
 
 button,input,select,textarea{font:inherit}
 #login-screen,#welcome-screen{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;z-index:9999;background:linear-gradient(135deg,#071a36,#123b78)}
@@ -290,6 +290,16 @@ header{
 @media(max-width:800px){
   #app-shell:after{left:14px;bottom:15px;width:220px;height:85px;opacity:.055}
   .content-body:after{right:14px;bottom:12px;font-size:17px;opacity:.04}
+}
+</style>
+<style id="sendwayo-android-transaction-fix">
+@media(max-width:800px){
+  .modal{padding:10px;align-items:center;overscroll-behavior:contain}
+  .modal-content{width:100%;max-width:100%;max-height:calc(100dvh - 20px);padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .modal-content button,.modal-content select,.modal-content input,.modal-content textarea{touch-action:manipulation}
+  .modal-content .btn{min-height:44px;padding:10px 13px}
+  .modal-content [style*="position:sticky"]{position:sticky!important;top:0!important;z-index:20!important}
+  .search-select-wrap .plus-btn{min-width:44px;min-height:44px}
 }
 </style>
 </head>
@@ -1750,7 +1760,7 @@ async function createTransaction(collection,fields,amount){
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
  const id=uid(collection),amountNumber=Number(amount||0),creditUsed=isAdmin()?0:Number(currentUser.__creditUsedForOperation||0),suppliedCommission=Number.isFinite(Number(fields?.commission))?Number(fields.commission):null,rate=commissionRateFor(collection,{...fields,amount:amountNumber,commission:suppliedCommission}),commissionAmount=suppliedCommission!==null?suppliedCommission:amountNumber*rate;
  const record={id,...fields,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser.uid,amount:amountNumber,commissionRate:amountNumber>0?commissionAmount/amountNumber:rate,commission:commissionAmount,status:'Pendiente',createdAt:now(),balanceDebited:false,balanceRefunded:false,accountingType:'COMERCIAL',commissionSplit:'50/50',creditUsed,adminVisible:true,adminInbox:true};
- if(!isAdmin())record.balanceDebited=true;
+ record.balanceDebited=false;
  state[collection]=state[collection]||{};state[collection][id]=record;addAudit('Crear '+collection,id);
  try{
    // Guardamos la operación en su nodo propio para que un Remitente pueda
@@ -1942,7 +1952,7 @@ async function guardarEnvio(){
  if(!benId)return toast('Escriba el nombre o número del beneficiario y seleccione la sugerencia.','warn');
  if(!isAdmin()&&remId!==currentUser.id)return toast('Un usuario solo puede registrar sus propios envíos.','warn');
  const c=calcEnvio(amount,type);if(!c.valid||isOfficialHtiCashRoute(type)&&officialHtiCashFee(amount,type)===null)return toast(isOfficialHtiCashRoute(type)?'Para MonCash/NatCash el monto debe estar entre RD$50 y RD$36,000 según la tabla oficial.':'Ingrese un monto válido.','warn');
- if(!await guardBalance(amount))return;
+ 
  if(!beginFormSubmit('envioModal'))return;
  const ben=state.beneficiaries[benId],rem=userById(remId),remName=personName(rem),remPhone=personPhone(rem),benName=personName(ben),benPhone=personPhone(ben);
  const id=await createTransaction('envios',{type,route:type,remitenteId:remId,remitente:remName,remitenteNombre:remName,remitentePhone:remPhone,remitenteDoc:rem.doc||rem.document||'',beneficiarioId:benId,beneficiario:benName,beneficiarioNombre:benName,beneficiarioPhone:benPhone,net:c.net,commission:c.commission,destination:c.total},amount);
@@ -2042,25 +2052,25 @@ async function guardarDeposito(){
 async function guardarRecarga(){
  const _modal=document.getElementById('recargaModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
- let amount=Number(document.getElementById('rec-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;if(!beginFormSubmit('recargaModal'))return;
+ let amount=Number(document.getElementById('rec-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!beginFormSubmit('recargaModal'))return;
  const id=await createTransaction('recargas',{company:document.getElementById('rec-comp').value,phone:document.getElementById('rec-num').value},amount);if(!id)return;toast('Recarga guardada y notificada.')
 }
 async function guardarPaquetico(){
  const _modal=document.getElementById('paquetikoModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
- const amount=Number(document.getElementById('pkt-monto').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;if(!beginFormSubmit('paquetikoModal'))return;
+ const amount=Number(document.getElementById('pkt-monto').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!beginFormSubmit('paquetikoModal'))return;
  const id=await createTransaction('paqueticos',{company:document.getElementById('pkt-comp').value,phone:document.getElementById('pkt-num').value,plan:document.getElementById('pkt-plan').value},amount);if(!id)return;toast('Paquetico guardado y notificado.');
 }
 async function guardarPago(){
  const _modal=document.getElementById('pagoModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
- let amount=Number(document.getElementById('pag-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;if(!beginFormSubmit('pagoModal'))return;
+ let amount=Number(document.getElementById('pag-monto').value);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!beginFormSubmit('pagoModal'))return;
  const id=await createTransaction('pagos',{company:document.getElementById('pag-empresa').value,contract:document.getElementById('pag-contrato').value,concepto:document.getElementById('pag-concepto')?.value.trim()||''},amount);if(!id)return;toast('Pago guardado y notificado.')
 }
 async function guardarPaquete(){
  const _modal=document.getElementById('paqueteModal');if(_modal?.dataset.submitting==='1')return;
  if(!canTransact())return toast('Su cuenta no tiene permiso para realizar operaciones.','error');
- const amount=Number(document.getElementById('paq-costo').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!await guardBalance(amount))return;if(!beginFormSubmit('paqueteModal'))return;
+ const amount=Number(document.getElementById('paq-costo').value||0);if(!amount||amount<=0)return toast('Monto inválido.','warn');if(!beginFormSubmit('paqueteModal'))return;
  const id=await createTransaction('paquetes',{type:document.getElementById('paq-tipo').value,weight:document.getElementById('paq-peso').value,description:document.getElementById('paq-desc').value,cost:amount},amount);if(!id)return;toast('Paquete guardado y notificado.');
 }
 function calculateCommissionAvailable(userId){
@@ -2287,6 +2297,29 @@ async function refundTransactionReservation(userId,transactionId,amount,creditUs
   if(!tx.committed)return false;state.users[userId]=tx.snapshot.val();if(currentUser?.id===userId)currentUser=state.users[userId];if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);return true;
  }catch(e){console.warn('Devolución idempotente:',e);return false}
 }
+async function debitTransactionBalance(userId,transactionId,amount,creditUsed){
+  if(!isAdmin()||!firebaseReady||!firebase.auth().currentUser)return false;
+  const n=Number(amount||0),used=Math.max(0,Number(creditUsed||0)),needed=Math.max(0,n-used);
+  if(n<=0)return true;
+  const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
+  try{
+    const tx=await ref.transaction(u=>{
+      if(!u||u.role!=='Remitente')return undefined;
+      const applied={...(u.transactionBalanceDebits||{})};
+      if(applied[transactionId]!==undefined)return u;
+      const bal=Number(u.balance||0),out=Math.max(0,Number(u.creditOutstanding||0));
+      if(bal<needed||out<used)return undefined;
+      return {...u,balance:bal-needed,creditOutstanding:Math.max(0,out-used),
+        transactionBalanceDebits:{...applied,[transactionId]:{id:transactionId,balanceDebited:needed,creditUsed:used,debitAt:now()}}};
+    });
+    if(!tx.committed)return false;
+    state.users[userId]=tx.snapshot.val();
+    if(currentUser?.id===userId)currentUser=state.users[userId];
+    if(lastSyncedState?.users?.[userId])lastSyncedState.users[userId]=cloneState(state.users[userId]);
+    localSave();
+    return true;
+  }catch(e){console.warn('Débito de operación:',e);return false}
+}
 async function setTransactionStatus(collection,id,status){
  if(!firebaseReady||!firebase.auth().currentUser)return toast('Firebase no está conectado. La operación financiera no se puede procesar offline.','error');
  if(!isAdmin())return;
@@ -2296,6 +2329,10 @@ async function setTransactionStatus(collection,id,status){
  if(status!=='Aprobado'){reviewReason=prompt('Escriba el motivo obligatorio para '+status+':',r.reviewReason||'')?.trim()||'';if(!reviewReason)return toast('Debe escribir un motivo.','warn')}
  const u=state.users?.[r.userId];if(!u)return toast('No se encontró el remitente.','error');
  if(status==='Aprobado'){
+   if(!r.balanceDebited){
+     if(!await debitTransactionBalance(u.id,r.id,r.amount,r.creditUsed))return toast('No hay balance/crédito suficiente o Firebase no confirmó el débito. La operación seguirá pendiente.','error');
+     r.balanceDebited=true;r.balanceSettledAt=now();state[collection][id]=r;
+   }
    const commission=Number(r.commission??(Number(r.amount||0)*commissionRateFor(collection,r))),userShare=commission*0.50,adminShare=commission*0.50;
    if(userShare>0&&!await applyTransactionCommissionShare(u.id,r.id,userShare))return toast('No se pudo completar la comisión del Remitente. La operación seguirá pendiente para reintento.','error');
    if(adminShare>0&&!await applyTransactionCommissionShare('admin',r.id,adminShare))return toast('No se pudo completar la comisión de Administración. La operación seguirá pendiente para reintento.','error');
