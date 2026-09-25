@@ -10,11 +10,11 @@
  <text x="510" y="500" font-size="190" fill="url(#blue)">WAYO</text>
  <text x="235" y="635" font-size="115" fill="#111827">EXPRESS</text>
 </g>
-<path d="M390 360 C520 150 850 120 900 260 C930 345 790 335 670 315" fill="none" stroke="url(#blue)" stroke-width="34" stroke-linecap="round"/>
-<path d="M670 560 C570 750 300 790 260 675 C230 590 340 595 440 615" fill="none" stroke="url(#orange)" stroke-width="34" stroke-linecap="round"/>
+<path d="M390 360 C500 160 650 145 735 245 C765 285 735 305 690 310" fill="none" stroke="url(#blue)" stroke-width="34" stroke-linecap="round"/>
+<path d="M700 560 C585 750 350 785 275 680 C245 610 350 595 440 615" fill="none" stroke="url(#orange)" stroke-width="34" stroke-linecap="round"/>
 <line x1="1030" y1="230" x2="1030" y2="730" stroke="#123b78" stroke-width="5"/>
 <g font-family="Arial,Helvetica,sans-serif" font-weight="800">
- <circle cx="1100" cy="315" r="55" fill="#1675d1"/><text x="1180" y="300" font-size="38" fill="#123b78">ENVÍOS DE</text><text x="1180" y="350" font-size="50" fill="#123b78">DINERO</text>
- <circle cx="1100" cy="490" r="55" fill="#f27a00"/><text x="1180" y="475" font-size="34" fill="#123b78">RECEPCIÓN Y ENVÍO</text><text x="1180" y="525" font-size="44" fill="#f27a00">DE PAQUETES</text>
- <circle cx="1100" cy="665" r="55" fill="#21a52a"/><text x="1180" y="650" font-size="34" fill="#123b78">RECARGAS Y</text><text x="1180" y="700" font-size="40" fill="#198c25">PAGOS DE SERVICIOS</text>
+ <circle cx="1100" cy="315" r="55" fill="#1675d1"/><text x="1160" y="300" font-size="36" fill="#123b78">ENVÍOS DE</text><text x="1160" y="350" font-size="47" fill="#123b78">DINERO</text>
+ <circle cx="1100" cy="490" r="55" fill="#f27a00"/><text x="1160" y="475" font-size="31" fill="#123b78">RECEPCIÓN Y ENVÍO</text><text x="1160" y="525" font-size="41" fill="#f27a00">DE PAQUETES</text>
+ <circle cx="1100" cy="665" r="55" fill="#21a52a"/><text x="1160" y="650" font-size="31" fill="#123b78">RECARGAS Y</text><text x="1160" y="700" font-size="37" fill="#198c25">PAGOS DE SERVICIOS</text>
 </g></svg>
