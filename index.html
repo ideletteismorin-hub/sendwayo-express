@@ -2813,8 +2813,11 @@ function renderGananciasDia(){
      if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
      if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
-     const day=commissionDateKey(r.reviewedAt||r.approvedAt||r.balanceSettledAt||r.processedAt||r.createdAt||r.date||r.updatedAt||r.timestamp);
-     if(day!==today)continue;
+     // Una operación de hoy debe aparecer si cualquiera de sus marcas de fecha corresponde a hoy.
+     // Esto evita que una fecha posterior de aprobación/procesamiento o una fecha ausente oculte la operación.
+     const dateFields=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp];
+     const isToday=dateFields.some(v=>commissionDateKey(v)===today);
+     if(!isToday)continue;
 
      // La operación cuenta aunque su comisión sea 0; la ganancia muestra la comisión realmente registrada.
      counts[col]++;
@@ -3705,8 +3708,11 @@ function swCommission(r,admin,uid){
   return stored>0?stored:Number((gross*.50).toFixed(2));
 }
 function swRecordDay(r){
-  for(const k of ['reviewedAt','approvedAt','balanceSettledAt','createdAt','updatedAt','date']){
-    const d=swDay(r&&r[k]);if(d)return d;
+  const keys=['reviewedAt','approvedAt','balanceSettledAt','processedAt','createdAt','updatedAt','date','timestamp'];
+  const today=swToday();
+  for(const k of keys){
+    const d=swDay(r&&r[k]);
+    if(d===today)return d;
   }
   return '';
 }
