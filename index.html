@@ -2805,16 +2805,18 @@ function renderGananciasDia(){
    }
    for(const [id,r] of records){
      if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
-     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt,r.timestamp].map(commissionDateKey).filter(Boolean);
-     if(!dates.includes(today))continue;
+     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt,r.timestamp,r.processedAt,r.fecha,r.fechaAprobacion,r.approvalDate].map(commissionDateKey).filter(Boolean);
+     const idPart=String(r.id||id).split('_')[1],idTime=idPart?parseInt(idPart,36):0;
+     const idToday=Number.isFinite(idTime)&&idTime>100000000000&&commissionDateKey(idTime)===today;
+     if(!dates.includes(today)&&!idToday)continue;
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
      if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
      const key=categoryKey(col,r);if(!buckets[key])buckets[key]={label:categoryLabel(key),operations:0,amount:0,gain:0};
-     const b=buckets[key],amount=Math.max(0,Number(r.amount??r.monto??r.value??0));
-     let grossCommission=Number(r.commissionTotal??r.commission??r.commissionAmount);
+     const b=buckets[key],amount=Math.max(0,Number(r.amount??r.monto??r.value??r.importe??r.valor??r.totalAmount??0));
+     let grossCommission=Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee);
      if(!Number.isFinite(grossCommission)){const rate=Number(commissionRateFor(col,{...r,amount}));grossCommission=Number.isFinite(rate)?amount*rate:0}
      let gain=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(gain))gain=grossCommission*0.50;
+     if(!Number.isFinite(gain))gain=Number(r.commissionShare??r.ganancia??r.gain??(grossCommission*0.50));
      if(!Number.isFinite(gain)||gain<0)gain=0;
      b.operations++;b.amount+=amount;b.gain+=gain;
    }
