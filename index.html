@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SENDWAYO EXPRESS - Empresa Integral de Servicios y Envíos</title>
-<link rel="icon" href="assets/sendwayo-oficial-logo.svg">
+<link rel="icon" href="assets/sendwayo-logo-real.jpg?v=20260925">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -272,7 +272,7 @@ header{
   bottom:24px;
   width:min(330px,30vw);
   height:118px;
-  background-image:url("assets/sendwayo-oficial-logo.svg");
+  background-image:url("assets/sendwayo-logo-real.jpg?v=20260925");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
@@ -289,7 +289,7 @@ header{
   left:50%;
   top:12%;
   transform:translateX(-50%);
-  background-image:url("assets/sendwayo-oficial-logo.svg");
+  background-image:url("assets/sendwayo-logo-real.jpg?v=20260925");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
@@ -330,7 +330,7 @@ header{
 <div id="welcome-screen">
   <div class="welcome-card">
     <div class="welcome-grid">
-      <a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-oficial-logo.svg" class="brand-logo" alt="SENDWAYO EXPRESS"></a>
+      <a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-logo-real.jpg?v=20260925" class="brand-logo" alt="SENDWAYO EXPRESS"></a>
       <div>
         <h1>SENDWAYO EXPRESS</h1>
         <div class="subtitle">Servicio de calidad que conecta contigo con confianza y seguridad</div>
@@ -363,7 +363,7 @@ header{
 
 <div id="login-screen" class="hidden">
   <div class="login-card" style="width:min(410px,94vw)">
-    <div style="text-align:center"><img src="assets/sendwayo-oficial-logo.svg" style="width:115px;height:115px" alt=""></div>
+    <div style="text-align:center"><img src="assets/sendwayo-logo-real.jpg?v=20260925" style="width:115px;height:115px" alt=""></div>
     <h2>SENDWAYO EXPRESS</h2>
     <p class="muted" style="text-align:center;margin:7px 0 20px">Ingrese sus credenciales de acceso</p>
     <div class="form-group"><label>Usuario o correo electrónico</label><input id="login-user" type="text" class="form-control" autocomplete="username" placeholder="nombre.apellido"></div>
@@ -375,7 +375,7 @@ header{
 
 <aside id="app-sidebar" class="hidden">
   <div>
-    <div class="sidebar-brand"><div class="sidebar-brand-main"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-oficial-logo.svg" alt="SENDWAYO EXPRESS"></a><div class="sidebar-brand-services"><span>ENVÍOS DE DINERO</span><span>RECEPCIÓN Y ENVÍO DE PAQUETES</span><span>RECARGAS Y PAGOS DE SERVICIOS</span></div></div><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
+    <div class="sidebar-brand"><div class="sidebar-brand-main"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-logo-real.jpg?v=20260925" alt="SENDWAYO EXPRESS"></a><div class="sidebar-brand-services"><span>ENVÍOS DE DINERO</span><span>RECEPCIÓN Y ENVÍO DE PAQUETES</span><span>RECARGAS Y PAGOS DE SERVICIOS</span></div></div><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
     <ul class="sidebar-menu" id="sidebar-menu">
       <li><a href="#" onclick="switchView('dashboard')"><i class="fa-solid fa-chart-pie"></i> Tablero Principal</a></li>
       <li><a href="#" onclick="switchView('informes')"><i class="fa-solid fa-file-lines"></i> Informes del Día</a></li><li><a href="#" onclick="switchView('credito')"><i class="fa-solid fa-hand-holding-dollar"></i> Crédito</a></li><li class="admin-only"><a href="#" onclick="switchView('contabilidad')"><i class="fa-solid fa-scale-balanced"></i> Contabilidad Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('bonos')"><i class="fa-solid fa-gift"></i> Bonos de Administración</a></li><li class="admin-only" data-sw-static-capital-menu><a href="#" onclick="switchView('capital');return false"><i class="fa-solid fa-coins"></i> Capital</a></li>
@@ -405,7 +405,7 @@ header{
   <div style="display:flex;align-items:center;gap:10px"><button class="mobile-toggle-btn" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></button><div class="header-title" id="page-title">Tablero Principal</div><div class="header-date-box"><span>Fecha y hora</span><b id="header-datetime"></b></div><div class="header-balance-box"><span>Balance disponible</span><b id="header-balance">RD$ 0.00</b></div><button type="button" class="refresh-btn" onclick="refreshFromFirebaseNow()" title="Actualizar directamente desde Firebase"><i class="fa-solid fa-rotate"></i></button><select id="language-selector" class="language-selector" onchange="setLanguage(this.value)" title="Idioma"><option value="es">Español</option><option value="fr">Français</option><option value="en">English</option><option value="ht">Kreyòl ayisyen</option></select><span class="session-pill" id="session-pill">Restante: <b id="session-countdown">30:00</b> · En sesión: <b id="session-elapsed">00:00</b></span></div>
   <div class="header-right">
     <div class="notification-bell" onclick="toggleNotifications()"><i class="fa-solid fa-bell"></i><span class="notification-badge" id="notif-count">0</span></div>
-    <div><img id="header-avatar" src="assets/sendwayo-oficial-logo.svg" style="border-radius:50%;width:36px;height:36px;object-fit:cover"></div>
+    <div><img id="header-avatar" src="assets/sendwayo-logo-real.jpg?v=20260925" style="border-radius:50%;width:36px;height:36px;object-fit:cover"></div>
     <span id="header-username" style="font-weight:700"></span>
   </div>
 </header>
@@ -600,7 +600,7 @@ header{
   </section>
 
   <section id="view-perfil" class="view-section">
-    <div class="card" style="max-width:650px;margin:auto"><h3>Mi Perfil de Usuario</h3><div style="text-align:center;margin:15px"><img id="profile-preview" src="assets/sendwayo-oficial-logo.svg" style="width:95px;height:95px;border-radius:50%;object-fit:cover;border:2px solid var(--primary)"></div>
+    <div class="card" style="max-width:650px;margin:auto"><h3>Mi Perfil de Usuario</h3><div style="text-align:center;margin:15px"><img id="profile-preview" src="assets/sendwayo-logo-real.jpg?v=20260925" style="width:95px;height:95px;border-radius:50%;object-fit:cover;border:2px solid var(--primary)"></div>
     <div class="form-group"><label>Foto de perfil</label><input id="profile-avatar" type="file" accept="image/*" class="form-control" onchange="setProfileAvatar(this)"></div><div class="form-group"><label>ID</label><input id="profile-staff-id" class="form-control" readonly></div><div class="form-group"><label>Nombre y Apellido</label><input id="profile-name" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="profile-username" class="form-control" autocomplete="username" readonly><div class="field-hint">Se genera automáticamente con nombre y apellido, sin espacios.</div></div><div class="form-group"><label>WhatsApp</label><input id="profile-phone" class="form-control" readonly><div class="field-hint">El número lo administra el Administrador.</div></div><div class="form-group"><label>Nueva Contraseña</label><input id="profile-pass" type="password" class="form-control" autocomplete="new-password"></div><div class="field-hint">El ID no puede modificarse.</div><button class="btn btn-primary" onclick="saveProfile()">Guardar Cambios</button></div>
   </section>
 </div></div>
@@ -701,7 +701,7 @@ window.sendwayoLogin=function(){
 </script>
 <script>
 const DB_PATH='sendwayo_express_v2';
-const LOGO_DATA='assets/sendwayo-oficial-logo.svg';
+const LOGO_DATA='assets/sendwayo-logo-real.jpg?v=20260925';
 const firebaseConfig={
  apiKey:"AIzaSyDvnBbSRqtGsBlIiX_hJXrtj2Drl_nlDT0",
  authDomain:"sendwayo-express.firebaseapp.com",
@@ -926,7 +926,7 @@ async function restoreSession(){
     return true;
   }catch(e){console.warn('Restaurar sesión:',e);return false}
 }
-function showAppForUser(found){document.getElementById('welcome-screen').classList.add('hidden');document.getElementById('login-screen').classList.add('hidden');document.getElementById('app-sidebar').classList.remove('hidden');document.getElementById('app-shell').classList.remove('hidden');document.getElementById('header-username').textContent=found.username;document.getElementById('sidebar-role-label').textContent=found.role.toUpperCase();document.getElementById('header-avatar').src=found.avatar||'assets/sendwayo-oficial-logo.svg';document.getElementById('profile-preview').src=found.avatar||'assets/sendwayo-oficial-logo.svg';applyRoleVisibility();renderAll()}
+function showAppForUser(found){document.getElementById('welcome-screen').classList.add('hidden');document.getElementById('login-screen').classList.add('hidden');document.getElementById('app-sidebar').classList.remove('hidden');document.getElementById('app-shell').classList.remove('hidden');document.getElementById('header-username').textContent=found.username;document.getElementById('sidebar-role-label').textContent=found.role.toUpperCase();document.getElementById('header-avatar').src=found.avatar||'assets/sendwayo-logo-real.jpg?v=20260925';document.getElementById('profile-preview').src=found.avatar||'assets/sendwayo-logo-real.jpg?v=20260925';applyRoleVisibility();renderAll()}
 function updateSessionUI(){
  let el=document.getElementById('session-countdown');if(!el)return;
  let remain=Math.max(0,SESSION_TTL-(Date.now()-lastActivity)),elapsed=Math.max(0,Date.now()-(sessionStartedAt||Date.now()));
@@ -4194,7 +4194,7 @@ window.SENDWAYO_HARDENING.exportLocalBackup=function(){
 <script id="sendwayo-emergency-stability-2026-09-25">
 (function(){
 'use strict';
-const OFFICIAL_LOGO='assets/sendwayo-oficial-logo.svg';
+const OFFICIAL_LOGO='assets/sendwayo-logo-real.jpg?v=20260925';
 const BACKGROUND_LOGO='assets/sendwayo-background-logo.svg';
 window.__sendwayoDeletedRecords=window.__sendwayoDeletedRecords||new Set();
 
@@ -4734,7 +4734,7 @@ setTimeout(capInstall,500);
 <script id="sendwayo-final-stability-2026-09-25">
 (function(){
 'use strict';
-const LOGO='assets/sendwayo-oficial-logo.svg';
+const LOGO='assets/sendwayo-logo-real.jpg?v=20260925';
 window.__sendwayoDeletedRecords=window.__sendwayoDeletedRecords||new Set();
 function logo(){
   try{
@@ -4797,7 +4797,7 @@ header .mobile-brand-strip b{font-size:.78rem;color:#0f2c59;letter-spacing:.2px}
 <script id="sendwayo-final-fix-2026-09-25">
 (function(){
 'use strict';
-function ensureMobileBrand(){if(window.innerWidth>800)return;const h=document.querySelector('header');if(!h||h.querySelector('.mobile-brand-strip'))return;const d=document.createElement('div');d.className='mobile-brand-strip';d.innerHTML='<img src="assets/sendwayo-oficial-logo.svg" alt="SENDWAYO EXPRESS"><b>SENDWAYO EXPRESS</b>';h.appendChild(d)}
+function ensureMobileBrand(){if(window.innerWidth>800)return;const h=document.querySelector('header');if(!h||h.querySelector('.mobile-brand-strip'))return;const d=document.createElement('div');d.className='mobile-brand-strip';d.innerHTML='<img src="assets/sendwayo-logo-real.jpg?v=20260925" alt="SENDWAYO EXPRESS"><b>SENDWAYO EXPRESS</b>';h.appendChild(d)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureMobileBrand,{once:true});else ensureMobileBrand();
 window.addEventListener('resize',ensureMobileBrand);
 window.sendwayoAdminRole=function(){const u=window.currentUser||null;return !!u&&(String(u.role||'').trim().toLowerCase()==='administrador'||u.id==='admin')};
