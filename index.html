@@ -222,6 +222,55 @@ header{
   from{transform:scale(.96);opacity:.72}
   to{transform:scale(1.06);opacity:1}
 }
+
+#app-shell:after{
+  content:"";
+  position:fixed;
+  left:calc(280px + 18px);
+  bottom:24px;
+  width:min(330px,30vw);
+  height:118px;
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTAwIDUwMCI+CjxkZWZzPgogPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHgyPSIxIj48c3RvcCBzdG9wLWNvbG9yPSIjMDYxYTNhIi8+PHN0b3Agb2Zmc2V0PSIuNTgiIHN0b3AtY29sb3I9IiMwZDNjN2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNjI0NTEiLz48L2xpbmVhckdyYWRpZW50PgogPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkIiB4MT0iMCIgeDI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNmZmY1OGEiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZDQzYiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2U2OWIwMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8bGluZWFyR3JhZGllbnQgaWQ9ImJsdWUiIHgxPSIwIiB4Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU0ZTRmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA4N2NmMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI4IiByZXN1bHQ9ImIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+CjwvZGVmcz4KPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMTQ3NiIgaGVpZ2h0PSI0NzYiIHJ4PSI5MCIgZmlsbD0idXJsKCNiZykiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIxMCIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjE3NSIgZmlsbD0iIzA5MmM2MSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjEyIiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPHBhdGggZD0iTTgwIDM4NSBMMjIwIDc4IEwzNjAgMzg1IFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIyNSIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjgwIiBmaWxsPSJ1cmwoI2JsdWUpIiBzdHJva2U9IiNmZmY1OGEiIHN0cm9rZS13aWR0aD0iNyIvPgo8cGF0aCBkPSJNMTU1IDI1NWMzNS0yOCA5NS0yOCAxMzAgME0xNjUgMzAwYzMyIDIyIDc4IDIyIDExMCAwTTIyMCAxNzBjLTIyIDMwLTIyIDEyMCAwIDE2ME0yMjAgMTcwYzIyIDMwIDIyIDEyMCAwIDE2MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTlmYmZmIiBzdHJva2Utd2lkdGg9IjgiIG9wYWNpdHk9Ii45NSIvPgo8cmVjdCB4PSIxNzUiIHk9IjMwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjQyIiByeD0iOCIgZmlsbD0iIzEyM2I3OCIgc3Ryb2tlPSIjZmZmNThhIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIyMjAiIHk9IjMzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiNmZmYiPiQ8L3RleHQ+CjwhLS0gbW9uZXkgaWNvbiAtLT4gPGNpcmNsZSBjeD0iMzY1IiBjeT0iMTM1IiByPSIzOCIgZmlsbD0iIzE3Yjg2YSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIzNjUiIHk9IjE0OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIj4kPC90ZXh0Pgo8IS0tIHBhY2thZ2UgaWNvbiAtLT4gPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzQwIDM1MCkiPjxwYXRoIGQ9Ik0wIDIyIDU1IDAgMTEwIDIydjcwTDU1IDExNSAwIDkyWiIgZmlsbD0iI2Y1OWUwYiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMCAyMiA1NSA0NyAxMTAgMjJNNTUgNDd2NjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1IDE0aDQwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNSIvPjwvZz4KPHRleHQgeD0iNDMwIiB5PSIyMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTYiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSItNCIgZmlsbD0idXJsKCNnb2xkKSI+U0VORFdBWU88L3RleHQ+CjxyZWN0IHg9IjQzMCIgeT0iMjU1IiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjEwMCIgcng9IjUwIiBmaWxsPSIjZmZmIi8+Cjx0ZXh0IHg9IjcxMCIgeT0iMzI2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNzIiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSIxMCIgZmlsbD0iIzEyM2I3OCI+RVhQUkVTUzwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjEwIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNkZmY3ZmYiPkRJTkVSTyDigKIgUEFRVUVURVMg4oCiIENPTkVYScOTTjwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjUyIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY1OGEiPlNFUlZJQ0lPIOKAoiBDT05GSUFOWkEg4oCiIFNFR1VSSURBRDwvdGV4dD4KPHBhdGggZD0iTTEwMjAgMzAwaDM5MCIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCB4PSIxMDI1IiB5PSIzNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+wqFUdSBkaW5lcm8geSB0dXMgZW52w61vcyBlbiBidWVuYXMgbWFub3MhPC90ZXh0Pgo8L3N2Zz4=");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  opacity:.075;
+  filter:saturate(.85) blur(.05px);
+  pointer-events:none;
+  z-index:0;
+}
+#login-screen:after,#welcome-screen:after{
+  content:"";
+  position:absolute;
+  width:min(560px,72vw);
+  height:180px;
+  left:50%;
+  top:12%;
+  transform:translateX(-50%);
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTAwIDUwMCI+CjxkZWZzPgogPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHgyPSIxIj48c3RvcCBzdG9wLWNvbG9yPSIjMDYxYTNhIi8+PHN0b3Agb2Zmc2V0PSIuNTgiIHN0b3AtY29sb3I9IiMwZDNjN2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNjI0NTEiLz48L2xpbmVhckdyYWRpZW50PgogPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkIiB4MT0iMCIgeDI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiNmZmY1OGEiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZDQzYiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2U2OWIwMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8bGluZWFyR3JhZGllbnQgaWQ9ImJsdWUiIHgxPSIwIiB4Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU0ZTRmZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA4N2NmMCIvPjwvbGluZWFyR3JhZGllbnQ+CiA8ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI4IiByZXN1bHQ9ImIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+CjwvZGVmcz4KPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMTQ3NiIgaGVpZ2h0PSI0NzYiIHJ4PSI5MCIgZmlsbD0idXJsKCNiZykiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIxMCIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjE3NSIgZmlsbD0iIzA5MmM2MSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjEyIiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPHBhdGggZD0iTTgwIDM4NSBMMjIwIDc4IEwzNjAgMzg1IFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnb2xkKSIgc3Ryb2tlLXdpZHRoPSIyNSIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSIyNTAiIHI9IjgwIiBmaWxsPSJ1cmwoI2JsdWUpIiBzdHJva2U9IiNmZmY1OGEiIHN0cm9rZS13aWR0aD0iNyIvPgo8cGF0aCBkPSJNMTU1IDI1NWMzNS0yOCA5NS0yOCAxMzAgME0xNjUgMzAwYzMyIDIyIDc4IDIyIDExMCAwTTIyMCAxNzBjLTIyIDMwLTIyIDEyMCAwIDE2ME0yMjAgMTcwYzIyIDMwIDIyIDEyMCAwIDE2MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTlmYmZmIiBzdHJva2Utd2lkdGg9IjgiIG9wYWNpdHk9Ii45NSIvPgo8cmVjdCB4PSIxNzUiIHk9IjMwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjQyIiByeD0iOCIgZmlsbD0iIzEyM2I3OCIgc3Ryb2tlPSIjZmZmNThhIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIyMjAiIHk9IjMzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiNmZmYiPiQ8L3RleHQ+CjwhLS0gbW9uZXkgaWNvbiAtLT4gPGNpcmNsZSBjeD0iMzY1IiBjeT0iMTM1IiByPSIzOCIgZmlsbD0iIzE3Yjg2YSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIzNjUiIHk9IjE0OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmIj4kPC90ZXh0Pgo8IS0tIHBhY2thZ2UgaWNvbiAtLT4gPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzQwIDM1MCkiPjxwYXRoIGQ9Ik0wIDIyIDU1IDAgMTEwIDIydjcwTDU1IDExNSAwIDkyWiIgZmlsbD0iI2Y1OWUwYiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMCAyMiA1NSA0NyAxMTAgMjJNNTUgNDd2NjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1IDE0aDQwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNSIvPjwvZz4KPHRleHQgeD0iNDMwIiB5PSIyMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTYiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSItNCIgZmlsbD0idXJsKCNnb2xkKSI+U0VORFdBWU88L3RleHQ+CjxyZWN0IHg9IjQzMCIgeT0iMjU1IiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjEwMCIgcng9IjUwIiBmaWxsPSIjZmZmIi8+Cjx0ZXh0IHg9IjcxMCIgeT0iMzI2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNzIiIGZvbnQtd2VpZ2h0PSI5MDAiIGxldHRlci1zcGFjaW5nPSIxMCIgZmlsbD0iIzEyM2I3OCI+RVhQUkVTUzwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjEwIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNkZmY3ZmYiPkRJTkVSTyDigKIgUEFRVUVURVMg4oCiIENPTkVYScOTTjwvdGV4dD4KPHRleHQgeD0iMTAyNSIgeT0iMjUyIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjUiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY1OGEiPlNFUlZJQ0lPIOKAoiBDT05GSUFOWkEg4oCiIFNFR1VSSURBRDwvdGV4dD4KPHBhdGggZD0iTTEwMjAgMzAwaDM5MCIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCB4PSIxMDI1IiB5PSIzNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZiI+wqFUdSBkaW5lcm8geSB0dXMgZW52w61vcyBlbiBidWVuYXMgbWFub3MhPC90ZXh0Pgo8L3N2Zz4=");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  opacity:.10;
+  pointer-events:none;
+}
+.content-body:after{
+  content:"SENDWAYO EXPRESS";
+  position:fixed;
+  right:32px;
+  bottom:20px;
+  font-size:clamp(18px,2.2vw,34px);
+  font-weight:900;
+  letter-spacing:.18em;
+  color:#0f2c59;
+  opacity:.045;
+  pointer-events:none;
+  z-index:0;
+}
+@media(max-width:800px){
+  #app-shell:after{left:14px;bottom:15px;width:220px;height:85px;opacity:.055}
+  .content-body:after{right:14px;bottom:12px;font-size:17px;opacity:.04}
+}
 </style>
 </head>
 <body>
@@ -3110,19 +3159,46 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(document.activeElem
 }
 async function deleteRecord(collection,id){
  const r=state[collection]?.[id];if(!r)return toast('No se encontró el registro.','error');
- const admin=isAdmin(),authUser=firebase.auth().currentUser,owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===authUser?.uid;
+ const admin=isAdmin(),authUser=firebase.auth().currentUser;
+ const owner=r.userId===currentUser?.id||r.createdUserId===currentUser?.id||r.requesterUserId===currentUser?.id||r.requesterAuthUid===authUser?.uid;
  const normalizedStatus=String(r.status||'').trim().toLowerCase();
  if(!admin&&(!owner||!['rechazado','no coincide'].includes(normalizedStatus)))return toast('No tiene permiso para borrar este registro.','warn');
- const financial=['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','credits'].includes(collection);
- if(normalizedStatus==='aprobado'||(financial&&normalizedStatus==='pagado'))return toast('Una operación financiera ya aprobada/pagada no se puede borrar. Use el proceso contable correspondiente.','warn');
+ if(!admin&&normalizedStatus==='aprobado')return toast('Una operación aprobada no puede ser borrada por el Remitente.','warn');
  if(!confirm('¿Borrar definitivamente el registro '+String(id)+'?'))return;
  if(!firebaseReady||!authUser)return toast('Firebase no está conectado. No se borrará ningún registro.','error');
  try{
-   const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);await ref.remove();
-   const check=await ref.once('value');if(check.exists())return toast('Firebase no confirmó el borrado. El registro se conserva por seguridad.','error');
-   if(state[collection])delete state[collection][id];if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
-   localSave();renderAll();toast('Registro borrado definitivamente.','success');
- }catch(e){console.warn('deleteRecord:',e);toast('No se pudo borrar el registro en Firebase.','error')}
+   const root=firebase.database().ref(DB_PATH),recordRef=root.child(collection).child(id),ledgerRef=root.child('ledger').child(collection).child(id);
+   const auditId=uid('del'),audit={
+     id:auditId,
+     user:currentUser?.username||'public',
+     action:'Borrar '+collection,
+     detail:String(id),
+     targetUserId:r.userId||null,
+     recordStatus:String(r.status||''),
+     amount:Number(r.amount||0),
+     createdByAuthUid:authUser.uid,
+     createdAt:now()
+   };
+   await root.update({
+     [collection+'/'+id]:null,
+     ['ledger/'+collection+'/'+id]:null,
+     ['audit/'+auditId]:audit
+   });
+   const [recordCheck,ledgerCheck]=await Promise.all([recordRef.once('value'),ledgerRef.once('value')]);
+   if(recordCheck.exists()||ledgerCheck.exists()){
+     return toast('Firebase no confirmó el borrado completo. El registro se conserva por seguridad.','error');
+   }
+   if(state[collection])delete state[collection][id];
+   if(lastSyncedState?.[collection])delete lastSyncedState[collection][id];
+   if(state.ledger?.[collection])delete state.ledger[collection][id];
+   if(lastSyncedState?.ledger?.[collection])delete lastSyncedState.ledger[collection][id];
+   state.audit=state.audit||{};state.audit[auditId]=audit;
+   localSave();renderAll();
+   toast('Registro borrado definitivamente de Firebase.','success');
+ }catch(e){
+   console.warn('deleteRecord:',e);
+   toast('No se pudo borrar el registro en Firebase.','error');
+ }
 }
 const _deleteRecordOriginal=deleteRecord;
  deleteRecord=async function(collection,id){
