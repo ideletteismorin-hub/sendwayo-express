@@ -163,7 +163,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
 
 <aside id="app-sidebar" class="hidden">
   <div>
-    <div class="sidebar-brand"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-logo-real.jpg?v=20260925"><span>SENDWAYO EXPRESS</span><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
+    <div class="sidebar-brand"><div class="sidebar-business-name">SENDWAYO<br>EXPRESS</div><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-logo-real.jpg?v=20260925"><span>SENDWAYO EXPRESS</span><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
     <ul class="sidebar-menu" id="sidebar-menu">
       <li><a href="#" onclick="switchView('dashboard')"><i class="fa-solid fa-chart-pie"></i> Tablero Principal</a></li>
       <li><a href="#" onclick="switchView('informes')"><i class="fa-solid fa-file-lines"></i> Informes del Día</a></li><li><a href="#" onclick="switchView('credito')"><i class="fa-solid fa-hand-holding-dollar"></i> Crédito</a></li><li class="admin-only"><a href="#" onclick="switchView('contabilidad')"><i class="fa-solid fa-scale-balanced"></i> Contabilidad Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('conciliacion');return false"><i class="fa-solid fa-arrows-rotate"></i> Conciliación Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('bonos')"><i class="fa-solid fa-gift"></i> Bonos de Administración</a></li><li class="admin-only" data-sw-static-capital-menu><a href="#" onclick="switchView('capital');return false"><i class="fa-solid fa-coins"></i> Capital</a></li>
@@ -4282,4 +4282,12 @@ setTimeout(swScheduleFinal,500);
   window.addEventListener('resize',function(){if(window.innerWidth>800)closeMenuSafe()},{passive:true});
 })();
 </script>
+
+<style id="sendwayo-brand-name-final-fix">
+.sidebar-brand{justify-content:flex-start!important;gap:10px!important;overflow:hidden!important}
+.sidebar-business-name{color:#f3b51b;font-weight:900;font-size:.78rem;line-height:1.05;letter-spacing:.5px;white-space:nowrap;flex:0 0 auto;text-align:right}
+.sidebar-brand>a{display:block;flex:1 1 auto;min-width:0}
+.sidebar-brand>a img{width:100%!important;max-width:190px!important;object-fit:contain!important;object-position:center!important}
+@media(max-width:800px){.sidebar-business-name{font-size:.68rem;letter-spacing:.3px}.sidebar-brand{padding-left:10px!important;padding-right:8px!important;gap:6px!important}.sidebar-brand>a img{max-width:165px!important;height:62px!important}}
+</style>
 </html>
