@@ -81,7 +81,29 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
 .qr-link{word-break:break-all;font-size:.76rem;color:#1d4ed8}
 @media(max-width:800px){aside{position:fixed;left:-280px;height:100%;transition:.25s;box-shadow:8px 0 20px rgba(0,0,0,.25)}aside.active{left:0}.mobile-toggle-btn{display:block}.form-grid{grid-template-columns:1fr}.welcome-grid{grid-template-columns:1fr}.brand-logo{width:145px;height:145px}}
 
-/* V3 visual/UX improvements */
+
+/* SENDWAYO — menú móvil estable y logo superior sin deformación */
+.sidebar-brand{flex:0 0 auto;min-height:150px;padding:8px 8px;background:#071a36;border-bottom:2px solid var(--secondary);overflow:hidden}
+.sidebar-brand-main{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-width:0}
+.sidebar-brand-main>a{display:flex;align-items:center;justify-content:center;flex:0 0 118px;width:118px;height:118px;overflow:hidden}
+.sidebar-brand-main>a img{display:block;width:118px;height:118px;object-fit:cover;object-position:left center}
+.sidebar-brand-services{min-width:0;display:flex;flex-direction:column;gap:5px;line-height:1.05;font-size:.55rem;font-weight:800;color:#fff;text-align:left}
+.sidebar-brand-services span:first-child{color:#5db6ff}.sidebar-brand-services span:nth-child(2){color:#ffb13b}.sidebar-brand-services span:nth-child(3){color:#65d66b}
+@media(max-width:800px){
+  #app-sidebar{position:fixed;left:-292px;top:0;bottom:0;width:280px;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;z-index:10001;-webkit-overflow-scrolling:touch;transition:left .22s ease}
+  #app-sidebar.active{left:0}
+  #app-sidebar>div:first-child{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+  #app-sidebar .sidebar-menu{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding-bottom:18px}
+  #app-sidebar .sidebar-menu a{min-height:42px;padding:10px 17px}
+  #app-sidebar>div:last-child{flex:0 0 auto}
+  .sidebar-brand{min-height:132px;padding:7px 8px}
+  .sidebar-brand-main>a{flex-basis:105px;width:105px;height:105px}.sidebar-brand-main>a img{width:105px;height:105px}
+  .sidebar-brand-services{font-size:.51rem;gap:4px}
+  .main-container{min-width:0}
+  .sidebar-overlay{z-index:10000}
+  body.menu-open{overflow:hidden}
+}
+\n/* V3 visual/UX improvements */
 .refresh-btn{width:34px;height:34px;border-radius:50%;border:0;background:#e9f7ef;color:#16854b;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .refresh-btn:hover{transform:rotate(90deg);transition:.25s}.refresh-btn.is-refreshing{animation:sendwayoSpin .8s linear infinite;cursor:wait;opacity:.65}@keyframes sendwayoSpin{to{transform:rotate(360deg)}}.session-pill{font-size:.72rem;color:#52606d;background:#f1f5f9;border-radius:999px;padding:5px 9px;white-space:nowrap}.session-pill b{color:#0f2c59}
 .search-select-wrap{display:flex;align-items:center;gap:7px}.search-select-wrap .form-control{flex:1}.plus-btn{width:42px;height:42px;border-radius:9px;background:#1f9d55;color:#fff;border:0;font-size:1.25rem;font-weight:800;cursor:pointer;flex:0 0 auto}.plus-btn:hover{filter:brightness(1.08)}
@@ -353,7 +375,7 @@ header{
 
 <aside id="app-sidebar" class="hidden">
   <div>
-    <div class="sidebar-brand"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-oficial-logo.svg"><span>SENDWAYO EXPRESS</span><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
+    <div class="sidebar-brand"><div class="sidebar-brand-main"><a href="https://sendwayo-oficial.github.io/sendwayo-express/" aria-label="SENDWAYO EXPRESS"><img src="assets/sendwayo-oficial-logo.svg" alt="SENDWAYO EXPRESS"></a><div class="sidebar-brand-services"><span>ENVÍOS DE DINERO</span><span>RECEPCIÓN Y ENVÍO DE PAQUETES</span><span>RECARGAS Y PAGOS DE SERVICIOS</span></div></div><button type="button" class="mobile-toggle-btn" style="color:#fff" onclick="closeMobileMenu();return false;" aria-label="Cerrar menú">×</button></div>
     <ul class="sidebar-menu" id="sidebar-menu">
       <li><a href="#" onclick="switchView('dashboard')"><i class="fa-solid fa-chart-pie"></i> Tablero Principal</a></li>
       <li><a href="#" onclick="switchView('informes')"><i class="fa-solid fa-file-lines"></i> Informes del Día</a></li><li><a href="#" onclick="switchView('credito')"><i class="fa-solid fa-hand-holding-dollar"></i> Crédito</a></li><li class="admin-only"><a href="#" onclick="switchView('contabilidad')"><i class="fa-solid fa-scale-balanced"></i> Contabilidad Financiera</a></li><li class="admin-only"><a href="#" onclick="switchView('bonos')"><i class="fa-solid fa-gift"></i> Bonos de Administración</a></li><li class="admin-only" data-sw-static-capital-menu><a href="#" onclick="switchView('capital');return false"><i class="fa-solid fa-coins"></i> Capital</a></li>
@@ -1670,6 +1692,13 @@ function toggleMobileMenu(){
  const willOpen=!sidebar.classList.contains('active');
  sidebar.classList.toggle('active',willOpen);
  if(overlay)overlay.classList.toggle('active',willOpen);
+ document.body.classList.toggle('menu-open',willOpen);
+}
+function closeMobileMenu(){
+ const sidebar=document.getElementById('app-sidebar'),overlay=document.getElementById('sidebar-overlay');
+ if(sidebar)sidebar.classList.remove('active');
+ if(overlay)overlay.classList.remove('active');
+ document.body.classList.remove('menu-open');
 }
 function switchView(id){
  document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
