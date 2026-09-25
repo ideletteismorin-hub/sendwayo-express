@@ -14,7 +14,7 @@
 <path d="M670 560 C570 750 300 790 260 675 C230 590 340 595 440 615" fill="none" stroke="url(#orange)" stroke-width="34" stroke-linecap="round"/>
 <line x1="1030" y1="230" x2="1030" y2="730" stroke="#123b78" stroke-width="5"/>
 <g font-family="Arial,Helvetica,sans-serif" font-weight="800">
- <circle cx="1100" cy="315" r="55" fill="#1675d1"/><text x="1180" y="300" font-size="38" fill="#123b78">ENVÍOS DE</text><text x="1180" y="350" font-size="50" fill="#123b78">DINERO</text>
- <circle cx="1100" cy="490" r="55" fill="#f27a00"/><text x="1180" y="475" font-size="34" fill="#123b78">RECEPCIÓN Y ENVÍO</text><text x="1180" y="525" font-size="44" fill="#f27a00">DE PAQUETES</text>
- <circle cx="1100" cy="665" r="55" fill="#21a52a"/><text x="1180" y="650" font-size="34" fill="#123b78">RECARGAS Y</text><text x="1180" y="700" font-size="40" fill="#198c25">PAGOS DE SERVICIOS</text>
+ <circle cx="1100" cy="315" r="55" fill="#1675d1"/><text x="1180" y="300" font-size="42" fill="#123b78">ENVÍOS DE</text><text x="1180" y="350" font-size="54" fill="#123b78">DINERO</text>
+ <circle cx="1100" cy="490" r="55" fill="#f27a00"/><text x="1180" y="475" font-size="40" fill="#123b78">RECEPCIÓN Y ENVÍO</text><text x="1180" y="525" font-size="50" fill="#f27a00">DE PAQUETES</text>
+ <circle cx="1100" cy="665" r="55" fill="#21a52a"/><text x="1180" y="650" font-size="38" fill="#123b78">RECARGAS Y</text><text x="1180" y="700" font-size="46" fill="#198c25">PAGOS DE SERVICIOS</text>
 </g></svg>
