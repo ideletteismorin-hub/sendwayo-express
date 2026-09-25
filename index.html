@@ -95,6 +95,16 @@ header{background:#fff;padding:12px 20px;display:flex;justify-content:space-betw
   .sidebar-overlay.active{opacity:1;pointer-events:auto}
   aside{z-index:100}
 }
+
+/* GANANCIAS DEL DÍA — tarjeta profesional */
+.card-ganancias-dia{background:#ffffff;border-radius:8px;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,0.05);font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin-top:18px}
+.card-ganancias-dia h3{font-size:15px;color:#333;margin-bottom:20px;font-weight:600}
+.item-ganancia{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}
+.detalles-tipo{display:flex;flex-direction:column;align-items:flex-end}
+.titulo-label{font-size:12px;font-weight:700;color:#1a365d}
+.monto-valor{font-size:13px;font-weight:600;color:#0056b3}
+.total-general-container{display:flex;justify-content:flex-end;align-items:center;margin-top:20px;gap:10px}
+.label-total{font-size:16px;font-weight:700;color:#00b050}.valor-total{font-size:18px;font-weight:700;color:#00b050}
 </style>
 <style id="sendwayo-sidebar-scroll-fix">
 aside{height:100vh;min-height:0;overflow:hidden}
@@ -195,6 +205,11 @@ aside{height:100vh;min-height:0;overflow:hidden}
       <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión de hoy</b><h2 id="kpi-commission-today">RD$ 0.00</h2></div>
       <div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2></div>
       <div class="kpi admin-only" style="border-top-color:#d4a017"><b>Capital</b><h2 id="kpi-capital-static">RD$ 0.00</h2></div>
+    </div>
+    <div id="ganancias-dia-card" class="card-ganancias-dia">
+      <h3>Ganancias del día</h3>
+      <div id="ganancias-dia-lista"></div>
+      <div class="total-general-container"><span class="label-total">Total general:</span><span id="ganancias-dia-total" class="valor-total">RD$ 0.00</span></div>
     </div>
   </section>
 
@@ -2754,12 +2769,43 @@ async function saveAdminBalanceAdjustment(){
  try{const tx=await ref.transaction(u=>{if(!u)return undefined;const current=Number(u.balance||0),next=mode==='set'?amount:mode==='add'?current+amount:current-amount;if(next<0||!adminBalanceAllowed(u,next))return undefined;return {...u,balance:next}});if(!tx.committed)return toast(id==='admin'?'No se puede dejar el balance de Administración por debajo de su comisión contable acumulada.':'No se pudo actualizar el balance.','warn');const updated=tx.snapshot.val();state.users[id]=updated;if(currentUser?.id===id)currentUser=updated;if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);localSave();const auditId=uid('bal'),audit={id:auditId,action:'Ajuste administrativo de balance',targetUserId:id,mode,amount,processedBy:currentUser.username,createdAt:now(),balanceBefore:Number(u?.balance||0),balanceAfter:Number(updated.balance||0),commissionBefore:Number(u?.commission||0),commissionAfter:Number(updated.commission||0)};try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set(audit)}catch(_){}closeModal('adminBalanceModal');renderAll();toast('Balance actualizado directamente en Firebase.','success')}catch(e){console.warn('Ajuste administrativo:',e);toast('No se pudo actualizar el balance en Firebase.','error')}
 }
 
+function renderGananciasDia(){
+ const box=document.getElementById('ganancias-dia-lista'),totalEl=document.getElementById('ganancias-dia-total');
+ if(!box||!totalEl||!currentUser)return;
+ const today=todayDateKey(), cols=['envios','recargas','paqueticos','pagos','paquetes'];
+ const labels={envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'};
+ const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
+ const roleId=isAdmin()?'admin':currentUser.id;
+ for(const col of cols){
+   const records=new Map();
+   Object.entries(state[col]||{}).forEach(([id,r])=>records.set(id,r));
+   Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>{if(!records.has(id))records.set(id,r)});
+   for(const r of records.values()){
+     if(String(r?.status||'').trim().toLowerCase()!=='aprobado')continue;
+     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.createdAt,r.date,r.updatedAt].map(commissionDateKey).filter(Boolean);
+     if(!dates.includes(today))continue;
+     const base=Number(r.commissionTotal??r.commission??r.commissionAmount??r.fee??0);
+     const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
+     if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
+     let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
+     if(!Number.isFinite(share))share=base*0.50;
+     if(Number.isFinite(share)&&share>0)sums[col]+=share;
+   }
+ }
+ const creditRows=Object.values(state.users?.[roleId]?.commissionCredits||{}).filter(x=>String(x?.type||'').toUpperCase()==='COMISION_ACREDITADA'&&[x.creditedAt,x.createdAt,x.processedAt,x.date].map(commissionDateKey).includes(today));
+ sums.paqueticos+=creditRows.reduce((a,x)=>a+Math.max(0,Number(x.amount||0)),0);
+ const total=Object.values(sums).reduce((a,n)=>a+n,0);
+ box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span>'+escapeHtml(labels[col])+'</span><span class="detalles-tipo"><span class="titulo-label">'+escapeHtml(labels[col])+'</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
+ totalEl.textContent=money(total);
+}
+
 function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
  const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
  document.getElementById('kpi-commission').textContent=money(commissionTotalFor(isAdmin()?'admin':u.id));
  const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id));
+ renderGananciasDia();
  const ka=document.getElementById('kpi-admin-commission-today');if(ka)ka.textContent=money(commissionTodayFor('admin'));
  const kb=document.getElementById('kpi-admin-bonus');if(kb)kb.textContent=money(adminBonusTotal());
  const af=document.getElementById('admin-finance-balance');if(af)af.textContent=money(state.users?.admin?.balance||0);
