@@ -1779,7 +1779,11 @@ async function createTransaction(collection,fields,amount){
      if(firebaseReady)await firebase.database().ref(DB_PATH+'/users/'+currentUser.id).transaction(u=>u?{...u,balance:Number(u.balance||0)+balanceUsed,creditOutstanding:Math.max(0,Number(u.creditOutstanding||0)-used)}:undefined);
      else{currentUser.balance=Number(currentUser.balance||0)+balanceUsed;currentUser.creditOutstanding=Math.max(0,Number(currentUser.creditOutstanding||0)-used);state.users[currentUser.id]=currentUser}
    }
-   delete state[collection][id];localSave();return null;
+   delete state[collection][id];localSave();
+   const modalMap={envios:'envioModal',recargas:'recargaModal',paqueticos:'paquetikoModal',pagos:'pagoModal',paquetes:'paqueteModal'};
+   const failedModal=document.getElementById(modalMap[collection]);
+   if(failedModal){delete failedModal.dataset.submitting;failedModal.querySelectorAll('button').forEach(b=>{b.disabled=false;b.style.pointerEvents='';b.style.opacity=''})}
+   return null;
  }
  try{
    await addNotification('Administrador','Nueva '+collection+' de '+currentUser.name,collection,id);
