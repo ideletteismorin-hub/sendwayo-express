@@ -205,7 +205,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
       <div class="kpi admin-only" style="border-top-color:#d4a017"><b>Capital</b><h2 id="kpi-capital-static">RD$ 0.00</h2></div>
     </div>
     <div id="ganancias-dia-card" class="card-ganancias-dia">
-      <h3>Ganancia del día de hoy</h3>
+      <h3>Ganancia de hoy</h3>
       <div id="ganancias-dia-lista"></div>
       <div class="total-general-container"><span class="label-total">Total de ganancia de hoy:</span><span id="ganancias-dia-total" class="valor-total">RD$ 0.00</span></div>
     </div>
@@ -2831,7 +2831,7 @@ function renderGananciasDia(){
  const ops=Object.values(counts).reduce((a,n)=>a+n,0);
  box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
  totalEl.textContent=money(total);
- const card=document.getElementById('ganancias-dia-card');if(card)card.title='Ganancias de hoy: '+ops+' operaciones aprobadas · '+money(total);
+ const card=document.getElementById('ganancias-dia-card');if(card)card.title='Ganancia de hoy: '+ops+' operaciones aprobadas · '+money(total);
 }
 function renderDashboard(){
  scheduleCommissionDayRefresh();
