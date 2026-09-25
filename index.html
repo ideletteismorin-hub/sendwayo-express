@@ -4113,6 +4113,7 @@ window.SENDWAYO_HARDENING.exportLocalBackup=function(){
 (function(){
 'use strict';
 const OFFICIAL_LOGO='assets/sendwayo-oficial-logo.svg';
+const BACKGROUND_LOGO='assets/sendwayo-background-logo.svg';
 window.__sendwayoDeletedRecords=window.__sendwayoDeletedRecords||new Set();
 
 function applyOfficialLogo(){
@@ -4120,9 +4121,9 @@ function applyOfficialLogo(){
     document.querySelectorAll('.brand-logo,.sidebar-brand img,.receipt-logo,#profile-preview').forEach(img=>{
       if(img && img.getAttribute('src')!==OFFICIAL_LOGO) img.setAttribute('src',OFFICIAL_LOGO);
     });
-    document.documentElement.style.setProperty('--sendwayo-logo-bg',"url('"+OFFICIAL_LOGO+"')");
+    document.documentElement.style.setProperty('--sendwayo-logo-bg',"url('"+BACKGROUND_LOGO+"')");
     const bg=document.getElementById('sendwayo-brand-background');
-    if(bg) bg.style.backgroundImage="url('"+OFFICIAL_LOGO+"')";
+    if(bg) bg.style.backgroundImage="url('"+BACKGROUND_LOGO+"')";
   }catch(e){console.warn('SENDWAYO logo:',e)}
 }
 function cleanDeletedRecords(){
@@ -4684,8 +4685,8 @@ window.__sendwayoDeletedRecords=window.__sendwayoDeletedRecords||new Set();
 function logo(){
   try{
     document.querySelectorAll('.brand-logo,.sidebar-brand img,.receipt-logo,#profile-preview').forEach(x=>x.src=LOGO);
-    document.documentElement.style.setProperty('--sendwayo-logo-bg',"url('"+LOGO+"')");
-    const bg=document.getElementById('sendwayo-brand-background');if(bg)bg.style.backgroundImage="url('"+LOGO+"')";
+    document.documentElement.style.setProperty('--sendwayo-logo-bg',"url('"+BACKGROUND_LOGO+"')");
+    const bg=document.getElementById('sendwayo-brand-background');if(bg)bg.style.backgroundImage="url('"+BACKGROUND_LOGO+"')";
   }catch(e){}
 }
 function clean(){
