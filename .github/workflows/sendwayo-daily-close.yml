@@ -1,0 +1,42 @@
+name: SENDWAYO - cierre financiero diario 22:00
+on:
+  schedule:
+    - cron: '5 2 * * *'
+  workflow_dispatch:
+    inputs:
+      close_date:
+        description: 'Fecha local RD a cerrar (YYYY-MM-DD)'
+        required: false
+jobs:
+  close:
+    if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+      - name: Prepare service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+      - name: Read Firebase snapshot
+        run: firebase database:get / --project sendwayo-express --json > sendwayo-rtdb.json
+      - name: Build daily close
+        env:
+          CLOSE_DATE: ${{ inputs.close_date }}
+        run: node scripts/sendwayo-daily-close.mjs < sendwayo-rtdb.json > daily-close.json
+      - name: Store daily close report
+        run: |
+          CLOSE_DATE=$(node -e "const r=require('./daily-close.json');process.stdout.write(r.closeDate)")
+          firebase database:set "sendwayo_express_v2/dailyReports/$CLOSE_DATE" daily-close.json --project sendwayo-express --confirm
+      - name: Upload close artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sendwayo-daily-close-${{ github.run_number }}
+          path: daily-close.json
+          retention-days: 90
