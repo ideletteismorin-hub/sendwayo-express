@@ -28,4 +28,9 @@ jobs:
         run: |
           grep -q 'sendwayo-professional-hardening' index.html
           grep -q 'ganancias-dia-card' index.html
-          echo "SENDWAYO critical markers OK"
+          grep -q 'swReconciliation' index.html
+          grep -q 'ledgerLocked' database.rules.json
+          test -f scripts/sendwayo-daily-close.mjs
+          test -f .github/workflows/sendwayo-daily-close.yml
+          node --check scripts/sendwayo-daily-close.mjs
+          echo "SENDWAYO critical hardening markers OK"
