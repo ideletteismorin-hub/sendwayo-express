@@ -4237,4 +4237,49 @@ document.addEventListener('DOMContentLoaded',()=>{swScheduleFinal();setTimeout(s
 setTimeout(swScheduleFinal,500);
 })();
 </script>
+
+<style id="sendwayo-mobile-final-fix">
+/* Ajuste final móvil: logo completo, menú flotante y contenido siempre accesible */
+.sidebar-brand img{object-fit:contain!important;object-position:center!important;width:100%!important;height:68px!important;max-width:210px!important}
+.brand-logo{object-fit:contain!important;object-position:center!important;max-width:100%;max-height:100%}
+@media(max-width:800px){
+  aside{width:min(280px,86vw)!important;left:calc(-1 * min(280px,86vw))!important;transition:left .22s ease!important;overflow:hidden!important}
+  aside.active{left:0!important}
+  .sidebar-brand{padding-left:14px!important;justify-content:center!important}
+  .sidebar-brand img{width:calc(100% - 8px)!important;height:62px!important;object-fit:contain!important}
+  .sidebar-menu{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
+  .sidebar-menu a{min-height:42px!important;touch-action:manipulation!important}
+  .sidebar-overlay{z-index:99!important}
+  aside{z-index:100!important}
+  .main-container{min-width:0!important;width:100%!important}
+  header{position:relative!important;z-index:101!important}
+  .content-body{min-width:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
+  input,select,textarea,button{touch-action:manipulation}
+  .toast,.sendwayo-live-notification{pointer-events:none!important}
+  .sendwayo-live-notification{max-height:72px!important;overflow:hidden!important}
+}
+</style>
+<script id="sendwayo-mobile-final-fix-js">
+(function(){
+  'use strict';
+  function closeMenuSafe(){
+    try{ if(typeof closeMobileMenu==='function') closeMobileMenu();
+      else { document.getElementById('app-sidebar')?.classList.remove('active'); document.getElementById('sidebar-overlay')?.classList.remove('active'); }
+    }catch(e){}
+  }
+  document.addEventListener('click',function(ev){
+    const a=ev.target&&ev.target.closest&&ev.target.closest('#app-sidebar .sidebar-menu a');
+    if(a && window.innerWidth<=800) setTimeout(closeMenuSafe,0);
+  },true);
+  document.addEventListener('touchend',function(ev){
+    const a=ev.target&&ev.target.closest&&ev.target.closest('#app-sidebar .sidebar-menu a');
+    if(a && window.innerWidth<=800) setTimeout(closeMenuSafe,0);
+  },{passive:true,capture:true});
+  document.addEventListener('click',function(ev){
+    const overlay=document.getElementById('sidebar-overlay'), sidebar=document.getElementById('app-sidebar');
+    if(window.innerWidth<=800 && sidebar?.classList.contains('active') && overlay && ev.target===overlay) closeMenuSafe();
+  });
+  window.addEventListener('resize',function(){if(window.innerWidth>800)closeMenuSafe()},{passive:true});
+})();
+</script>
 </html>
