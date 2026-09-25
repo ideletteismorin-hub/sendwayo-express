@@ -4254,35 +4254,7 @@ async function hardDeleteRecord(collection,id){
 }
 window.deleteRecord=hardDeleteRecord;
 
-function warmFirebase(){
-  try{
-    if(typeof initFirebase==='function'&&!firebaseReady){
-      window.__sendwayoFirebaseInitPromise=window.__sendwayoFirebaseInitPromise||initFirebase().catch(e=>{console.warn('Firebase warm-up:',e);return false});
-    }
-  }catch(e){}
-}
-const originalLogin=window.realizarLogin;
-window.realizarLogin=async function(){
-  if(window.__sendwayoLoginLock)return;
-  window.__sendwayoLoginLock=true;
-  try{
-    if(window.__sendwayoFirebaseInitPromise)await Promise.race([
-      window.__sendwayoFirebaseInitPromise,
-      new Promise(r=>setTimeout(r,9000))
-    ]);
-    return typeof originalLogin==='function'?await originalLogin():false;
-  }finally{
-    setTimeout(()=>window.__sendwayoLoginLock=false,350);
-  }
-};
-function boot(){
-  applyOfficialLogo();
-  warmFirebase();
-  cleanDeletedRecords();
-  const obs=new MutationObserver(()=>{applyOfficialLogo();cleanDeletedRecords()});
-  obs.observe(document.body,{subtree:true,childList:true});
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+function warmFirebase(){return false;}
 })();
 </script>\n</body>
 
