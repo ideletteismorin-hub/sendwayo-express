@@ -2807,9 +2807,23 @@ function renderGananciasDia(){
  const roleId=isAdmin()?'admin':currentUser.id,sources=[state,lastSyncedState].filter(Boolean);
  for(const col of cols){
    const records=new Map();
-   for(const src of sources){
-     Object.entries(src.ledger?.[col]||{}).forEach(([id,r])=>records.set(id,{...(r||{})}));
-     Object.entries(src[col]||{}).forEach(([id,r])=>records.set(id,{...(src.ledger?.[col]?.[id]||{}),...(r||{})}));
+   // La operación aprobada actual tiene prioridad sobre copias antiguas.
+   // Esto evita que lastSyncedState (pendiente) borre visualmente una comisión ya aprobada.
+   for(const src of [state,lastSyncedState].filter(Boolean)){
+     Object.entries(src.ledger?.[col]||{}).forEach(([id,r])=>{
+       const prev=records.get(id);
+       if(!prev || String(prev.status||'').trim().toLowerCase()!=='aprobado' || String(r?.status||'').trim().toLowerCase()==='aprobado'){
+         records.set(id,{...(r||{})});
+       }
+     });
+     Object.entries(src[col]||{}).forEach(([id,r])=>{
+       const ledgerR=src.ledger?.[col]?.[id]||{};
+       const candidate={...ledgerR,...(r||{})};
+       const prev=records.get(id);
+       if(!prev || String(prev.status||'').trim().toLowerCase()!=='aprobado' || String(candidate.status||'').trim().toLowerCase()==='aprobado'){
+         records.set(id,candidate);
+       }
+     });
    }
    for(const [id,r] of records){
      if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
