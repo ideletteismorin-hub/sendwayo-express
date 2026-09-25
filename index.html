@@ -381,7 +381,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
 
   <section id="view-secretas" class="view-section">
     <div class="card admin-only" style="margin-bottom:12px"><div class="card-header"><h3>Acreditar Administración</h3><button class="btn btn-primary btn-sm" onclick="openAdminBalanceModal('admin','set')">Acreditar Administración</button></div><p class="muted">Acredita la administración para ir ajustando los precios según lo conveniente. El monto indicado establece exactamente el balance de la Administración.</p><div style="margin-top:8px"><b>Balance actual:</b> <span id="secret-admin-balance">RD$ 0.00</span></div></div>
-    <div class="card admin-only" style="margin-bottom:12px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h3 style="color:#0f2c59">Acreditaciones de Administración</h3><p class="muted" style="margin-top:4px">Funciones exclusivas del Administrador. Acreditar Balance y Acreditar Bono entran directamente al balance. Acreditar Comisiones mueve el monto desde la comisión disponible hacia el balance.</p></div></div><div class="actions" style="gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal('bonus')">Acreditar Bono</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission');setTimeout(()=>acreditarTodaComisionDisponible(),80)">Acreditar Toda la Comisión</button></div></div>
+    <div class="card admin-only" style="margin-bottom:12px;border-top:5px solid var(--secondary);background:linear-gradient(135deg,#fff,#fffdf3)"><div class="card-header"><div><h3 style="color:#0f2c59">Acreditaciones de Administración</h3><p class="muted" style="margin-top:4px">Funciones exclusivas del Administrador. Acreditar Balance y Acreditar Comisión entran directamente al balance. Acreditar Comisiones mueve el monto desde la comisión disponible hacia el balance.</p></div></div><div class="actions" style="gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="openAdminCreditModal('balance')">Acreditar Balance</button><button class="btn btn-success btn-sm" onclick="openAdminCreditModal('bonus')">Acreditar Comisión</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission')">Acreditar Comisiones</button><button class="btn btn-warning btn-sm" onclick="openAdminCreditModal('commission');setTimeout(()=>acreditarTodaComisionDisponible(),80)">Acreditar Toda la Comisión</button></div></div>
     <div class="card"><div class="card-header"><h3>Información Secreta - Usuarios y Accesos</h3><div class="actions"><button class="btn btn-success btn-sm" onclick="crearAccesosIniciales()">Crear accesos iniciales</button><button class="btn btn-primary btn-sm" onclick="openModal('secretaModal')">Agregar Nuevo</button></div></div>
     <div class="info-box"><strong>Contraseña inicial:</strong> 12345678. El usuario puede cambiarla desde Mi Perfil. No se guarda en la base de datos.</div><div class="info-box">Visible solamente para el administrador. Las credenciales de acceso se validan mediante Firebase Authentication. La contraseña no debe utilizarse como autorización de Firebase por sí sola. Cada usuario debe existir en Firebase Authentication antes de entrar al sistema.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> UID de autenticación de esta sesión: <code id="firebase-auth-uid">No disponible</code>. Este UID se utiliza para preparar las reglas del administrador.</div><div class="info-box" style="margin-top:10px"><strong>Seguridad Firebase:</strong> esta sesión utiliza autenticación Firebase y este navegador tiene el UID temporal <code id="firebase-auth-uid">No disponible</code>. El UID del administrador debe quedar configurado en Firebase Security Rules. Sin esa autorización, el usuario Administrador no puede operar.</div>
     <div class="secret-divider" role="separator" aria-label="Separador de Información Secreta"></div><div class="table-toolbar" style="margin-top:12px"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','secTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','secTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','secTable')">CSV</button></div><input class="search-box" placeholder="Buscar usuario, nombre o WhatsApp..." oninput="filterTable(this,'secTable')"></div>
@@ -2662,7 +2662,7 @@ function openAdminCreditModal(type='balance'){
  const titles={balance:'Acreditar Balance',bonus:'Acreditar Bono',commission:'Acreditar Comisiones'};
  const infos={
   balance:'El monto indicado se suma directamente al balance de la cuenta seleccionada. No genera comisión.',
-  bonus:'El bono es una acreditación manual exclusiva de Administración; no proviene de depósitos, donaciones ni comisiones y se acredita directamente al balance administrativo.',
+  bonus:'La comisión es una acreditación manual exclusiva de Administración; se acredita directamente al balance administrativo y queda registrada en el historial.',
   commission:'En Remitentes, acredita el monto a la bolsa de comisión disponible y NO toca el balance. El Remitente decide cuándo cobrarla en Retiro / Pago de Comisiones. En Administración, la comisión se acredita directamente al balance administrativo.'
  };
  window.__adminCreditType=['balance','bonus','commission'].includes(type)?type:'balance';
@@ -2698,7 +2698,7 @@ function refreshAdminCreditModal(){
  document.getElementById('admin-credit-current').textContent=money(u.balance);
  document.getElementById('admin-credit-commission').textContent=money(commission);
  const btn=document.getElementById('admin-credit-save-btn');
- if(btn)btn.textContent=window.__adminCreditType==='bonus'?'Acreditar Bono':window.__adminCreditType==='commission'?'Acreditar Comisiones':'Acreditar Balance';
+ if(btn)btn.textContent=window.__adminCreditType==='bonus'?'Acreditar Comisión':window.__adminCreditType==='commission'?'Acreditar Comisiones':'Acreditar Balance';
  const amt=document.getElementById('admin-credit-amount');
  if(amt&&window.__adminCreditType==='commission'&&id!=='admin')amt.setAttribute('max',String(commission));
  else if(amt)amt.removeAttribute('max');
@@ -2710,7 +2710,7 @@ async function saveAdminCredit(){
  const type=window.__adminCreditType||'balance',id=document.getElementById('admin-credit-target')?.value;
  const amount=Number(document.getElementById('admin-credit-amount')?.value),u=state.users?.[id];
  if(!u||!['balance','bonus','commission'].includes(type))return toast('Seleccione una cuenta válida.','warn');
- if(type==='bonus'&&id!=='admin')return toast('El bono solo puede acreditarse a la Administración.','warn');
+ if(type==='bonus'&&id!=='admin')return toast('La comisión indicada aquí solo puede acreditarse a la Administración.','warn');
  if(type==='commission'&&id==='admin')return toast('La comisión de Administración ya está integrada en su balance. Use Acreditar Balance o Acreditar Bono para una entrada manual.','warn');
  const availableCommission=commissionAvailableForAdminCredit(u);
  if(!Number.isFinite(amount)||amount<=0)return toast('Ingrese un monto mayor que cero.','warn');
@@ -2761,7 +2761,7 @@ async function saveAdminCredit(){
   if(currentUser?.id===id)currentUser=updated;
   if(lastSyncedState?.users)lastSyncedState.users[id]=cloneState(updated);
   localSave();
-  const label=type==='bonus'?'Acreditar Bono':type==='commission'?'Acreditar Comisiones':'Acreditar Balance';
+  const label=type==='bonus'?'Acreditar Comisión':type==='commission'?'Acreditar Comisiones':'Acreditar Balance';
   const auditId=uid('acr');
   const audit={id:auditId,action:label,targetUserId:id,amount,commissionBefore:Number(u.commission||0),commissionAfter:Number(updated.commission||0),balanceBefore:Number(u.balance||0),balanceAfter:Number(updated.balance||0),processedBy:currentUser.username,createdAt:now()};
   try{await firebase.database().ref(DB_PATH+'/audit/'+auditId).set(audit)}catch(_){}
