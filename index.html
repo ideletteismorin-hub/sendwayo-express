@@ -4306,4 +4306,44 @@ setTimeout(swScheduleFinal,500);
  .sidebar-business-name{font-size:1.02rem;line-height:.98;height:62px;white-space:normal;letter-spacing:-.4px;margin-left:-6px!important}
 }
 </style>
+
+<style id="sendwayo-outside-close-and-name-seven-fix">
+/* Cierre universal por clic/toque fuera. No altera el contenido interno. */
+.sendwayo-live-notification{pointer-events:auto!important;cursor:pointer}
+.sidebar-business-name{transform:translateX(70px)!important}
+@media(max-width:800px){.sidebar-business-name{transform:translateX(70px)!important}}
+</style>
+<script id="sendwayo-outside-close-and-name-seven-fix-js">
+(function(){
+'use strict';
+function swCloseFloatingSurfacesOutside(ev){
+  try{
+    const target=ev&&ev.target;
+    if(!target)return;
+    const notif=document.getElementById('notif-panel');
+    const bell=target.closest&&target.closest('.notification-bell');
+    if(notif&&notif.classList.contains('show')&&!notif.contains(target)&&!bell){
+      if(typeof closeNotificationSurfaces==='function')closeNotificationSurfaces();
+      else notif.classList.remove('show');
+    }
+    const live=document.getElementById('sendwayo-live-notification');
+    if(live&&live.classList.contains('show')&&!live.contains(target)){
+      if(typeof closeNotificationSurfaces==='function')closeNotificationSurfaces();
+      else live.classList.remove('show');
+    }
+    document.querySelectorAll('.modal').forEach(function(modal){
+      if(!modal)return;
+      const visible=getComputedStyle(modal).display!=='none' || modal.classList.contains('show');
+      if(visible && target===modal){
+        if(typeof closeModal==='function')closeModal(modal.id);
+        else {modal.style.display='none';modal.classList.remove('show')}
+      }
+    });
+  }catch(_){}
+}
+/* pointerdown cubre mouse, lápiz y la mayoría de toques móviles; touchstart refuerza Android. */
+document.addEventListener('pointerdown',swCloseFloatingSurfacesOutside,true);
+document.addEventListener('touchstart',swCloseFloatingSurfacesOutside,{capture:true,passive:true});
+})();
+</script>
 </html>
