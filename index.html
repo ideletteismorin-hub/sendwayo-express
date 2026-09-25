@@ -2800,38 +2800,42 @@ async function saveAdminBalanceAdjustment(){
 function renderGananciasDia(){
  const box=document.getElementById('ganancias-dia-lista'),totalEl=document.getElementById('ganancias-dia-total');
  if(!box||!totalEl||!currentUser)return;
- const today=todayDateKey(), roleId=isAdmin()?'admin':currentUser.id;
+ const today=todayDateKey(), admin=isAdmin(), uid=admin?'admin':currentUser.id;
  const cols=['envios','recargas','paqueticos','pagos','paquetes'];
  const labels={envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'};
- const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
- const counts={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
+ const data={};cols.forEach(c=>data[c]={count:0,commission:0,ops:[]});
+ const recordsById={};
  for(const col of cols){
-   const records=new Map();
-   Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>records.set(id,{...(r||{})}));
-   Object.entries(state[col]||{}).forEach(([id,r])=>records.set(id,{...(state.ledger?.[col]?.[id]||{}),...(r||{})}));
-   for(const [id,r] of records){
+   const merged=new Map();
+   Object.entries(state[col]||{}).forEach(([id,r])=>merged.set(id,{...(r||{})}));
+   Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>merged.set(id,{...(r||{}),...(merged.get(id)||{})}));
+   recordsById[col]=merged;
+ }
+ for(const col of cols){
+   for(const [id,r] of recordsById[col]){
      if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
-     const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
-     if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
-     // Una operación de hoy debe aparecer si cualquiera de sus marcas de fecha corresponde a hoy.
-     // Esto evita que una fecha posterior de aprobación/procesamiento o una fecha ausente oculte la operación.
-     const dateFields=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp];
-     const isToday=dateFields.some(v=>commissionDateKey(v)===today);
-     if(!isToday)continue;
-
-     // La operación cuenta aunque su comisión sea 0; la ganancia muestra la comisión realmente registrada.
-     counts[col]++;
-     const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0);
-     let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(share)||share<0)share=Number((Math.max(0,gross)*0.50).toFixed(2));
-     sums[col]+=Number.isFinite(share)&&share>0?share:0;
+     const owner=r.userId??r.remitterId??r.remitenteId??r.senderId;
+     if(!admin&&String(owner)!==String(uid))continue;
+     const dates=[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp];
+     if(!dates.some(v=>commissionDateKey(v)===today))continue;
+     const gross=Math.max(0,Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0));
+     let share=admin?Number(r.commissionAdmin):Number(r.commissionUser);
+     if(!Number.isFinite(share)||share<=0)share=Number((gross*0.50).toFixed(2));
+     if(!Number.isFinite(share)||share<0)share=0;
+     data[col].count++;
+     data[col].commission+=share;
+     data[col].ops.push({id,amount:Number(r.amount||0),commission:share});
    }
  }
- const total=Object.values(sums).reduce((a,n)=>a+n,0);
- const ops=Object.values(counts).reduce((a,n)=>a+n,0);
- box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
- totalEl.textContent=money(total);
- const card=document.getElementById('ganancias-dia-card');if(card)card.title='Ganancia de hoy: '+ops+' operaciones aprobadas · '+money(total);
+ let total=0,ops=0;
+ box.innerHTML=cols.map(col=>{
+   const d=data[col],count=d.count,comm=Number(d.commission.toFixed(2));
+   total+=comm;ops+=count;
+   return '<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+count+' operación'+(count===1?'':'es')+' de hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión (50%)</span><span class="monto-valor">'+money(comm)+'</span></span></div>';
+ }).join('');
+ totalEl.textContent=money(Number(total.toFixed(2)));
+ const card=document.getElementById('ganancias-dia-card');
+ if(card)card.title='Ganancia de hoy: '+ops+' operaciones · comisión 50% · '+money(total);
 }
 function renderDashboard(){
  scheduleCommissionDayRefresh();
