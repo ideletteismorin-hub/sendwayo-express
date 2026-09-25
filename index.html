@@ -4284,16 +4284,16 @@ setTimeout(swScheduleFinal,500);
 </script>
 
 <style id="sendwayo-brand-name-final-fix">
-/* Logo primero; nombre después, grande y alineado al mismo nivel */
-.sidebar-brand{justify-content:flex-start!important;gap:5px!important;overflow:hidden!important;padding-left:6px!important}
+/* Logo al extremo izquierdo; nombre grande, cercano y completamente visible */
+.sidebar-brand{justify-content:flex-start!important;gap:2px!important;overflow:hidden!important;padding-left:0!important;padding-right:4px!important}
 .sidebar-brand>a{order:1;display:block;flex:0 0 auto;min-width:0}
-.sidebar-brand>a img{width:190px!important;height:68px!important;object-fit:contain!important;object-position:center!important;display:block}
-.sidebar-business-name{order:2;color:#f3b51b;font-weight:900;font-size:1.05rem;line-height:1.05;letter-spacing:.25px;white-space:nowrap;flex:1 1 auto;min-width:0;text-align:left;display:flex;align-items:center;height:68px}
+.sidebar-brand>a img{width:175px!important;height:68px!important;object-fit:contain!important;object-position:left center!important;display:block}
+.sidebar-business-name{order:2;color:#f3b51b;font-weight:900;font-size:.96rem;line-height:1.02;letter-spacing:0;white-space:normal;flex:1 1 auto;min-width:0;text-align:left;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;height:68px;overflow:visible}
 @media(max-width:800px){
-  .sidebar-brand{padding-left:4px!important;padding-right:5px!important;gap:3px!important}
-  .sidebar-brand>a{flex:0 0 150px}
-  .sidebar-brand>a img{width:150px!important;height:62px!important}
-  .sidebar-business-name{font-size:.82rem;line-height:1.05;height:62px;white-space:nowrap;overflow:hidden;letter-spacing:0}
+  .sidebar-brand{padding-left:0!important;padding-right:3px!important;gap:1px!important}
+  .sidebar-brand>a{flex:0 0 142px}
+  .sidebar-brand>a img{width:142px!important;height:62px!important;object-fit:contain!important;object-position:left center!important}
+  .sidebar-business-name{font-size:.76rem;line-height:1.02;height:62px;white-space:normal;letter-spacing:0}
 }
 </style>
 </html>
