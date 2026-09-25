@@ -201,7 +201,6 @@ aside{height:100vh;min-height:0;overflow:hidden}
     <section id="view-dashboard" class="view-section active">
     <div class="kpis">
       <div class="kpi"><b>Balance</b><h2 id="kpi-balance">RD$ 0.00</h2></div>
-      <div class="kpi" style="border-top-color:#1f9d55"><b>Comisión de hoy</b><h2 id="kpi-commission-today">RD$ 0.00</h2></div>
       <div class="kpi" style="border-top-color:#f3b51b"><b>Comisión Total</b><h2 id="kpi-commission">RD$ 0.00</h2></div>
       <div class="kpi admin-only" style="border-top-color:#d4a017"><b>Capital</b><h2 id="kpi-capital-static">RD$ 0.00</h2></div>
     </div>
@@ -2807,7 +2806,6 @@ function renderGananciasDia(){
  const sums={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
  const counts={envios:0,recargas:0,paqueticos:0,pagos:0,paquetes:0};
  for(const col of cols){
-   // La operación visible es la fuente principal. El ledger solo completa campos que falten.
    const records=new Map();
    Object.entries(state.ledger?.[col]||{}).forEach(([id,r])=>records.set(id,{...(r||{})}));
    Object.entries(state[col]||{}).forEach(([id,r])=>records.set(id,{...(state.ledger?.[col]?.[id]||{}),...(r||{})}));
@@ -2815,28 +2813,28 @@ function renderGananciasDia(){
      if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
      const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
      if(roleId!=='admin'&&String(ownerId)!==String(roleId))continue;
-     // Para "hoy" usamos la fecha de aprobación; si no existe, la de procesamiento/creación.
      const day=commissionDateKey(r.reviewedAt||r.approvedAt||r.balanceSettledAt||r.processedAt||r.createdAt||r.date||r.updatedAt||r.timestamp);
      if(day!==today)continue;
+
+     // La operación cuenta aunque su comisión sea 0; la ganancia muestra la comisión realmente registrada.
+     counts[col]++;
      const gross=Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0);
      let share=roleId==='admin'?Number(r.commissionAdmin):Number(r.commissionUser);
-     // Si la operación no tiene reparto guardado, la comisión total sigue siendo una ganancia real.
-     if(!Number.isFinite(share)||share<0)share=gross;
-     if(Number.isFinite(share)&&share>0){counts[col]++;sums[col]+=share;}
+     if(!Number.isFinite(share)||share<0)share=Number((Math.max(0,gross)*0.50).toFixed(2));
+     sums[col]+=Number.isFinite(share)&&share>0?share:0;
    }
  }
  const total=Object.values(sums).reduce((a,n)=>a+n,0);
  const ops=Object.values(counts).reduce((a,n)=>a+n,0);
- box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
+ box.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+counts[col]+' operación'+(counts[col]===1?'':'es')+' aprobada'+(counts[col]===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+money(sums[col])+'</span></span></div>').join('');
  totalEl.textContent=money(total);
- const card=document.getElementById('ganancias-dia-card');if(card)card.title='Ganancia del día de hoy: '+ops+' operaciones aprobadas · '+money(total);
+ const card=document.getElementById('ganancias-dia-card');if(card)card.title='Ganancias de hoy: '+ops+' operaciones aprobadas · '+money(total);
 }
 function renderDashboard(){
  scheduleCommissionDayRefresh();
  let u=currentUser;document.getElementById('kpi-balance').textContent=money(u.balance);
  const hb=document.getElementById('header-balance');if(hb)hb.textContent=money(u.balance);
  document.getElementById('kpi-commission').textContent=money(commissionTotalFor(isAdmin()?'admin':u.id));
- const kt=document.getElementById('kpi-commission-today');if(kt)kt.textContent=money(commissionTodayFor(isAdmin()?'admin':u.id));
  renderGananciasDia();
  const ka=document.getElementById('kpi-admin-commission-today');if(ka)ka.textContent=money(commissionTodayFor('admin'));
  const kb=document.getElementById('kpi-admin-bonus');if(kb)kb.textContent=money(adminBonusTotal());
@@ -3713,25 +3711,22 @@ function swRecordDay(r){
   return '';
 }
 function swDaily(uid,admin){
-  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={};
-  let total=0;
+  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},counts={};
+  let total=0,ops=0;
   for(const col of cols){
-    let n=0,seen=new Set();
+    let amount=0,n=0,seen=new Set();
     for(const [id,r] of swRecords(col)){
       if(seen.has(id)||!swApproved(r)||swRecordDay(r)!==swToday())continue;
-      seen.add(id);n+=swCommission(r,admin,uid);
+      seen.add(id);
+      n++;
+      amount+=swCommission(r,admin,uid);
     }
-    out[col]=Number(n.toFixed(2));total+=n;
+    out[col]=Number(amount.toFixed(2));
+    counts[col]=n;
+    total+=amount;
+    ops+=n;
   }
-  const credits=Object.values((window.state&&state.commissionCredits)||{});
-  let manual=0;
-  for(const r of credits){
-    if(!r)continue;
-    const owner=r.userId??r.remitterId??r.remitenteId;
-    if((admin||String(owner)===String(uid))&&swDay(r.createdAt??r.date??r.timestamp)===swToday()&&String(r.type||r.accountingType||'').toUpperCase()==='COMISION_ACREDITADA')manual+=Math.max(0,swNum(r.amount));
-  }
-  if(manual){out.paqueticos=(out.paqueticos||0)+manual;total+=manual}
-  return {by:out,total:Number(total.toFixed(2))};
+  return {by:out,counts,total:Number(total.toFixed(2)),ops};
 }
 function swLabel(col){
   return ({envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos / servicios',paquetes:'Paquetes'})[col]||col;
@@ -3740,15 +3735,15 @@ function swRenderGanancias(){
   const card=document.getElementById('ganancias-dia-card'),list=document.getElementById('ganancias-dia-lista'),tot=document.getElementById('ganancias-dia-total');
   if(!card||!list)return;
   const admin=typeof isAdmin==='function'&&isAdmin(),uid=admin?'admin':(window.currentUser&&currentUser.id);
-  if(!uid){list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias del día.</div>';if(tot)tot.textContent=swMoney(0);return}
+  if(!uid){list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias de hoy.</div>';if(tot)tot.textContent=swMoney(0);return}
   const d=swDaily(uid,admin);
   const cols=['envios','recargas','paqueticos','pagos','paquetes'];
-  list.innerHTML=cols.map(col=>'<div class="item-ganancia"><span class="titulo-label">'+swEsc(swLabel(col))+'</span><span class="detalles-tipo"><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('')+
-    (d.total<=0?'<div class="muted" style="padding-top:10px">No hay ganancias de operaciones aprobadas para hoy.</div>':'');
+  list.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+(d.counts[col]||0)+' operación'+((d.counts[col]||0)===1?'':'es')+' aprobada'+((d.counts[col]||0)===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('');
   if(tot)tot.textContent=swMoney(d.total);
   card.dataset.swUpdated=String(Date.now());
 }
 window.SENDWAYO_HARDENING.renderDaily=swRenderGanancias;
+
 
 /* Evita que un render repetido congele la interfaz. */
 let queued=false;
