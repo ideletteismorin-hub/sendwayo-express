@@ -3608,7 +3608,7 @@ window.editRecord=function(collection,id){const r=state[collection]?.[id];if(!r)
 window.actionButtons=function(collection,id,status){
   const admin=isAdmin(),rec=state[collection]?.[id],owner=rec?.userId===currentUser?.id||rec?.createdUserId===currentUser?.id;
   let a='<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')">Ver</button>';
-  if(status==='Aprobado')a+='<button class="btn btn-primary btn-sm" title="Recibo" onclick="showReceipt(\''+collection+'\',\''+id+'\')">COMPROBANTE</button>';
+  if(status==='Aprobado' && collection!=='envios' && collection!=='deposits')a+='<button class="btn btn-primary btn-sm" title="Recibo" onclick="showReceipt(\''+collection+'\',\''+id+'\')">COMPROBANTE</button>';
   if(admin){
     a+='<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord(\''+collection+'\',\''+id+'\')">Editar</button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\''+collection+'\',\''+id+'\')">Eliminar</button>';
     if(status==='Pendiente'&&collection!=='accountWithdrawals')a+='<button class="btn btn-success btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'No coincide\')">NO COINCIDE</button>';
@@ -4537,5 +4537,85 @@ async function deleteCapitalMovement(id){if(!isAdmin())return;const r=state.capi
   #app-sidebar .sidebar-brand>a img{width:108px!important;height:60px!important;transform:none!important;object-fit:contain!important;object-position:center!important;margin:0!important}
   #app-sidebar .sidebar-business-name{order:2!important;transform:none!important;margin:0!important;padding:0!important;font-size:.92rem!important;line-height:1!important;letter-spacing:-.25px!important;display:flex!important;align-items:center!important;flex:1 1 auto!important;min-width:0!important;height:60px!important;white-space:normal!important}
   #app-sidebar .mobile-toggle-btn{display:block!important;margin-left:auto!important;flex:0 0 30px!important}
+}
+</style>
+
+<style id="sendwayo-receipt-header-absolute-final">
+/* ENCABEZADO ÚNICO DEL COMPROBANTE: LOGO A LA IZQUIERDA + NOMBRE A SU LADO + LEMA DEBAJO */
+.receipt-brand-wide .receipt-head .receipt-brand-row{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-wrap:nowrap!important;
+  gap:14px!important;
+  width:max-content!important;
+  max-width:100%!important;
+  margin:0 auto!important;
+  text-align:left!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{
+  display:block!important;
+  flex:0 0 145px!important;
+  width:145px!important;
+  height:78px!important;
+  max-width:145px!important;
+  max-height:78px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name{
+  display:block!important;
+  flex:0 1 auto!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:left!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name h2{
+  display:block!important;
+  width:auto!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+  font-size:1.75rem!important;
+  line-height:1.05!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{
+  display:block!important;
+  width:auto!important;
+  max-width:500px!important;
+  margin:6px 0 0!important;
+  padding:0!important;
+  text-align:left!important;
+  font-size:.78rem!important;
+  line-height:1.2!important;
+}
+@media(max-width:800px){
+  .receipt-brand-wide .receipt-head .receipt-brand-row{
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    justify-content:center!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{
+    flex-basis:82px!important;
+    width:82px!important;
+    height:58px!important;
+    max-width:82px!important;
+    max-height:58px!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-brand-name h2{
+    font-size:1.08rem!important;
+    white-space:nowrap!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{
+    max-width:calc(100vw - 105px)!important;
+    font-size:.5rem!important;
+    line-height:1.15!important;
+    margin-top:4px!important;
+  }
 }
 </style>
