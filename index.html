@@ -176,7 +176,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
         <div class="welcome-services-photo" aria-label="Todos nuestros servicios y productos">
           <img src="assets/sendwayo-servicios.jpg" alt="Todos nuestros servicios y productos de SENDWAYO EXPRESS" loading="eager">
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><select id="welcome-language-selector" class="language-selector" onchange="setLanguage(this.value)"><option value="es">Español</option><option value="fr">Français</option><option value="en">English</option><option value="ht">Kreyòl ayisyen</option></select></div><div class="contact-card" style="text-align:center"><strong>CONTACTARNOS</strong><div>WhatsApp / Celular: <span id="welcome-contact-phone">8298573043</span> · Correo: <span id="welcome-contact-email">sendwayoexpress@gmail.com</span></div></div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><select id="welcome-language-selector" class="language-selector" onchange="setLanguage(this.value)"><option value="es">Español</option><option value="fr">Français</option><option value="en">English</option><option value="ht">Kreyòl ayisyen</option></select></div><div class="contact-card" style="text-align:center"><strong>CONTACTARNOS</strong><div>WhatsApp / Celular: <span id="welcome-contact-phone">8297676665</span> · Correo: <span id="welcome-contact-email">sendwayoexpress@gmail.com</span></div></div>
       </div>
     </div>
   </div>
@@ -401,7 +401,7 @@ aside{height:100vh;min-height:0;overflow:hidden}
 </section>
 <section id="view-contacto" class="view-section">
   <div class="card"><div class="card-header"><h3><i class="fa-solid fa-address-card"></i> Contactarnos</h3><button class="btn btn-primary admin-only" id="edit-contact-btn" onclick="editContact()">Editar</button></div>
-  <div class="contact-card"><h3>SENDWAYO EXPRESS</h3><p style="margin-top:8px">Estamos para ayudarte. Puedes modificar estos datos desde la cuenta del administrador.</p><div style="margin-top:14px;display:grid;gap:8px"><div><strong>WhatsApp / Celular:</strong> <span id="contact-phone">8298573043</span></div><div><strong>Correo:</strong> <span id="contact-email">sendwayoexpress@gmail.com</span></div></div></div>
+  <div class="contact-card"><h3>SENDWAYO EXPRESS</h3><p style="margin-top:8px">Estamos para ayudarte. Puedes modificar estos datos desde la cuenta del administrador.</p><div style="margin-top:14px;display:grid;gap:8px"><div><strong>WhatsApp / Celular:</strong> <span id="contact-phone">8297676665</span></div><div><strong>Correo:</strong> <span id="contact-email">sendwayoexpress@gmail.com</span></div></div></div>
   <div class="table-toolbar" style="margin-top:16px"><div class="actions"><button class="btn btn-primary btn-sm admin-only" onclick="editContact()">Agregar Nuevo</button><button class="btn btn-success btn-sm" onclick="exportData('Excel','contactTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','contactTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','contactTable')">CSV</button></div><input class="search-box" placeholder="Buscar contacto..." oninput="filterTable(this,'contactTable')"></div>
   <div class="table-wrap"><table id="contactTable"><thead><tr><th>N°</th><th>Dato</th><th>Valor</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
 </section>
@@ -685,7 +685,7 @@ function ensureStaffDirectory(){}
 function nextStaffId(role){return makePermanentId()}
 
 const BANKS=[{id:'b1',bank:'Banco Popular',holder:'Herace Fleuranvil',number:'831434592',active:true},{id:'b2',bank:'Banreservas',holder:'Herace Fleuranvil',number:'9601783620',active:true},{id:'b3',bank:'BHD',holder:'Herace Fleuranvil',number:'36818900013',active:true}];
-let state={settings:{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0,commissionAccrued:0,bonusAccrued:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{},dailyReports:{},capital:{balance:0,totalAcreditado:0,movements:{}}};
+let state={settings:{contact:{phone:'8297676665',email:'sendwayoexpress@gmail.com'}},users:{admin:{id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0,commissionAccrued:0,bonusAccrued:0}},beneficiaries:{},accounts:{},envios:{},recargas:{},paqueticos:{},pagos:{},paquetes:{},deposits:{},accountWithdrawals:{},commissions:{},requests:{},notifications:{},audit:{},dailyReports:{},capital:{balance:0,totalAcreditado:0,movements:{}}};
 // Producción: no crear transacciones demo; las cuentas bancarias oficiales sí deben conservarse.
 
 const SESSION_KEY='sendwayo_express_session_v4'; const SESSION_TTL=30*60*1000;
@@ -929,7 +929,7 @@ const OFFICIAL_BANK_ACCOUNTS=[
  {id:'b3',bank:'BHD',holder:'Herace Fleuranvil',number:'36818900013'}
 ];
 function ensureSeedData(){
-  state.settings=state.settings||{contact:{phone:'8298573043',email:'sendwayoexpress@gmail.com'}};state.settings.contact=state.settings.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};
+  state.settings=state.settings||{contact:{phone:'8297676665',email:'sendwayoexpress@gmail.com'}};state.settings.contact=state.settings.contact||{phone:'8297676665',email:'sendwayoexpress@gmail.com'};
   productionResetState();
   state.users=state.users||{}; if(!state.users.admin)state.users.admin={id:'admin',role:'Administrador',name:'Administrador SENDWAYO EXPRESS',phone:'',username:'admin',active:true,balance:0,commission:0,referrals:0};
   RESTORED_SECRET_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]={...x,staffId:x.staffId||('ID'+String(10000000+Number(x.id.replace('rm',''))).padStart(8,'0')),active:true,balance:Number(x.balance||0),commission:Number(x.commission||0),referrals:0,accountStatus:'Activo',accountSchemaV3:1,authEmail:authEmailFor(x)};});
@@ -2389,7 +2389,7 @@ function generateReceipt(collection,id){
  let benName=collection==='deposits'?(u.name||r.username||'Remitente'):(r.beneficiario||r.beneficiary||'Según operación');
  let benPhone=collection==='deposits'?(u.phone||''):(r.beneficiarioPhone||r.beneficiaryPhone||'');
  let d=new Date(),receiptId=r.receipt?.id||('SW-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0'));
- r.receipt={id:receiptId,date:d.toLocaleDateString('es-DO'),time:d.toLocaleTimeString('es-DO'),business:'SENDWAYO EXPRESS',user:u.name||'',username:u.username||'',staffId:u.staffId||'',role:'Remitente',concept:transactionConcept(collection,r),type:r.type||transactionConcept(collection,r),route:r.route||r.type||'Según operación',amount:Number(r.amount||0),net:Number(r.net||r.amount||0),remitente:r.remitenteNombre||r.remitente||u.name||'',remitentePhone:r.remitentePhone||u.phone||'',beneficiario:benName,beneficiarioPhone:benPhone,collection,status:'Aprobado',original:true,contactPhone:'8298573043',contactEmail:'sendwayoexpress@gmail.com'};
+ r.receipt={id:receiptId,date:d.toLocaleDateString('es-DO'),time:d.toLocaleTimeString('es-DO'),business:'SENDWAYO EXPRESS',user:u.name||'',username:u.username||'',staffId:u.staffId||'',role:'Remitente',concept:transactionConcept(collection,r),type:r.type||transactionConcept(collection,r),route:r.route||r.type||'Según operación',amount:Number(r.amount||0),net:Number(r.net||r.amount||0),remitente:r.remitenteNombre||r.remitente||u.name||'',remitentePhone:r.remitentePhone||u.phone||'',beneficiario:benName,beneficiarioPhone:benPhone,collection,status:'Aprobado',original:true,contactPhone:'8297676665',contactEmail:'sendwayoexpress@gmail.com'};
  state[collection][id]=r;
  enrichReceipt(collection,id);
 }
@@ -2426,7 +2426,7 @@ window.showReceipt=function showReceipt(collection,id){
  const isRdHaiti=/^RD\s*a\s*HTI/i.test(String(r.type||r.route||tipo));
  const displayAmount=isRdHaiti?Number(r.destination??(netAmount*2.10)):amount;
  const displayCurrency=isRdHaiti?'HTG':'RD$';
- const contact=state.settings?.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};
+ const contact=(()=>{const c=state.settings?.contact||{phone:'8297676665',email:'sendwayoexpress@gmail.com'};return c.phone==='8298573043'?{...c,phone:'8297676665'}:c;})();
  const lang=localStorage.getItem('sendwayo_language')||'es';
  const RT={
   es:{company:'SENDWAYO EXPRESS',top:'Servicio de calidad que conecta contigo con confianza y seguridad.',bottom:'Hazlo todo sin moverte de casa, quédate cómodo y nosotros nos encargamos.',proof:'COMPROBANTE OFICIAL',date:'Fecha',time:'Hora',transaction:'Transacción',senderId:'ID Remitente',beneficiary:'BENEFICIARIO',received:'MONTO RECIBIDO',approved:'APROBADO',thanks:'Gracias por confiar en SENDWAYO EXPRESS.',print:'Imprimir / Guardar',wa:'WhatsApp / Celular',email:'Email'},
@@ -2481,7 +2481,7 @@ function guardarRetiroCuenta(){
  let id=uid('awr');state.accountWithdrawals=state.accountWithdrawals||{};state.accountWithdrawals[id]={id,userId:currentUser.id,username:currentUser.username,createdByAuthUid:firebase.auth().currentUser?.uid||null,amount,note:document.getElementById('cuenta-retiro-nota').value.trim(),status:'Pendiente',createdAt:now()};
  addNotification('Administrador','Solicitud de retiro de cuenta de '+currentUser.name+' por '+money(amount),'accountWithdrawals',id);addAudit('Solicitar retiro de cuenta',id);persist();closeModal('retiroCuentaModal');renderAll();toast('Solicitud de retiro enviada al Administrador.')
 }
-function renderContact(){let c=state.settings?.contact||{phone:'8298573043',email:'sendwayoexpress@gmail.com'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
+function renderContact(){let c=state.settings?.contact||{phone:'8297676665',email:'sendwayoexpress@gmail.com'};if(c.phone==='8298573043')c={...c,phone:'8297676665'};document.getElementById('contact-phone').textContent=c.phone||'';document.getElementById('contact-email').textContent=c.email||'';let wp=document.getElementById('welcome-contact-phone'),we=document.getElementById('welcome-contact-email');if(wp)wp.textContent=c.phone||'';if(we)we.textContent=c.email||'';document.querySelector('#contactTable tbody').innerHTML=`<tr><td>1</td><td>WhatsApp / Celular</td><td>${escapeHtml(c.phone||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr><tr><td>2</td><td>Correo</td><td>${escapeHtml(c.email||'')}</td><td>${isAdmin()?'<button class="btn btn-warning btn-sm" onclick="editContact()">Editar</button>':''}</td></tr>`}function editContact(){if(!isAdmin())return;let c=state.settings.contact;c.phone=prompt('WhatsApp / celular:',c.phone)||c.phone;c.email=prompt('Correo electrónico:',c.email)||c.email;state.settings.contact=c;persist();renderAll();toast('Información de contacto actualizada.')}
 async function applyAccountWithdrawalSettlement(userId,withdrawalId,amount){ if(!isAdmin())return false;
  const n=Number(amount||0);if(n<=0||!firebaseReady||!firebase.auth().currentUser)return false;
  const ref=firebase.database().ref(DB_PATH+'/users/'+userId);
