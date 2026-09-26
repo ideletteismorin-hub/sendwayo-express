@@ -954,6 +954,7 @@ function renderRealtimeView(){
    case 'view-perfil':renderProfile();break;
   }
  }catch(e){console.warn('SENDWAYO realtime view:',e)}
+ try{if(typeof swRenderGanancias==='function')swRenderGanancias()}catch(_){}
  if(typeof ensureDownloadActions==='function')setTimeout(()=>ensureDownloadActions(),0);
 }
 /* SENDWAYO NOTIFICATIONS — recepción inmediata y alerta no invasiva */
@@ -2796,39 +2797,7 @@ async function saveAdminBalanceAdjustment(){
 }
 
 function renderGananciasDia(){
- const box=document.getElementById('ganancias-dia-lista'),totalEl=document.getElementById('ganancias-dia-total');
- if(!box||!totalEl||!currentUser)return;
- const today=todayDateKey(), admin=isAdmin(), uid=admin?'admin':currentUser.id;
- const cols=['envios','recargas','paqueticos','pagos','paquetes'];
- const labels={envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos y servicios',paquetes:'Paquetes'};
- const data={};cols.forEach(c=>data[c]={count:0,commission:0,ops:[]});
- for(const col of cols){
-   const rows=typeof swRecords==='function'?swRecords(col):Object.entries(state[col]||{});
-   for(const [id,r] of rows){
-     if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
-     const owner=r.userId??r.remitterId??r.remitenteId??r.senderId;
-     if(!admin&&String(owner)!==String(uid))continue;
-     const isToday=typeof swRecordDay==='function'?swRecordDay(r)===today:[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp].some(v=>commissionDateKey(v)===today);
-     if(!isToday)continue;
-     const gross=Math.max(0,Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0));
-     if(gross<=0)continue;
-     let share=admin?Number(r.commissionAdmin):Number(r.commissionUser);
-     if(!Number.isFinite(share)||share<=0)share=Number((gross*0.50).toFixed(2));
-     if(!Number.isFinite(share)||share<=0)continue;
-     data[col].count++;
-     data[col].commission+=share;
-     data[col].ops.push({id,amount:Number(r.amount||0),commission:share});
-   }
- }
- let total=0,ops=0;
- box.innerHTML=cols.map(col=>{
-   const d=data[col],count=d.count,comm=Number(d.commission.toFixed(2));
-   total+=comm;ops+=count;
-   return '<div class="item-ganancia"><span><b>'+escapeHtml(labels[col])+'</b><br><small>'+count+' operación'+(count===1?'':'es')+' de hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión (50%)</span><span class="monto-valor">'+money(comm)+'</span></span></div>';
- }).join('');
- totalEl.textContent=money(Number(total.toFixed(2)));
- const card=document.getElementById('ganancias-dia-card');
- if(card)card.title='Ganancia de hoy: '+ops+' operaciones · comisión 50% · '+money(total);
+ if(typeof swRenderGanancias==='function'){swRenderGanancias();return;}
 }
 function renderDashboard(){
  scheduleCommissionDayRefresh();
@@ -3709,13 +3678,12 @@ function swCommission(r,admin,uid){
   return stored>0?stored:Number((gross*.50).toFixed(2));
 }
 function swRecordDay(r){
-  const keys=['reviewedAt','approvedAt','balanceSettledAt','processedAt','createdAt','updatedAt','date','timestamp'];
-  const today=swToday();
-  for(const k of keys){
-    const d=swDay(r&&r[k]);
-    if(d===today)return d;
-  }
-  return '';
+ const keys=['reviewedAt','approvedAt','balanceSettledAt','processedAt','createdAt','updatedAt','date','timestamp','fecha','fechaAprobacion','approvedDate','processedDate'];
+ const today=swToday();
+ for(const k of keys){if(swDay(r&&r[k])===today)return today;}
+ const part=String(r?.id||'').split('_')[1];
+ if(part){const n=parseInt(part,36);if(Number.isFinite(n)&&n>0&&swDay(n)===today)return today;}
+ return '';
 }
 function swDaily(uid,admin){
   const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},counts={};
