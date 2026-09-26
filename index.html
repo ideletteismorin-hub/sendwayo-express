@@ -3740,7 +3740,12 @@ function swCommission(r,admin,uid,col){
   return stored>0?stored:Number((gross*0.50).toFixed(2));
 }
 function swRecordDay(r){
- const keys=['reviewedAt','approvedAt','balanceSettledAt','processedAt','approvedAtMs','createdAt','createdAtMs','updatedAt','date','timestamp','fecha','fechaAprobacion','approvedDate','processedDate'];
+ const keys=[
+  'reviewedAt','reviewedAtMs','approvedAt','approvedAtMs','balanceSettledAt',
+  'processedAt','processedAtMs','createdAt','createdAtMs','updatedAt','updatedAtMs',
+  'date','timestamp','fecha','fechaAprobacion','fechaAprobacionMs','approvedDate',
+  'processedDate','fechaCreacion','fechaHora'
+ ];
  const today=swToday();
  for(const k of keys){if(swDay(r&&r[k])===today)return today;}
  const part=String(r?.id||'').split('_')[1];
