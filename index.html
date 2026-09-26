@@ -4635,3 +4635,20 @@ async function deleteCapitalMovement(id){if(!isAdmin())return;const r=state.capi
 .receipt-brand-wide .receipt-head .receipt-original{display:block!important;width:max-content!important;max-width:100%!important;margin:8px auto 4px!important;text-align:center!important}
 @media(max-width:800px){.receipt-brand-wide .receipt-head .receipt-brand-row{gap:10px!important;width:100%!important}.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{flex:0 0 115px!important;width:115px!important;height:72px!important;max-width:115px!important;max-height:72px!important}.receipt-brand-wide .receipt-head .receipt-brand-name h2{font-size:1.08rem!important;white-space:nowrap!important}.receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{max-width:calc(100vw - 135px)!important;font-size:.53rem!important;line-height:1.18!important;margin-top:4px!important}.receipt-brand-wide .receipt-head .receipt-original{margin:7px auto 4px!important}}
 </style>
+
+<style id="sendwayo-receipt-layout-exact">
+/* Encabezado exacto: LOGO y NOMBRE en la MISMA FILA; lema debajo; espacio antes del siguiente bloque. */
+.receipt-brand-wide .receipt-head .receipt-brand-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;flex-wrap:nowrap!important;gap:18px!important;width:100%!important;margin:0 auto!important;text-align:left!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{display:block!important;flex:0 0 180px!important;width:180px!important;height:95px!important;max-width:180px!important;max-height:95px!important;object-fit:contain!important;margin:0!important}
+.receipt-brand-wide .receipt-head .receipt-brand-name{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;flex:0 1 auto!important;min-width:0!important;text-align:center!important}
+.receipt-brand-wide .receipt-head .receipt-brand-name h2{display:block!important;margin:0!important;text-align:center!important;white-space:nowrap!important;font-size:2rem!important;line-height:1.05!important}
+.receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{display:block!important;margin:7px 0 0!important;text-align:center!important;max-width:560px!important;font-size:.82rem!important;line-height:1.22!important}
+.receipt-brand-wide .receipt-head .receipt-original{display:block!important;margin:16px auto 6px!important;text-align:center!important}
+@media(max-width:800px){
+ .receipt-brand-wide .receipt-head .receipt-brand-row{gap:9px!important;width:100%!important}
+ .receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{flex:0 0 105px!important;width:105px!important;height:68px!important;max-width:105px!important;max-height:68px!important}
+ .receipt-brand-wide .receipt-head .receipt-brand-name h2{font-size:1.05rem!important}
+ .receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{font-size:.5rem!important;max-width:calc(100vw - 125px)!important;margin-top:4px!important}
+ .receipt-brand-wide .receipt-head .receipt-original{margin-top:14px!important}
+}
+</style>
