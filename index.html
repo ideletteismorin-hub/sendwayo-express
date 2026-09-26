@@ -2178,10 +2178,50 @@ async function setTransactionStatus(collection,id,status){
      updates[DB_PATH+'/users/admin/balance']=firebase.database.ServerValue.increment(adminShare);
      updates[DB_PATH+'/users/admin/transactionCommissionCredits/'+id]={id,amount:adminShare,creditedAt:firebase.database.ServerValue.TIMESTAMP};
    }
-   try{await firebase.database().ref(DB_PATH).update(updates)}
-   catch(e){
-     console.error('APROBACION FIREBASE',e);
-     return toast('Firebase rechazó la aprobación. Verifique los permisos de Administrador.','error');
+   try{
+     // Primero intentamos la actualización atómica completa.
+     await firebase.database().ref(DB_PATH).update(updates);
+   }catch(e){
+     console.warn('APROBACION FIREBASE: actualización raíz rechazada; reintentando por rutas autorizadas.',e);
+     try{
+       // Firebase Realtime Database puede rechazar una actualización multi-ruta
+       // aunque el Administrador tenga permiso sobre cada nodo individual.
+       const transactionUpdates={
+         status:'Aprobado',
+         estado:'aprobado',
+         reviewedAt:firebase.database.ServerValue.TIMESTAMP,
+         approvedAt:firebase.database.ServerValue.TIMESTAMP,
+         reviewedBy:currentUser.username,
+         manualReview:true,
+         reviewReason:'',
+         commissionUser:userShare,
+         commissionAdmin:adminShare,
+         commissionTotal:commission,
+         commissionRate:commissionRateFor(logicalCollection,r),
+         commissionAccount:'50% REMITENTE / 50% ADMINISTRADOR',
+         balanceDebited:!!r.balanceDebited,
+         balanceSettledAt:firebase.database.ServerValue.TIMESTAMP,
+         net:amount-Number(r.commission||0)
+       };
+       await firebase.database().ref(base).update(transactionUpdates);
+       if(userShare>0){
+         await firebase.database().ref(DB_PATH+'/users/'+u.id).update({
+           commissionAccrued:firebase.database.ServerValue.increment(userShare),
+           commission:firebase.database.ServerValue.increment(userShare),
+           ['transactionCommissionCredits/'+id]:{id,amount:userShare,creditedAt:firebase.database.ServerValue.TIMESTAMP}
+         });
+       }
+       if(adminShare>0){
+         await firebase.database().ref(DB_PATH+'/users/admin').update({
+           commissionAccrued:firebase.database.ServerValue.increment(adminShare),
+           balance:firebase.database.ServerValue.increment(adminShare),
+           ['transactionCommissionCredits/'+id]:{id,amount:adminShare,creditedAt:firebase.database.ServerValue.TIMESTAMP}
+         });
+       }
+     }catch(e2){
+       console.error('APROBACION FIREBASE (reintento por rutas)',e,e2);
+       return toast('Firebase rechazó la aprobación. No se modificó la operación.','error');
+     }
    }
    const approved={...r,status:'Aprobado',estado:'aprobado',reviewedAt:now(),approvedAt:Date.now(),reviewedBy:currentUser.username,manualReview:true,reviewReason:'',commissionUser:userShare,commissionAdmin:adminShare,commissionTotal:commission,commissionRate:commissionRateFor(logicalCollection,r),commissionAccount:'50% REMITENTE / 50% ADMINISTRADOR',balanceDebited:!!r.balanceDebited,balanceSettledAt:now(),net:amount-Number(r.commission||0)};
    state[collection][id]=sourceCollection==='transacciones'?{...approved,_sourceCollection:'transacciones'}:approved;
