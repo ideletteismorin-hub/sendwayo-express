@@ -2118,7 +2118,7 @@ async function setTransactionStatus(collection,id,status){
    if(userShare>0&&!await applyTransactionCommissionShare(u.id,r.id,userShare))return toast('No se pudo completar la comisión del Remitente. La operación seguirá pendiente para reintento.','error');
    if(adminShare>0&&!await applyTransactionCommissionShare('admin',r.id,adminShare))return toast('No se pudo completar la comisión de Administración. La operación seguirá pendiente para reintento.','error');
    const ref=firebase.database().ref(DB_PATH+'/'+collection+'/'+id);
-   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status:'Aprobado',reviewedAt:now(),reviewedBy:currentUser.username,manualReview:true,reviewReason:'',commissionUser:userShare,commissionAdmin:adminShare,commissionTotal:commission,commissionRate:commissionRateFor(collection,v||r),commissionAccount:'50% REMITENTE / 50% ADMINISTRADOR',balanceDebited:!!v.balanceDebited,balanceSettledAt:now(),net:Number(v.amount||0)-Number(v.commission||0)});
+   const tx=await ref.transaction(v=>!v||v.status!=='Pendiente'?undefined:{...v,status:'Aprobado',estado:'aprobado',reviewedAt:now(),approvedAt:firebase.database.ServerValue.TIMESTAMP,reviewedBy:currentUser.username,manualReview:true,reviewReason:'',commissionUser:userShare,commissionAdmin:adminShare,commissionTotal:commission,commissionRate:commissionRateFor(collection,v||r),commissionAccount:'50% REMITENTE / 50% ADMINISTRADOR',balanceDebited:!!v.balanceDebited,balanceSettledAt:now(),net:Number(v.amount||0)-Number(v.commission||0)});
    if(!tx.committed)return toast('La operación sigue pendiente porque Firebase no confirmó el cambio de estado. Puede reintentarse sin duplicar comisiones.','warn');
    r=tx.snapshot.val();state[collection][id]=r;
    // Libro mayor inmutable por operación aprobada: una sola clave por operación evita duplicados.
@@ -2481,10 +2481,10 @@ function commissionTodayFor(userId){
    const rows=typeof swRecords==='function'?swRecords(col):Object.entries(state[col]||{});
    for(const [id,r] of rows){
      const key=col+'|'+id;
-     if(seen.has(key)||!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
+     if(seen.has(key)||!r||!swApproved(r))continue;
      const day=typeof swRecordDay==='function'?swRecordDay(r):[r.reviewedAt,r.approvedAt,r.balanceSettledAt,r.processedAt,r.createdAt,r.date,r.updatedAt,r.timestamp].map(commissionDateKey).find(Boolean);
      if(day!==today)continue;
-     const ownerId=r.userId??r.remitterId??r.remitenteId??r.senderId;
+     const ownerId=r.userId??r.usuarioId??r.remitterId??r.remitenteId??r.senderId;
      if(!admin&&String(ownerId)!==String(userId))continue;
      const gross=Math.max(0,Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0));
      if(gross<=0)continue;
@@ -2508,7 +2508,7 @@ function commissionTotalFor(userId){
  let derived=0;
  for(const col of cols){
    for(const [id,r] of (typeof swRecords==='function'?swRecords(col):Object.entries(state[col]||{}))){
-     if(!r||String(r.status||'').trim().toLowerCase()!=='aprobado')continue;
+     if(!r||!swApproved(r))continue;
      const owner=r.userId??r.remitterId??r.remitenteId??r.senderId;
      if(!admin&&String(owner)!==String(userId))continue;
      const gross=Math.max(0,Number(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee??0));
@@ -3675,12 +3675,12 @@ function swDay(v){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
 }
 function swApproved(r){
-  const v=String(r&&r.status||'').trim().toLowerCase();
+  const v=String(r?.status??r?.estado??'').trim().toLowerCase();
   return v==='aprobado'||v==='approved'||r?.approved===true||r?.aprobado===true;
 }
 function swRecords(col){
   const merged=new Map();
-  const isApprovedRecord=r=>{const s=String(r?.status||'').trim().toLowerCase();return s==='aprobado'||s==='approved'||r?.approved===true||r?.aprobado===true};
+  const isApprovedRecord=r=>{const s=String(r?.status??r?.estado??'').trim().toLowerCase();return s==='aprobado'||s==='approved'||r?.approved===true||r?.aprobado===true};
   const mergeRecord=(id,incoming)=>{
     if(!incoming)return;
     const current=merged.get(id);
@@ -3740,7 +3740,7 @@ function swCommission(r,admin,uid,col){
     const stored=swNum(r?.commissionAdmin);
     return stored>0?stored:Number((gross*0.50).toFixed(2));
   }
-  const owner=r?.userId??r?.remitterId??r?.remitenteId??r?.senderId;
+  const owner=r?.userId??r?.usuarioId??r?.remitterId??r?.remitenteId??r?.senderId;
   if(String(owner)!==String(uid))return 0;
   const stored=swNum(r?.commissionUser);
   return stored>0?stored:Number((gross*0.50).toFixed(2));
@@ -3759,32 +3759,37 @@ function swRecordDay(r){
  return '';
 }
 function swDaily(uid,admin){
-  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},counts={},approved=[];
+  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},volume={},counts={},approved=[];
   let total=0,ops=0;
   const today=swToday();
   for(const col of cols){
-    let amount=0,n=0;
+    let amount=0,vol=0,n=0;
     for(const [id,r] of swRecords(col)){
       if(!swApproved(r))continue;
-      // Una operación aprobada hoy cuenta por su fecha de aprobación/proceso; si falta,
-      // se acepta la fecha de creación como respaldo.
+      // La fecha principal es la aprobación; la fecha de creación solo sirve como respaldo
+      // para registros antiguos que todavía no guardan approvedAt.
       const day=swRecordDay(r)||swDay(r?.createdAt||r?.createdAtMs||r?.date||r?.timestamp||id);
       if(day!==today)continue;
+      const bucket=swTipoTransaccion(r,col);
+      if(bucket!==col)continue;
+      const opAmount=swAmount(r);
       const share=swCommission(r,admin,uid,col);
-      // Si la operación está aprobada pero el registro antiguo no trae comisión,
-      // swCommission la reconstruye con la tarifa vigente del módulo.
-      if(share<=0)continue;
+      // La operación se cuenta aunque su comisión almacenada sea 0: la comisión se
+      // reconstruye automáticamente según la tarifa de la categoría.
+      if(opAmount<=0&&share<=0)continue;
       n++;
+      vol+=opAmount;
       amount+=share;
-      approved.push({col,id,r,share});
+      approved.push({col,id,r,share,amount:opAmount});
     }
     out[col]=Number(amount.toFixed(2));
+    volume[col]=Number(vol.toFixed(2));
     counts[col]=n;
     total+=amount;
     ops+=n;
   }
-  approved.sort((a,b)=>swDate(b.r?.reviewedAt||b.r?.approvedAt||b.r?.processedAt||b.r?.createdAt||b.r?.date)-swDate(a.r?.reviewedAt||a.r?.approvedAt||a.r?.processedAt||a.r?.createdAt||a.r?.date));
-  return {by:out,counts,total:Number(total.toFixed(2)),ops,approved};
+  approved.sort((a,b)=>swDate(b.r?.reviewedAt||b.r?.approvedAt||b.r?.processedAt||b.r?.createdAt||b.r?.date||b.r?.fecha)-swDate(a.r?.reviewedAt||a.r?.approvedAt||a.r?.processedAt||a.r?.createdAt||a.r?.date||a.r?.fecha));
+  return {by:out,volume,counts,total:Number(total.toFixed(2)),ops,approved};
 }
 function swLabel(col){
   return ({envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos / servicios',paquetes:'Paquetes'})[col]||col;
@@ -3796,7 +3801,7 @@ function swRenderGanancias(){
   if(!uid){list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias de hoy.</div>';if(tot)tot.textContent=swMoney(0);return}
   const d=swDaily(uid,admin);
   const cols=['envios','recargas','paqueticos','pagos','paquetes'];
-  const resumen=cols.map(col=>'<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+(d.counts[col]||0)+' operación'+((d.counts[col]||0)===1?'':'es')+' aprobada'+((d.counts[col]||0)===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('');
+  const resumen=cols.map(col=>'<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+(d.counts[col]||0)+' operación'+((d.counts[col]||0)===1?'':'es')+' aprobada'+((d.counts[col]||0)===1?'':'s')+' hoy · Volumen: '+swMoney(d.volume?.[col]||0)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('');
   const detalle=d.approved.length
     ? '<div style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px"><b>Transacciones aprobadas hoy</b>'+d.approved.map(x=>{
         const label=swLabel(x.col),amount=swAmount(x.r),id=x.id;
