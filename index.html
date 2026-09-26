@@ -3782,7 +3782,11 @@ function swRecords(col){
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
 function swAmount(r){
-  return swNum(r?.amount??r?.monto??r?.montoEnviado??r?.montoRecarga??r?.importe??r?.valor??r?.total??r?.value??r?.cost??r?.precio??r?.price);
+  return swNum(
+    r?.amount??r?.monto??r?.montoEnviado??r?.montoRecarga??r?.montoTotal??
+    r?.montoOperacion??r?.amountSent??r?.amountReceived??r?.importe??r?.valor??
+    r?.total??r?.value??r?.cost??r?.precio??r?.price??r?.montoServicio
+  );
 }
 function swTipoTransaccion(r,col){
   const t=String(r?.tipoTransaccion??r?.tipo??r?.type??r?.transactionType??r?.categoria??'').trim().toLowerCase();
@@ -3828,12 +3832,19 @@ function swRecordDay(r){
   'reviewedAt','reviewedAtMs','approvedAt','approvedAtMs','balanceSettledAt',
   'processedAt','processedAtMs','createdAt','createdAtMs','updatedAt','updatedAtMs',
   'date','timestamp','fecha','fechaAprobacion','fechaAprobacionMs','approvedDate',
-  'processedDate','fechaCreacion','fechaHora'
+  'processedDate','fechaCreacion','fechaHora','fechaRegistro','fechaOperacion',
+  'createdDate','approvalDate','approvedOn','dateMs','createdOn'
  ];
  const today=swToday();
- for(const k of keys){if(swDay(r&&r[k])===today)return today;}
- const part=String(r?.id||'').split('_')[1];
- if(part){const n=parseInt(part,36);if(Number.isFinite(n)&&n>0&&swDay(n)===today)return today;}
+ for(const k of keys){if(swDay(r?.[k])===today)return today;}
+ const nested=[r?.metadata,r?.meta,r?.timestamps,r?.dates].filter(Boolean);
+ for(const obj of nested){for(const k of keys){if(swDay(obj?.[k])===today)return today;}}
+ const raw=String(r?.id||'');
+ const parts=raw.split(/[_-]/).filter(Boolean);
+ for(const p of parts){
+   if(/^\d{10,13}$/.test(p)){if(swDay(Number(p))===today)return today;}
+   const n=parseInt(p,36);if(Number.isFinite(n)&&n>100000&&swDay(n)===today)return today;
+ }
  return '';
 }
 function swDaily(uid,admin){
