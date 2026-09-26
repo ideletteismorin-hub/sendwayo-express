@@ -2446,6 +2446,7 @@ function renderAll(){
  setTimeout(()=>{
    try{updateSelectors()}catch(e){}
    try{renderRealtimeView()}catch(e){console.warn('SENDWAYO renderAll:',e)}
+   try{if(typeof swRenderGanancias==='function')swRenderGanancias()}catch(e){console.warn('SENDWAYO Ganancia de hoy:',e)}
    try{ensureStandardStatusBars()}catch(e){}
    try{renderNotifications()}catch(e){}
    try{translateInterface()}catch(e){}
@@ -3755,6 +3756,10 @@ function swRenderGanancias(){
   card.dataset.swUpdated=String(Date.now());
 }
 window.SENDWAYO_HARDENING.renderDaily=swRenderGanancias;
+window.SENDWAYO_HARDENING.refreshDailyNow=function(){
+  try{if(typeof swRenderGanancias==='function')swRenderGanancias()}catch(e){console.warn('SENDWAYO Ganancia de hoy:',e)}
+};
+setInterval(()=>{if(document.querySelector('#view-dashboard.view-section.active')&&typeof swRenderGanancias==='function')swRenderGanancias()},1500);
 
 
 /* Evita que un render repetido congele la interfaz. */
