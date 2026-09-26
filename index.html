@@ -4935,3 +4935,69 @@ async function deleteCapitalMovement(id){if(!isAdmin())return;const r=state.capi
   }
 }
 </style>
+
+<style id="sendwayo-logo-global-final">
+/* El fondo general del comprobante permanece visible; solo se limpia visualmente el logo. */
+.receipt-brand-wide .receipt-watermark,
+.receipt-compact .receipt-watermark{
+  display:flex!important;
+}
+.receipt-brand-wide .receipt-watermark img,
+.receipt-compact .receipt-watermark img{
+  display:block!important;
+  opacity:.055!important;
+}
+/* Primera línea: logo + nombre como un único grupo perfectamente centrado. */
+.receipt-brand-wide .receipt-head .receipt-brand-row{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:fit-content!important;
+  max-width:100%!important;
+  margin:0 auto!important;
+  gap:14px!important;
+  overflow:visible!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{
+  width:200px!important;
+  height:96px!important;
+  flex:0 0 200px!important;
+  max-width:200px!important;
+  max-height:96px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0!important;
+  mix-blend-mode:multiply!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  text-align:left!important;
+  overflow:visible!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name h2{
+  margin:0!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+  font-size:1.85rem!important;
+}
+/* El mismo tratamiento visual para todas las apariciones del logo de marca. */
+.sidebar-brand img,
+.brand-logo,
+#header-avatar,
+#profile-preview,
+img[data-current-brand-logo="true"]{
+  mix-blend-mode:multiply!important;
+  background:transparent!important;
+}
+@media(max-width:800px){
+  .receipt-brand-wide .receipt-head .receipt-brand-row{gap:8px!important;width:fit-content!important;max-width:100%!important;justify-content:center!important}
+  .receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{width:130px!important;height:74px!important;flex:0 0 130px!important;max-width:130px!important;max-height:74px!important}
+  .receipt-brand-wide .receipt-head .receipt-brand-name h2{font-size:1.08rem!important}
+}
+</style>
