@@ -125,7 +125,21 @@ aside{height:100vh;min-height:0;overflow:hidden}
 .sidebar-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.55);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
 .sidebar-menu::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.82);background-clip:padding-box}
 @media(max-width:900px){aside{height:100dvh}.sidebar-menu{max-height:calc(100dvh - 98px);-webkit-overflow-scrolling:touch}}
-</style></head>
+</style><style id="sendwayo-receipt-single-line-final">
+.receipt-brand-wide .receipt-head{width:100%!important;text-align:center!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:18px!important;width:100%!important;max-width:900px!important;margin:0 auto!important;padding:0!important;text-align:left!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{display:block!important;flex:0 0 180px!important;width:180px!important;height:78px!important;max-width:180px!important;max-height:78px!important;object-fit:contain!important;object-position:center!important;margin:0!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-brand-name{display:block!important;flex:1 1 auto!important;min-width:0!important;margin:0!important;padding:0!important;text-align:left!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-brand-name h2{display:block!important;width:auto!important;margin:0!important;padding:0!important;text-align:left!important;white-space:nowrap!important;font-size:2rem!important;line-height:1.05!important;font-weight:900!important;color:#0f2c59!important}
+.receipt-brand-wide .receipt-head .receipt-slogan{display:block!important;width:100%!important;max-width:760px!important;margin:9px auto 0!important;text-align:center!important;font-size:.82rem!important;line-height:1.22!important;font-weight:800!important}
+@media(max-width:800px){
+.receipt-brand-wide .receipt-head .receipt-brand-row{gap:9px!important;width:100%!important;max-width:100%!important;justify-content:flex-start!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{flex:0 0 92px!important;width:92px!important;height:58px!important;max-width:92px!important;max-height:58px!important}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-brand-name h2{font-size:1.08rem!important;white-space:nowrap!important;overflow:visible!important}
+.receipt-brand-wide .receipt-head .receipt-slogan{font-size:.5rem!important;line-height:1.18!important;margin-top:5px!important}
+}
+</style>
+</head>
 <body>
 <div id="welcome-screen">
   <div class="welcome-card">
@@ -2378,7 +2392,7 @@ function downloadReceipt(collection,id){
  showReceipt(collection,id);
  setTimeout(()=>window.print(),250);
 }
-function showReceipt(collection,id){
+window.showReceipt=function showReceipt(collection,id){
  let r=state[collection]?.[id];
  if(!r||r.status!=='Aprobado')return toast('El recibo solo aparece después de la aprobación del Administrador.','warn');
  if(!r.receipt){
@@ -2441,7 +2455,7 @@ function showReceipt(collection,id){
  <div class="receipt-bottom-line" style="font-size:.54rem;line-height:1.18;margin-top:3px!important;white-space:normal;overflow:visible;word-break:normal">${t.bottom}</div>
  <div class="contact-card" style="padding:8px 9px;margin-top:7px;text-align:center;font-size:.68rem;line-height:1.28;white-space:normal;overflow:visible">
    <div style="white-space:normal;overflow:visible;overflow-wrap:anywhere"><strong>${t.wa}:</strong> ${escapeHtml(contact.phone||'')}</div>
-   <div style="white-space:normal;overflow:visible;overflow-wrap:anywhere;margin-top:4px"><strong>${t.email}:</strong> ${escapeHtml(contact.email||'')}<div class="receipt-capture" style="display:flex;justify-content:center;margin-top:8px"><button type="button" class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopImmediatePropagation();swCopyReceiptText();return false">COPIAR</button></div>
+   <div style="white-space:normal;overflow:visible;overflow-wrap:anywhere;margin-top:4px"><strong>${t.email}:</strong> ${escapeHtml(contact.email||'')}<div class="receipt-capture" style="display:flex;justify-content:center;margin-top:8px"><button type="button" class="btn btn-primary btn-sm" onclick="event.preventDefault();event.stopPropagation();swCopyReceiptText();return false">COPIAR</button></div>
  </div>
  </div>
  </div>`;
@@ -2909,7 +2923,7 @@ function renderEnvios(){
    const remPhone=r.remitentePhone||u.phone||'';
    const benName=r.beneficiarioNombre||r.beneficiario||b?.name||'';
    const benPhone=r.beneficiarioPhone||b?.phone||'';
-   return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td><b>${escapeHtml(remName)}</b><br><small>${escapeHtml(remPhone)}</small></td><td>${money(r.amount)}</td><td><b>${escapeHtml(benName)}</b><br><small>${escapeHtml(benPhone)}</small></td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td>${r.status==='Aprobado'?`<button class="btn btn-primary btn-sm" title="Ver comprobante" onclick="showReceipt(\'envios\',\'${r.id}\')">COMPROBANTE</button>`:'—'}</td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)}</td></tr>`
+   return `<tr><td>${i+1}</td><td>${escapeHtml(r.type)}</td><td><b>${escapeHtml(remName)}</b><br><small>${escapeHtml(remPhone)}</small></td><td>${money(r.amount)}</td><td><b>${escapeHtml(benName)}</b><br><small>${escapeHtml(benPhone)}</small></td><td>${money(r.net)}</td><td>${money(r.commission)}</td><td>${Number(r.destination||0).toFixed(2)} HTG</td><td><span class="status ${statusClass(r.status||'Pendiente')}">${escapeHtml(r.status||'Pendiente')}</span></td><td>${r.status==='Aprobado'?`<button class="btn btn-primary btn-sm" title="Ver comprobante" onclick="event.preventDefault();event.stopPropagation();window.showReceipt(\'envios\',\'${r.id}\')">COMPROBANTE</button>`:'—'}</td><td data-record-id="${r.id}">${actionButtons('envios',r.id,r.status)}</td></tr>`
  }).join('')||'<tr><td colspan="11" class="muted">No hay registros.</td></tr>';
 }
 function renderPeople(){
