@@ -3636,7 +3636,11 @@ const swStyle=document.createElement('style');swStyle.textContent='.request-comp
 const SWH={version:'1.0.0',lastRender:0,healthTimer:null,conn:null};
 window.SENDWAYO_HARDENING=SWH;
 
-function swNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function swNum(v){
+  if(typeof v==='number')return Number.isFinite(v)?v:0;
+  const s=String(v??'').replace(/[^0-9,.-]/g,'').replace(/\.(?=.*\.)/g,'').replace(/,/g,'.');
+  const n=Number(s);return Number.isFinite(n)?n:0;
+}
 function swMoney(v){try{return typeof money==='function'?money(v):'RD$ '+swNum(v).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2})}catch(e){return 'RD$ '+swNum(v).toFixed(2)}}
 function swEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function swToday(){
@@ -3662,12 +3666,22 @@ function swRecords(col){
   Object.entries((window.state&&state[col])||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
-function swCommission(r,admin,uid){
-  const gross=Math.max(0,swNum(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee));
-  // La comisión de cada operación aprobada se reparte 50/50.
-  // Si un registro antiguo no trae commissionAdmin/commissionUser, o lo trae en cero,
-  // se deriva la participación desde la comisión total para que Ganancias del día
-  // nunca quede en cero cuando realmente hubo comisión.
+function swCommission(r,admin,uid,col){
+  let gross=swNum(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee);
+  // Si una operación aprobada antigua no guardó la comisión total, la reconstruimos
+  // desde el monto y la regla de su módulo. Nunca dejamos Ganancia de hoy en cero
+  // cuando la operación aprobada realmente generó comisión.
+  if(gross<=0){
+    const amount=swNum(r.amount);
+    if(amount>0){
+      if(col==='envios'&&typeof commissionRateFor==='function'){
+        gross=Number((amount*Number(commissionRateFor(col,r)||0)).toFixed(2));
+      }else if(['recargas','paqueticos','pagos','paquetes'].includes(col)){
+        gross=Number((amount*0.05).toFixed(2));
+      }
+    }
+  }
+  if(gross<=0)return 0;
   if(admin){
     const stored=swNum(r.commissionAdmin);
     return stored>0?stored:Number((gross*.50).toFixed(2));
@@ -3694,7 +3708,7 @@ function swDaily(uid,admin){
       if(seen.has(id)||!swApproved(r)||swRecordDay(r)!==swToday())continue;
       seen.add(id);
       n++;
-      amount+=swCommission(r,admin,uid);
+      amount+=swCommission(r,admin,uid,col);
     }
     out[col]=Number(amount.toFixed(2));
     counts[col]=n;
