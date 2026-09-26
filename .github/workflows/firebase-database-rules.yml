@@ -1,0 +1,19 @@
+name: Publicar reglas de Firebase
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-database-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Publicar reglas de Realtime Database
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only database --project sendwayo-express --token "$FIREBASE_TOKEN"
