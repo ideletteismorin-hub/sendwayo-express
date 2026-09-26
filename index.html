@@ -2417,9 +2417,9 @@ function showReceipt(collection,id){
      <img class="receipt-logo" src="${LOGO_DATA}" alt="${t.company}" data-current-brand-logo="true">
      <div class="receipt-brand-name">
        <h2>${t.company}</h2>
-       <div class="receipt-slogan">${t.top}</div>
      </div>
    </div>
+   <div class="receipt-slogan">${t.top}</div>
    <div class="receipt-original" style="white-space:nowrap;overflow:visible;text-overflow:clip">${t.company} #${escapeHtml(rec.id||'')}</div>
  </div>
  <div class="receipt-grid-compact">
@@ -3851,18 +3851,39 @@ function swDaily(uid,admin){
   const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},volume={},counts={},approved=[];
   let total=0,ops=0;
   const today=swToday();
+
+  // La ganancia se reconstruye SOLO con operaciones aprobadas que tengan
+  // alguna fecha de operación/aprobación correspondiente a HOY.
+  // Esto evita perder operaciones por diferencias entre versiones de los
+  // nombres de fecha y mantiene la vista idéntica para Administrador y Remitente.
+  const recordIsToday=r=>{
+    if(!r)return false;
+    if(swRecordDay(r)===today)return true;
+    const dateKeys=[
+      'createdAt','createdAtMs','date','dateMs','timestamp','timestampMs',
+      'reviewedAt','reviewedAtMs','approvedAt','approvedAtMs',
+      'processedAt','processedAtMs','balanceSettledAt','updatedAt','updatedAtMs',
+      'fecha','fechaHora','fechaRegistro','fechaOperacion','fechaAprobacion',
+      'fechaAprobacionMs','approvedDate','approvalDate','approvedOn','createdDate','createdOn'
+    ];
+    for(const k of dateKeys){if(swDay(r?.[k])===today)return true;}
+    for(const obj of [r?.metadata,r?.meta,r?.timestamps,r?.dates].filter(Boolean)){
+      for(const k of dateKeys){if(swDay(obj?.[k])===today)return true;}
+    }
+    return false;
+  };
+
   for(const col of cols){
     let amount=0,vol=0,n=0;
     for(const [id,r] of swRecords(col)){
-      if(!swApproved(r))continue;
-      // Se toma la fecha real de la operación/aprobación. Si existe cualquiera de
-      // los formatos usados por versiones anteriores, se acepta para no perder
-      // operaciones del día por una diferencia de nombre de campo.
-      const day=swRecordDay(r);
-      if(day!==today)continue;
+      if(!swApproved(r)||!recordIsToday(r))continue;
 
       const opAmount=swAmount(r);
       const share=swCommission(r,admin,uid,col);
+
+      // Una operación aprobada con monto válido debe aparecer aunque la
+      // comisión almacenada esté en cero: la comisión se calcula con la
+      // regla vigente cuando sea necesario.
       if(opAmount<=0&&share<=0)continue;
 
       n++;
@@ -3876,7 +3897,13 @@ function swDaily(uid,admin){
     total+=amount;
     ops+=n;
   }
-  approved.sort((a,b)=>swDate(b.r?.reviewedAt||b.r?.approvedAt||b.r?.processedAt||b.r?.createdAt||b.r?.date||b.r?.fecha)-swDate(a.r?.reviewedAt||a.r?.approvedAt||a.r?.processedAt||a.r?.createdAt||a.r?.date||a.r?.fecha));
+
+  const dateOf=r=>swDate(
+    r?.reviewedAt||r?.approvedAt||r?.processedAt||r?.balanceSettledAt||
+    r?.createdAt||r?.updatedAt||r?.date||r?.fecha||0
+  )?.getTime()||0;
+
+  approved.sort((a,b)=>dateOf(b.r)-dateOf(a.r));
   return {by:out,volume,counts,total:Number(total.toFixed(2)),ops,approved};
 }
 function swLabel(col){
@@ -3885,17 +3912,35 @@ function swLabel(col){
 function swRenderGanancias(){
   const card=document.getElementById('ganancias-dia-card'),list=document.getElementById('ganancias-dia-lista'),tot=document.getElementById('ganancias-dia-total');
   if(!card||!list)return;
-  const admin=typeof isAdmin==='function'&&isAdmin(),uid=admin?'admin':(window.currentUser&&currentUser.id);
-  if(!uid){list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias de hoy.</div>';if(tot)tot.textContent=swMoney(0);return}
+
+  const admin=typeof isAdmin==='function'&&isAdmin();
+  const uid=admin?'admin':(window.currentUser&&currentUser.id);
+  if(!uid){
+    list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias de hoy.</div>';
+    if(tot)tot.textContent=swMoney(0);
+    return;
+  }
+
   const d=swDaily(uid,admin);
   const cols=['envios','recargas','paqueticos','pagos','paquetes'];
-  const resumen=cols.map(col=>'<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+(d.counts[col]||0)+' operación'+((d.counts[col]||0)===1?'':'es')+' aprobada'+((d.counts[col]||0)===1?'':'s')+' hoy · Volumen: '+swMoney(d.volume?.[col]||0)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('');
+
+  const resumen=cols.map(col=>{
+    const n=Number(d.counts[col]||0);
+    return '<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+
+      n+' operación'+(n===1?'':'es')+' aprobada'+(n===1?'':'s')+
+      ' hoy · Volumen: '+swMoney(d.volume?.[col]||0)+
+      '</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+
+      swMoney(d.by[col]||0)+'</span></span></div>';
+  }).join('');
+
   const detalle=d.approved.length
-    ? '<div style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px"><b>Transacciones aprobadas hoy</b>'+d.approved.map(x=>{
+    ? '<div style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px"><b>Transacciones aprobadas hoy</b>'+
+      d.approved.map(x=>{
         const label=swLabel(x.col),amount=swAmount(x.r),id=x.id;
         return '<div class="item-ganancia" style="padding:7px 0"><span><b>'+swEsc(label)+'</b><br><small>ID: '+swEsc(id)+' · Monto: '+swMoney(amount)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+swMoney(x.share)+'</span></span></div>';
       }).join('')+'</div>'
     : '<div class="muted" style="margin-top:10px">No hay transacciones aprobadas registradas para hoy.</div>';
+
   list.innerHTML=resumen+detalle;
   if(tot)tot.textContent=swMoney(d.total);
   card.dataset.swUpdated=String(Date.now());
@@ -3904,8 +3949,11 @@ window.SENDWAYO_HARDENING.renderDaily=swRenderGanancias;
 window.SENDWAYO_HARDENING.refreshDailyNow=function(){
   try{if(typeof swRenderGanancias==='function')swRenderGanancias()}catch(e){console.warn('SENDWAYO Ganancia de hoy:',e)}
 };
-setInterval(()=>{if(document.querySelector('#view-dashboard.view-section.active')&&typeof swRenderGanancias==='function')swRenderGanancias()},1500);
 
+// Se actualiza en el dashboard del Administrador y también en el dashboard
+// de cada Remitente, sin depender del rol ni de que el primer render haya
+// ocurrido antes de restaurar la sesión.
+setInterval(()=>{if(typeof swRenderGanancias==='function'&&document.getElementById('ganancias-dia-card'))swRenderGanancias()},1200);
 
 /* Evita que un render repetido congele la interfaz. */
 let queued=false;
@@ -4648,18 +4696,100 @@ async function deleteCapitalMovement(id){if(!isAdmin())return;const r=state.capi
 </style>
 
 <style id="sendwayo-receipt-layout-exact">
-/* Encabezado exacto: LOGO y NOMBRE en la MISMA FILA; lema debajo; espacio antes del siguiente bloque. */
-.receipt-brand-wide .receipt-head .receipt-brand-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;flex-wrap:nowrap!important;gap:18px!important;width:100%!important;margin:0 auto!important;text-align:left!important}
-.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{display:block!important;flex:0 0 180px!important;width:180px!important;height:95px!important;max-width:180px!important;max-height:95px!important;object-fit:contain!important;margin:0!important}
-.receipt-brand-wide .receipt-head .receipt-brand-name{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;flex:0 1 auto!important;min-width:0!important;text-align:center!important}
-.receipt-brand-wide .receipt-head .receipt-brand-name h2{display:block!important;margin:0!important;text-align:center!important;white-space:nowrap!important;font-size:2rem!important;line-height:1.05!important}
-.receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{display:block!important;margin:7px 0 0!important;text-align:center!important;max-width:560px!important;font-size:.82rem!important;line-height:1.22!important}
-.receipt-brand-wide .receipt-head .receipt-original{display:block!important;margin:16px auto 6px!important;text-align:center!important}
+/* ENCABEZADO DEFINITIVO DEL COMPROBANTE:
+   LOGO A LA IZQUIERDA + SENDWAYO EXPRESS A SU DERECHA, EN LA MISMA FILA.
+   EL LEMA VA CENTRADO DEBAJO. */
+.receipt-brand-wide .receipt-head{
+  width:100%!important;
+  text-align:center!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-row{
+  display:grid!important;
+  grid-template-columns:180px minmax(0,1fr)!important;
+  align-items:center!important;
+  column-gap:18px!important;
+  width:100%!important;
+  max-width:900px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  text-align:left!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{
+  display:block!important;
+  width:180px!important;
+  height:95px!important;
+  max-width:180px!important;
+  max-height:95px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0!important;
+  justify-self:start!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:left!important;
+}
+.receipt-brand-wide .receipt-head .receipt-brand-name h2{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+  font-size:2rem!important;
+  line-height:1.05!important;
+  font-weight:900!important;
+}
+.receipt-brand-wide .receipt-head .receipt-slogan{
+  display:block!important;
+  width:100%!important;
+  max-width:760px!important;
+  margin:9px auto 0!important;
+  padding:0!important;
+  text-align:center!important;
+  font-size:.82rem!important;
+  line-height:1.22!important;
+  font-weight:800!important;
+}
+.receipt-brand-wide .receipt-head .receipt-original{
+  display:block!important;
+  width:max-content!important;
+  max-width:100%!important;
+  margin:17px auto 6px!important;
+  padding:0!important;
+  text-align:center!important;
+}
 @media(max-width:800px){
- .receipt-brand-wide .receipt-head .receipt-brand-row{gap:9px!important;width:100%!important}
- .receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{flex:0 0 105px!important;width:105px!important;height:68px!important;max-width:105px!important;max-height:68px!important}
- .receipt-brand-wide .receipt-head .receipt-brand-name h2{font-size:1.05rem!important}
- .receipt-brand-wide .receipt-head .receipt-brand-name .receipt-slogan{font-size:.5rem!important;max-width:calc(100vw - 125px)!important;margin-top:4px!important}
- .receipt-brand-wide .receipt-head .receipt-original{margin-top:14px!important}
+  .receipt-brand-wide .receipt-head .receipt-brand-row{
+    grid-template-columns:105px minmax(0,1fr)!important;
+    column-gap:9px!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-brand-row .receipt-logo{
+    width:105px!important;
+    height:68px!important;
+    max-width:105px!important;
+    max-height:68px!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-brand-name h2{
+    font-size:1.05rem!important;
+    white-space:nowrap!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-slogan{
+    width:100%!important;
+    max-width:100%!important;
+    font-size:.5rem!important;
+    line-height:1.18!important;
+    margin-top:5px!important;
+    text-align:center!important;
+  }
+  .receipt-brand-wide .receipt-head .receipt-original{
+    margin-top:14px!important;
+  }
 }
 </style>
