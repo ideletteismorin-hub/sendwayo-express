@@ -3638,8 +3638,17 @@ const SWH={version:'1.0.0',lastRender:0,healthTimer:null,conn:null};
 window.SENDWAYO_HARDENING=SWH;
 
 function swNum(v){
+  if(v==null||v==='')return 0;
   if(typeof v==='number')return Number.isFinite(v)?v:0;
-  const s=String(v??'').replace(/[^0-9,.-]/g,'').replace(/\.(?=.*\.)/g,'').replace(/,/g,'.');
+  if(typeof v==='object'){
+    if(typeof v.toMillis==='function'&&Number.isFinite(Number(v.toMillis())))return Number(v.toMillis());
+    if(Number.isFinite(Number(v.seconds)))return Number(v.seconds)*1000;
+    if(Number.isFinite(Number(v._seconds)))return Number(v._seconds)*1000;
+    if(v.value!=null)return swNum(v.value);
+  }
+  let s=String(v).trim().replace(/[^0-9,.-]/g,'');
+  if(s.includes(',')&&s.includes('.')) s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
+  else if(s.includes(',')) s=s.replace(/,/g,'.');
   const n=Number(s);return Number.isFinite(n)?n:0;
 }
 function swMoney(v){try{return typeof money==='function'?money(v):'RD$ '+swNum(v).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2})}catch(e){return 'RD$ '+swNum(v).toFixed(2)}}
@@ -3651,9 +3660,14 @@ function swToday(){
 function swDate(v){
   if(v==null||v==='')return null;
   try{
+    if(typeof v==='object'){
+      if(typeof v.toDate==='function'){const d=v.toDate();if(d&&!isNaN(d.getTime()))return d}
+      const ms=typeof v.toMillis==='function'?v.toMillis():(Number.isFinite(Number(v.seconds))?Number(v.seconds)*1000:(Number.isFinite(Number(v._seconds))?Number(v._seconds)*1000:null));
+      if(ms!=null){const d=new Date(ms);if(!isNaN(d.getTime()))return d}
+    }
     if(typeof parseSendwayoDate==='function'){const d=parseSendwayoDate(v);if(d&&!isNaN(d.getTime()))return d}
   }catch(e){}
-  if(typeof v==='number'){const d=new Date(v<1e12?v*1000:v);if(!isNaN(d.getTime()))return d}
+  if(typeof v==='number'||/^\d+$/.test(String(v).trim())){const n=Number(v);const d=new Date(n<1e12?n*1000:n);if(!isNaN(d.getTime()))return d}
   const d=new Date(v);return isNaN(d.getTime())?null:d;
 }
 function swDay(v){
@@ -3662,7 +3676,7 @@ function swDay(v){
 }
 function swApproved(r){
   const v=String(r&&r.status||'').trim().toLowerCase();
-  return v==='aprobado'||v==='approved';
+  return v==='aprobado'||v==='approved'||r?.approved===true||r?.aprobado===true;
 }
 function swRecords(col){
   const merged=new Map();
