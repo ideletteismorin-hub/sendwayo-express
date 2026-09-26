@@ -279,7 +279,14 @@ aside{height:100vh;min-height:0;overflow:hidden}
     </div>
   </section>
 
-  <section id="view-envios" class="view-section">
+  <section id="view-capital" class="view-section admin-only"><div class="card">
+<div class="card-header"><div><h2><i class="fa-solid fa-coins"></i> Capital</h2><p class="muted">Control exclusivo de Administración para registrar, consultar y conciliar los movimientos reales de capital de SENDWAYO EXPRESS.</p></div><button class="btn btn-primary" onclick="openCapitalModal()"><i class="fa-solid fa-plus"></i> Agregar movimiento</button></div>
+<div class="kpis" style="margin-bottom:14px"><div class="kpi"><b>Capital total</b><h2 id="capital-total">RD$ 0.00</h2></div><div class="kpi"><b>Capital disponible</b><h2 id="capital-disponible">RD$ 0.00</h2></div><div class="kpi"><b>Capital invertido</b><h2 id="capital-invertido">RD$ 0.00</h2></div><div class="kpi"><b>Movimientos</b><h2 id="capital-movimientos">0</h2></div></div>
+<div class="info-box" style="margin-bottom:14px"><b>Control:</b> este módulo no cambia automáticamente el balance de remitentes, las comisiones ni las ganancias. Todo movimiento de capital queda registrado con fecha, responsable, concepto, monto, tipo y estado.</div>
+<div class="table-toolbar"><div class="actions"><button class="btn btn-success btn-sm" onclick="exportData('Excel','capitalTable')">Excel</button><button class="btn btn-danger btn-sm" onclick="exportData('PDF','capitalTable')">PDF</button><button class="btn btn-warning btn-sm" onclick="exportData('CSV','capitalTable')">CSV</button></div><input id="capital-search" class="search-box" placeholder="Buscar por ID, tipo, concepto o responsable..." oninput="renderCapital()"></div>
+<div class="table-wrap"><table id="capitalTable"><thead><tr><th>N°</th><th>ID</th><th>Fecha/Hora</th><th>Tipo</th><th>Concepto</th><th>Responsable</th><th>Monto</th><th>Efecto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div>
+</div></section>
+<section id="view-envios" class="view-section">
     <div class="card">
       <div class="card-header"><h3>Gestión de Envíos y Transacciones Globales</h3><button class="btn btn-primary" onclick="openModal('envioModal')"><i class="fa-solid fa-plus"></i> Agregar Nuevo</button></div>
       <div class="status-bar" id="envio-statusbar"><button class="btn btn-light btn-sm active" onclick="setStatusFilter('envios','Todos',this)">TODOS</button><button class="btn btn-success btn-sm" onclick="setStatusFilter('envios','Aprobado',this)">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setStatusFilter('envios','Rechazado',this)">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setStatusFilter('envios','No coincide',this)">NO COINCIDE</button></div>
@@ -437,7 +444,15 @@ aside{height:100vh;min-height:0;overflow:hidden}
 
 <div class="modal" id="secretaModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('secretaModal')">×</button><h3>Credencial Secreta</h3><div class="form-grid"><div class="form-group"><label>Rol</label><select id="sec-role" class="form-control"><option>Remitente</option></select></div><div class="form-group"><label>Nombre</label><input id="sec-name" class="form-control"></div><div class="form-group"><label>WhatsApp</label><input id="sec-phone" class="form-control"></div><div class="form-group"><label>Usuario</label><input id="sec-user" class="form-control"></div><div class="form-group"><label>Contraseña</label><input id="sec-pass" class="form-control"></div></div><button class="btn btn-primary" onclick="guardarCredencial()">Guardar</button></div></div>
 
-<div class="modal" id="detailModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('detailModal')">×</button><div id="detail-content"></div></div></div>
+<div class="modal" id="capitalModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('capitalModal')">×</button><h3>Registrar movimiento de Capital</h3><div class="form-grid">
+<div class="form-group"><label>Tipo de movimiento</label><select id="cap-type" class="form-control"><option>Aporte de capital</option><option>Recuperación de capital</option><option>Inversión</option><option>Retiro de capital</option><option>Ajuste positivo</option><option>Ajuste negativo</option></select></div>
+<div class="form-group"><label>Monto RD$</label><input id="cap-amount" type="number" min="0.01" step="0.01" class="form-control"></div>
+<div class="form-group"><label>Concepto</label><input id="cap-concept" class="form-control" placeholder="Ej.: aporte inicial, inversión, retiro..."></div>
+<div class="form-group"><label>Responsable</label><input id="cap-responsible" class="form-control" value="Administración"></div>
+<div class="form-group"><label>Fecha y hora</label><input id="cap-date" type="datetime-local" class="form-control"></div>
+<div class="form-group"><label>Estado</label><select id="cap-status" class="form-control"><option>Aplicado</option><option>Pendiente</option><option>Anulado</option></select></div>
+<div class="form-group" style="grid-column:1/-1"><label>Nota / referencia</label><textarea id="cap-note" class="form-control" rows="3" placeholder="Detalle o referencia del movimiento"></textarea></div>
+</div><div class="info-box" style="margin-top:10px">Los movimientos quedan bajo control del Administrador y pueden ser consultados o eliminados desde este módulo.</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn btn-light" onclick="closeModal('capitalModal')">Cerrar</button><button class="btn btn-primary" onclick="saveCapitalMovement()">Guardar movimiento</button></div></div></div><div class="modal" id="detailModal"><div class="modal-content"><button class="modal-close-x" onclick="closeModal('detailModal')">×</button><div id="detail-content"></div></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -887,7 +902,7 @@ function ensureSeedData(){
   RESTORED_SECRET_ACCOUNTS.forEach(x=>{if(!state.users[x.id])state.users[x.id]={...x,staffId:x.staffId||('ID'+String(10000000+Number(x.id.replace('rm',''))).padStart(8,'0')),active:true,balance:Number(x.balance||0),commission:Number(x.commission||0),referrals:0,accountStatus:'Activo',accountSchemaV3:1,authEmail:authEmailFor(x)};});
   // Producción: no sembrar remitentes automáticamente.
  state.users.admin.authEmail=authEmailFor(state.users.admin); state.beneficiaries=state.beneficiaries||{}; state.accounts=state.accounts||{}; OFFICIAL_BANK_ACCOUNTS.forEach(a=>{if(!state.accounts[a.id])state.accounts[a.id]={...a,active:true,official:true};});
-  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','ledger'].forEach(k=>state[k]=state[k]||{});
+  ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','requests','notifications','audit','ledger','capital'].forEach(k=>state[k]=state[k]||{});
   ensureStaffDirectory();
 }
 async function loadScript(src,timeout=8000){return new Promise((resolve,reject)=>{if(document.querySelector('script[data-src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.async=true;s.dataset.src=src;let done=false;const finish=(err)=>{if(done)return;done=true;clearTimeout(timer);s.onload=s.onerror=null;err?reject(err):resolve()};const timer=setTimeout(()=>finish(new Error('SCRIPT_TIMEOUT: '+src)),timeout);s.onload=()=>finish();s.onerror=()=>finish(new Error('SCRIPT_LOAD_ERROR: '+src));document.head.appendChild(s)})}
@@ -938,6 +953,7 @@ function renderRealtimeView(){
    case 'view-informes':renderDailyReports();break;
    case 'view-contabilidad':renderAccounting();break;
    case 'view-bonos':renderBonuses();break;
+   case 'view-capital':renderCapital();break;
    case 'view-credito':renderCredit();break;
    case 'view-envios':renderEnvios();break;
    case 'view-beneficiarios':renderBeneficiaries();break;
@@ -1067,7 +1083,7 @@ function attachRealtimeListeners(){
  ['envios','recargas','paqueticos','pagos','paquetes','transacciones','deposits','accountWithdrawals','commissions'].forEach(k=>bindCollection(k,true));
  // Datos generales necesarios para operar.
  if(isAdmin()){
-   ['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger'].forEach(k=>bindCollection(k,false));
+   ['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','capital'].forEach(k=>bindCollection(k,false));
    const capitalRef=root.child('capital');
    capitalRef.off();
    capitalRef.on('value',snap=>{state.capital=snap.val()||{balance:0,totalAcreditado:0,movements:{}};scheduleRender('capital',null,state.capital);if(typeof swRenderCapital==='function')swRenderCapital()});
@@ -4430,6 +4446,16 @@ function swCloseFloatingSurfacesOutside(ev){
 document.addEventListener('pointerdown',swCloseFloatingSurfacesOutside,true);
 document.addEventListener('touchstart',swCloseFloatingSurfacesOutside,{capture:true,passive:true});
 })();
+
+// SENDWAYO CAPITAL — módulo administrativo
+function capitalNum(v){const n=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:0}
+function capitalRows(){return Object.entries(state.capital||{}).filter(([id,r])=>r&&typeof r==='object').map(([id,r])=>({id,r}))}
+function capitalImpact(r){if(!r||r.status==='Anulado')return 0;const a=Math.abs(capitalNum(r.amount));return ['Inversión','Retiro de capital','Ajuste negativo'].includes(r.type)?-a:a}
+function renderCapital(){if(!isAdmin())return;const rows=capitalRows();let total=0,invertido=0;rows.forEach(({r})=>{total+=capitalImpact(r);if(r.status!=='Anulado'&&r.type==='Inversión')invertido+=Math.abs(capitalNum(r.amount))});const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=money(v)};set('capital-total',total);set('capital-disponible',total);set('capital-invertido',invertido);const mc=document.getElementById('capital-movimientos');if(mc)mc.textContent=rows.length;const q=String(document.getElementById('capital-search')?.value||'').trim().toLowerCase();const body=document.querySelector('#capitalTable tbody');if(!body)return;const filtered=rows.filter(({id,r})=>!q||[id,r.type,r.concept,r.responsible,r.status,r.note].some(v=>String(v??'').toLowerCase().includes(q))).sort((a,b)=>capitalNum(b.r.dateMs||b.r.date||0)-capitalNum(a.r.dateMs||a.r.date||0));body.innerHTML=filtered.map(({id,r},i)=>{const amount=Math.abs(capitalNum(r.amount)),impact=capitalImpact(r),effect=impact>=0?'Aumenta capital':'Reduce capital';return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(id)+'</td><td>'+escapeHtml(formatDate(r.dateMs||r.date))+'</td><td>'+escapeHtml(r.type||'')+'</td><td>'+escapeHtml(r.concept||'')+'</td><td>'+escapeHtml(r.responsible||'Administración')+'</td><td>'+money(amount)+'</td><td>'+effect+'</td><td>'+escapeHtml(r.status||'Aplicado')+'</td><td><div class="actions"><button class="btn btn-light btn-sm" onclick="viewCapitalMovement(\''+id+'\')"><i class="fa-solid fa-eye"></i></button><button class="btn btn-danger btn-sm" onclick="deleteCapitalMovement(\''+id+'\')"><i class="fa-solid fa-trash"></i></button></div></td></tr>'}).join('')||'<tr><td colspan="10" class="muted">No hay movimientos de capital registrados.</td></tr>'}
+function openCapitalModal(){if(!isAdmin())return toast('Solo el Administrador puede registrar capital.','warn');const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());const d=document.getElementById('cap-date');if(d)d.value=now.toISOString().slice(0,16);['cap-amount','cap-concept','cap-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const resp=document.getElementById('cap-responsible');if(resp)resp.value='Administración';const st=document.getElementById('cap-status');if(st)st.value='Aplicado';openModal('capitalModal')}
+async function saveCapitalMovement(){if(!isAdmin())return toast('Solo el Administrador puede guardar movimientos de capital.','warn');const amount=Math.abs(capitalNum(document.getElementById('cap-amount')?.value));const type=String(document.getElementById('cap-type')?.value||'').trim();const concept=String(document.getElementById('cap-concept')?.value||'').trim();if(!(amount>0)||!type||!concept)return toast('Complete tipo, monto y concepto.','warn');const dateValue=document.getElementById('cap-date')?.value;const dateMs=dateValue?new Date(dateValue).getTime():Date.now();if(!Number.isFinite(dateMs))return toast('La fecha indicada no es válida.','warn');const id='CAP-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();const record={id,type,amount,concept,responsible:String(document.getElementById('cap-responsible')?.value||'Administración').trim()||'Administración',dateMs,status:String(document.getElementById('cap-status')?.value||'Aplicado'),note:String(document.getElementById('cap-note')?.value||'').trim(),createdAt:firebase.database.ServerValue.TIMESTAMP,createdBy:'admin'};state.capital=state.capital||{};state.capital[id]=record;const ok=await firebasePatch({[DB_PATH+'/capital/'+id]:record});if(!ok){delete state.capital[id];return toast('No se pudo guardar el movimiento de capital.','error')}markSynced(['capital',id],record);closeModal('capitalModal');renderCapital();toast('Movimiento de capital guardado.','success')}
+function viewCapitalMovement(id){const r=state.capital?.[id];if(!r)return;const html='<h3>Movimiento de Capital</h3><div class="info-box" style="margin-top:10px"><b>ID:</b> '+escapeHtml(id)+'<br><b>Tipo:</b> '+escapeHtml(r.type)+'<br><b>Concepto:</b> '+escapeHtml(r.concept)+'<br><b>Responsable:</b> '+escapeHtml(r.responsible||'Administración')+'<br><b>Monto:</b> '+money(r.amount)+'<br><b>Fecha:</b> '+escapeHtml(formatDate(r.dateMs||r.date))+'<br><b>Estado:</b> '+escapeHtml(r.status||'Aplicado')+(r.note?'<br><b>Nota:</b> '+escapeHtml(r.note):'')+'</div>';const e=document.getElementById('detail-content');if(e)e.innerHTML=html;openModal('detailModal')}
+async function deleteCapitalMovement(id){if(!isAdmin())return;const r=state.capital?.[id];if(!r)return;if(!confirm('¿Eliminar este movimiento de capital?'))return;const old=cloneState(r);delete state.capital[id];const ok=await firebaseRemove('capital/'+id);if(!ok){state.capital[id]=old;return toast('No se pudo eliminar el movimiento.','error')}renderCapital();toast('Movimiento de capital eliminado.','success')}
 </script>
 
 <style id="sendwayo-position-adjustment-6-name-4-logo">
