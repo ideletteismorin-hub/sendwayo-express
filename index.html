@@ -1383,7 +1383,7 @@ async function loadAuthorizedState(authUser){
  const root=firebase.database().ref(DB_PATH);
  if(isAdmin()){
    // Administrador: cargar colecciones separadas, nunca el árbol raíz completo.
-   const adminCollections=['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','capital','envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','notifications','settings'];
+   const adminCollections=['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','capital','envios','recargas','paqueticos','pagos','paquetes','transacciones','deposits','accountWithdrawals','commissions','notifications','settings'];
    const snaps=await Promise.race([
      Promise.all(adminCollections.map(k=>root.child(k).once('value').then(s=>[k,s.val()||{}]))),
      new Promise((_,reject)=>setTimeout(()=>reject(new Error('STATE_LOAD_TIMEOUT')),15000))
