@@ -3709,6 +3709,12 @@ function swRecords(col){
 function swAmount(r){
   return swNum(r?.amount??r?.monto??r?.net??r?.total??r?.value??r?.cost);
 }
+function swTipoTransaccion(r,col){
+  const t=String(r?.tipoTransaccion??r?.tipo??r?.type??r?.transactionType??'').trim().toLowerCase();
+  if(t==='recarga'||t==='recargas')return 'recargas';
+  if(t==='paquetico'||t==='paqueticos')return 'paqueticos';
+  return col;
+}
 function swCommission(r,admin,uid,col){
   let gross=swNum(r?.commissionTotal??r?.commission??r?.commissionAmount??r?.comision??r?.fee);
   if(gross<=0){
