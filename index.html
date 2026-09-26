@@ -2439,7 +2439,6 @@ function showReceipt(collection,id){
    <div style="white-space:normal;overflow:visible;overflow-wrap:anywhere"><strong>${t.wa}:</strong> ${escapeHtml(contact.phone||'')}</div>
    <div style="white-space:normal;overflow:visible;overflow-wrap:anywhere;margin-top:4px"><strong>${t.email}:</strong> ${escapeHtml(contact.email||'')}</div>
  </div>
- <div class="receipt-capture"><button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> ${t.print}</button></div>
  </div>`;
  document.getElementById('detail-content').innerHTML=html;
  openModal('detailModal');
@@ -3667,17 +3666,6 @@ function swCopyReceiptText(){
 function swCopyReceiptFallback(textToCopy){
   const ta=document.createElement('textarea');ta.value=textToCopy;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Comprobante copiado. Ya puede pegarlo donde necesite.','success')}catch(e){toast('No se pudo copiar automáticamente el comprobante.','error')}ta.remove();
 }
-const swOriginalShowReceipt=window.showReceipt;
-window.showReceipt=async function(collection,id){
-  const result=await swOriginalShowReceipt(collection,id);
-  const host=document.getElementById('detail-content');if(!host)return result;
-  const capture=host.querySelector('.receipt-capture');
-  if(capture&&!capture.querySelector('[data-copy-receipt]')){
-    const btn=document.createElement('button');btn.type='button';btn.className='btn btn-success btn-sm';btn.setAttribute('data-copy-receipt','1');btn.innerHTML='<i class="fa-solid fa-copy"></i> Copiar comprobante';btn.onclick=swCopyReceiptText;
-    capture.appendChild(btn);
-  }
-  return result;
-};
 function swImproveSecrets(){
   const sec=document.getElementById('view-secretas');if(!sec)return;
   sec.querySelectorAll('.info-box').forEach((e,i)=>{e.style.padding='8px 10px';e.style.marginBottom='6px';e.style.fontSize='.74rem';if(i>0&&/UID de autenticación|UID del administrador|UID temporal/i.test(e.textContent||''))e.style.display='none'});
@@ -4245,23 +4233,6 @@ async function swCopyReceiptImage(){
 window.swCopyReceiptText=swCopyReceiptImage;
 window.swCopyReceiptImage=swCopyReceiptImage;
 
-const swOriginalShowReceipt=window.showReceipt;
-window.showReceipt=async function(collection,id){
-  const result=await swOriginalShowReceipt(collection,id);
-  const host=document.getElementById('detail-content');if(!host)return result;
-  const capture=host.querySelector('.receipt-capture');
-  if(capture){
-    let btn=capture.querySelector('[data-copy-receipt]');
-    if(!btn){
-      btn=document.createElement('button');btn.type='button';btn.className='btn btn-success btn-sm';btn.setAttribute('data-copy-receipt','1');
-      capture.appendChild(btn);
-    }
-    btn.innerHTML='<i class="fa-solid fa-copy"></i> Copiar comprobante';
-    btn.onclick=swCopyReceiptImage;
-    btn.title='Copiar la imagen completa del comprobante al portapapeles';
-  }
-  return result;
-};
 
 })();
 </script>
