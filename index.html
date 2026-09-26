@@ -1066,6 +1066,10 @@ function attachRealtimeListeners(){
  // Datos generales necesarios para operar.
  if(isAdmin()){
    ['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger'].forEach(k=>bindCollection(k,false));
+   const capitalRef=root.child('capital');
+   capitalRef.off();
+   capitalRef.on('value',snap=>{state.capital=snap.val()||{balance:0,totalAcreditado:0,movements:{}};scheduleRender('capital',null,state.capital);if(typeof swRenderCapital==='function')swRenderCapital()});
+   window.__sendwayoRealtimeRefs.push(capitalRef);
  }else{
    // Su propio usuario se mantiene sincronizado sin escuchar los demás.
    const userRef=root.child('users').child(currentUser.id);
