@@ -3662,8 +3662,11 @@ function swDay(v){
 function swApproved(r){return String(r&&r.status||'').trim().toLowerCase()==='aprobado'}
 function swRecords(col){
   const merged=new Map();
-  Object.entries((window.state&&state.ledger&&state.ledger[col])||{}).forEach(([id,r])=>merged.set(id,{...(r||{})}));
-  Object.entries((window.state&&state[col])||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
+  const sources=[window.state,window.lastSyncedState,window.__SENDWAYO_LAST_STATE].filter(Boolean);
+  for(const src of sources){
+    Object.entries((src.ledger&&src.ledger[col])||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
+    Object.entries(src[col]||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
+  }
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
 function swCommission(r,admin,uid,col){
@@ -3674,11 +3677,17 @@ function swCommission(r,admin,uid,col){
   if(gross<=0){
     const amount=swNum(r.amount);
     if(amount>0){
-      if(col==='envios'&&typeof commissionRateFor==='function'){
-        gross=Number((amount*Number(commissionRateFor(col,r)||0)).toFixed(2));
+      let rate=0;
+      if(col==='envios'){
+        rate=0.10;
+        if(typeof commissionRateFor==='function'){
+          const configured=Number(commissionRateFor(col,r));
+          if(Number.isFinite(configured)&&configured>0)rate=configured;
+        }
       }else if(['recargas','paqueticos','pagos','paquetes'].includes(col)){
-        gross=Number((amount*0.05).toFixed(2));
+        rate=0.05;
       }
+      if(rate>0)gross=Number((amount*rate).toFixed(2));
     }
   }
   if(gross<=0)return 0;
