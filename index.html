@@ -3680,10 +3680,29 @@ function swApproved(r){
 }
 function swRecords(col){
   const merged=new Map();
-  const sources=[window.state,window.lastSyncedState,window.__SENDWAYO_LAST_STATE].filter(Boolean);
+  const isApprovedRecord=r=>{const s=String(r?.status||'').trim().toLowerCase();return s==='aprobado'||s==='approved'||r?.approved===true||r?.aprobado===true};
+  const mergeRecord=(id,incoming)=>{
+    if(!incoming)return;
+    const current=merged.get(id);
+    if(!current){merged.set(id,{...(incoming||{})});return}
+    const incomingApproved=isApprovedRecord(incoming),currentApproved=isApprovedRecord(current);
+    // La aprobación confirmada es la fuente contable prioritaria: un snapshot atrasado
+    // nunca puede volver a convertir una operación aprobada en pendiente.
+    if(incomingApproved&&!currentApproved){
+      merged.set(id,{...(current||{}),...(incoming||{})});
+      return;
+    }
+    if(currentApproved&&!incomingApproved){
+      merged.set(id,{...(incoming||{}),...(current||{})});
+      return;
+    }
+    merged.set(id,{...(current||{}),...(incoming||{})});
+  };
+  // Los snapshots históricos pueden estar atrasados. El estado vivo se aplica al final.
+  const sources=[window.__SENDWAYO_LAST_STATE,window.lastSyncedState,window.state].filter(Boolean);
   for(const src of sources){
-    Object.entries((src.ledger&&src.ledger[col])||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
-    Object.entries(src[col]||{}).forEach(([id,r])=>merged.set(id,{...(merged.get(id)||{}),...(r||{})}));
+    Object.entries((src.ledger&&src.ledger[col])||{}).forEach(([id,r])=>mergeRecord(id,r));
+    Object.entries(src[col]||{}).forEach(([id,r])=>mergeRecord(id,r));
   }
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
