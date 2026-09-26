@@ -718,7 +718,7 @@ async function manualRefresh(showMessage=true){
    const root=firebase.database().ref(DB_PATH);
    let remote={};
    if(isAdmin()){
-     const keys=['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions','notifications','settings'];
+     const keys=['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger','envios','recargas','paqueticos','pagos','paquetes','transacciones','deposits','accountWithdrawals','commissions','notifications','settings'];
      const snaps=await Promise.race([Promise.all(keys.map(k=>root.child(k).once('value').then(s=>[k,s.val()||{}]))),new Promise((_,reject)=>setTimeout(()=>reject(new Error('REFRESH_TIMEOUT')),12000))]);
      remote=Object.fromEntries(snaps);
      if(!remote.users||Object.keys(remote.users).length===0)throw new Error('FIREBASE_EMPTY');
@@ -768,7 +768,8 @@ async function manualRefresh(showMessage=true){
      dailyReports:remote.dailyReports||{},
      credits:remote.credits||{},
      settings:remote.settings||{},
-     ledger:remote.ledger||{}
+     ledger:remote.ledger||{},
+     transacciones:remote.transacciones||{}
    };
    const fresh=currentUser&&state.users?.[currentUser.id];
    if(fresh&&fresh.active!==false)currentUser=fresh;
@@ -1063,7 +1064,7 @@ function attachRealtimeListeners(){
    window.__sendwayoRealtimeRefs.push(ref);
  };
  // Colecciones financieras: el Remitente recibe solamente sus operaciones.
- ['envios','recargas','paqueticos','pagos','paquetes','deposits','accountWithdrawals','commissions'].forEach(k=>bindCollection(k,true));
+ ['envios','recargas','paqueticos','pagos','paquetes','transacciones','deposits','accountWithdrawals','commissions'].forEach(k=>bindCollection(k,true));
  // Datos generales necesarios para operar.
  if(isAdmin()){
    ['users','beneficiaries','accounts','requests','audit','dailyReports','credits','ledger'].forEach(k=>bindCollection(k,false));
@@ -3703,6 +3704,11 @@ function swRecords(col){
   for(const src of sources){
     Object.entries((src.ledger&&src.ledger[col])||{}).forEach(([id,r])=>mergeRecord(id,r));
     Object.entries(src[col]||{}).forEach(([id,r])=>mergeRecord(id,r));
+    // Compatibilidad con el formato genérico transacciones/{id}.
+    // Esas operaciones se clasifican por tipoTransaccion antes de sumarlas.
+    Object.entries(src.transacciones||{}).forEach(([id,r])=>{
+      if(swTipoTransaccion(r,'')===col)mergeRecord(id,{...(r||{}),_sourceCollection:'transacciones'});
+    });
   }
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
@@ -3710,9 +3716,12 @@ function swAmount(r){
   return swNum(r?.amount??r?.monto??r?.net??r?.total??r?.value??r?.cost);
 }
 function swTipoTransaccion(r,col){
-  const t=String(r?.tipoTransaccion??r?.tipo??r?.type??r?.transactionType??'').trim().toLowerCase();
-  if(t==='recarga'||t==='recargas')return 'recargas';
-  if(t==='paquetico'||t==='paqueticos')return 'paqueticos';
+  const t=String(r?.tipoTransaccion??r?.tipo??r?.type??r?.transactionType??r?.categoria??'').trim().toLowerCase();
+  if(['envio','envíos','envios','remesa','transferencia'].includes(t))return 'envios';
+  if(['recarga','recargas'].includes(t))return 'recargas';
+  if(['paquetico','paqueticos','paquetico / paquete'].includes(t))return 'paqueticos';
+  if(['pago','pagos','servicio','servicios','factura','facturas'].includes(t))return 'pagos';
+  if(['paquete','paquetes','recepcion','recepción'].includes(t))return 'paquetes';
   return col;
 }
 function swCommission(r,admin,uid,col){
