@@ -3782,7 +3782,7 @@ function swRecords(col){
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
 function swAmount(r){
-  return swNum(r?.amount??r?.monto??r?.net??r?.total??r?.value??r?.cost);
+  return swNum(r?.amount??r?.monto??r?.montoEnviado??r?.montoRecarga??r?.importe??r?.valor??r?.total??r?.value??r?.cost??r?.precio??r?.price);
 }
 function swTipoTransaccion(r,col){
   const t=String(r?.tipoTransaccion??r?.tipo??r?.type??r?.transactionType??r?.categoria??'').trim().toLowerCase();
@@ -3844,17 +3844,16 @@ function swDaily(uid,admin){
     let amount=0,vol=0,n=0;
     for(const [id,r] of swRecords(col)){
       if(!swApproved(r))continue;
-      // La fecha principal es la aprobación; la fecha de creación solo sirve como respaldo
-      // para registros antiguos que todavía no guardan approvedAt.
-      const day=swRecordDay(r)||swDay(r?.createdAt||r?.createdAtMs||r?.date||r?.timestamp||id);
+      // Se toma la fecha real de la operación/aprobación. Si existe cualquiera de
+      // los formatos usados por versiones anteriores, se acepta para no perder
+      // operaciones del día por una diferencia de nombre de campo.
+      const day=swRecordDay(r);
       if(day!==today)continue;
-      const bucket=swTipoTransaccion(r,col);
-      if(bucket!==col)continue;
+
       const opAmount=swAmount(r);
       const share=swCommission(r,admin,uid,col);
-      // La operación se cuenta aunque su comisión almacenada sea 0: la comisión se
-      // reconstruye automáticamente según la tarifa de la categoría.
       if(opAmount<=0&&share<=0)continue;
+
       n++;
       vol+=opAmount;
       amount+=share;
@@ -4618,4 +4617,9 @@ async function deleteCapitalMovement(id){if(!isAdmin())return;const r=state.capi
     margin-top:4px!important;
   }
 }
+</style>
+
+<style id="sendwayo-ganancia-hoy-final">
+.card-ganancias-dia h3{font-size:1.55rem!important;font-weight:900!important;color:#0f2c59!important;line-height:1.15!important;margin-bottom:20px!important}
+@media(max-width:800px){.card-ganancias-dia h3{font-size:1.3rem!important}}
 </style>
