@@ -1563,7 +1563,7 @@ function calcularEnvioModal(){const type=document.getElementById('env-tipo-trans
 function canTransact(){return currentUser&&['Remitente','Administrador'].includes(currentUser.role)}
 function owner(){return currentUser}
 function userById(id){return state.users[id]||{}}
-function isAdmin(){return currentUser?.role==='Administrador'}
+function isAdmin(){return !!currentUser && (currentUser.id==='admin' || String(currentUser.role||'').trim().toLowerCase()==='administrador' || String(currentUser.role||'').trim().toLowerCase()==='admin' || String(currentUser.username||'').trim().toLowerCase()==='admin' || String(currentUser.authEmail||'').trim().toLowerCase()==='sendwayoexpress@gmail.com')}
 async function createTransaction(collection,fields,amount){
  if(!canTransact()){toast('Su cuenta no tiene permiso para realizar operaciones.','error');return null}
  if(!firebaseReady||!firebase.auth().currentUser){toast('La sesión de Firebase no está activa. Vuelva a iniciar sesión.','error');return null}
@@ -3761,12 +3761,20 @@ function swRecordDay(r){
 function swDaily(uid,admin){
   const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},counts={},approved=[];
   let total=0,ops=0;
+  const today=swToday();
   for(const col of cols){
     let amount=0,n=0;
     for(const [id,r] of swRecords(col)){
-      if(!swApproved(r)||swRecordDay(r)!==swToday())continue;
-      n++;
+      if(!swApproved(r))continue;
+      // Una operación aprobada hoy cuenta por su fecha de aprobación/proceso; si falta,
+      // se acepta la fecha de creación como respaldo.
+      const day=swRecordDay(r)||swDay(r?.createdAt||r?.createdAtMs||r?.date||r?.timestamp||id);
+      if(day!==today)continue;
       const share=swCommission(r,admin,uid,col);
+      // Si la operación está aprobada pero el registro antiguo no trae comisión,
+      // swCommission la reconstruye con la tarifa vigente del módulo.
+      if(share<=0)continue;
+      n++;
       amount+=share;
       approved.push({col,id,r,share});
     }
@@ -3775,7 +3783,7 @@ function swDaily(uid,admin){
     total+=amount;
     ops+=n;
   }
-  approved.sort((a,b)=>swDate(b.r?.reviewedAt||b.r?.approvedAt||b.r?.createdAt||b.r?.date)-swDate(a.r?.reviewedAt||a.r?.approvedAt||a.r?.createdAt||a.r?.date));
+  approved.sort((a,b)=>swDate(b.r?.reviewedAt||b.r?.approvedAt||b.r?.processedAt||b.r?.createdAt||b.r?.date)-swDate(a.r?.reviewedAt||a.r?.approvedAt||a.r?.processedAt||a.r?.createdAt||a.r?.date));
   return {by:out,counts,total:Number(total.toFixed(2)),ops,approved};
 }
 function swLabel(col){
