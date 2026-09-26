@@ -2040,7 +2040,7 @@ function actionButtons(collection,id,status){
    // Envíos y depósitos ya tienen su única columna Factura / Recibo propia.
    // No se agrega otro botón aquí para evitar comprobantes duplicados.
    if(collection!=='envios' && collection!=='deposits'){
-     arr.push('<button class="btn btn-primary btn-sm" title="Ver comprobante oficial" onclick="showReceipt(\''+collection+'\',\''+id+'\')">COMPROBANTE</button>');
+     arr.push('<button class="btn btn-primary btn-sm" title="Ver comprobante oficial" type="button" onclick="event.preventDefault();event.stopImmediatePropagation();showReceipt(\''+collection+'\',\''+id+'\');return false">COMPROBANTE</button>');
    }
  }else if(admin||status!=="Pendiente"){
    arr.push('<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')"><i class="fa-solid fa-eye"></i></button>');
@@ -3613,7 +3613,7 @@ window.editRecord=function(collection,id){const r=state[collection]?.[id];if(!r)
 window.actionButtons=function(collection,id,status){
   const admin=isAdmin(),rec=state[collection]?.[id],owner=rec?.userId===currentUser?.id||rec?.createdUserId===currentUser?.id;
   let a='<button class="btn btn-light btn-sm" title="Ver" onclick="viewRecord(\''+collection+'\',\''+id+'\')">Ver</button>';
-  if(status==='Aprobado' && collection!=='envios' && collection!=='deposits')a+='<button class="btn btn-primary btn-sm" title="Recibo" onclick="showReceipt(\''+collection+'\',\''+id+'\')">COMPROBANTE</button>';
+  if(status==='Aprobado' && collection!=='envios' && collection!=='deposits')a+='<button class="btn btn-primary btn-sm" title="Recibo" type="button" onclick="event.preventDefault();event.stopImmediatePropagation();showReceipt(\''+collection+'\',\''+id+'\');return false">COMPROBANTE</button>';
   if(admin){
     a+='<button class="btn btn-warning btn-sm" title="Editar" onclick="editRecord(\''+collection+'\',\''+id+'\')">Editar</button><button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteRecord(\''+collection+'\',\''+id+'\')">Eliminar</button>';
     if(status==='Pendiente'&&collection!=='accountWithdrawals')a+='<button class="btn btn-success btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Aprobado\')">APROBADO</button><button class="btn btn-danger btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'Rechazado\')">RECHAZADO</button><button class="btn btn-warning btn-sm" onclick="setTransactionStatus(\''+collection+'\',\''+id+'\',\'No coincide\')">NO COINCIDE</button>';
