@@ -2470,23 +2470,6 @@ function renderAccounting(){
  mb.innerHTML=rows.filter(r=>!q2||normalizeSearchText(r.type).includes(q2)||normalizeSearchText(r.person).includes(q2)||normalizeSearchText(r.id).includes(q2)).slice(0,500).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(r.date)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.person)+'</td><td>'+money(r.amount)+'</td><td>'+money(r.commission)+'</td><td>'+escapeHtml(r.status)+'</td><td>'+escapeHtml(r.origin)+'</td><td><button class="btn btn-light btn-sm" onclick="viewRecord(\''+r.origin+'\',\''+r.id+'\')">Ver</button></td></tr>').join('')||'<tr><td colspan="9" class="muted">No hay movimientos financieros.</td></tr>';
 }
 
-function ensureDownloadActions(){
- document.querySelectorAll('td .actions').forEach(box=>{
-   if(box.querySelector('[data-sendwayo-download]'))return;
-   const buttons=[...box.querySelectorAll('button')];
-   let source=buttons.find(b=>/viewRecord\(/.test(b.getAttribute('onclick')||''));
-   let collection='',id='';
-   if(source){
-     const m=(source.getAttribute('onclick')||'').match(/viewRecord\(['"]([^'"]+)['"],['"]([^'"]+)['"]\)/);if(m){collection=m[1];id=m[2]}
-   }else{
-     source=buttons.find(b=>/viewUser\(/.test(b.getAttribute('onclick')||''));
-     if(source){const m=(source.getAttribute('onclick')||'').match(/viewUser\(['"]([^'"]+)['"]\)/);if(m){collection='users';id=m[1]}}
-   }
-   if(!collection||!id)return;
-   const d=document.createElement('button');d.type='button';d.className='btn btn-primary btn-sm';d.textContent='Descargar';d.dataset.sendwayoDownload='1';d.onclick=()=>downloadRecord(collection,id);
-   box.insertBefore(d,box.children[1]||null);
- });
-}
 const SENDWAYO_STATUS_CONFIG={beneficiarios:{table:'benefTable',column:4,items:[['Todos',''],['Activos','Activo'],['Inactivos','Inactivo']]},paquetes:{table:'paqTable',column:5,items:[['Todos',''],['Pendiente','Pendiente'],['Aprobado','Aprobado'],['Rechazado','Rechazado'],['No coincide','No coincide']]},remitentes:{table:'remTable',column:5,items:[['Todos',''],['Activos','Activo'],['Inactivos','Inactivo']]},recargas:{table:'recTable',column:4,items:[['Todos',''],['Pendiente','Pendiente'],['Aprobado','Aprobado'],['Rechazado','Rechazado'],['No coincide','No coincide']]},paqueticos:{table:'paqktTable',column:5,items:[['Todos',''],['Pendiente','Pendiente'],['Aprobado','Aprobado'],['Rechazado','Rechazado'],['No coincide','No coincide']]},pagos:{table:'pagoTable',column:4,items:[['Todos',''],['Pendiente','Pendiente'],['Aprobado','Aprobado'],['Rechazado','Rechazado'],['No coincide','No coincide']]},cuentas_depositos:{table:'depTable',column:5,items:[['Todos',''],['Pendiente','Pendiente'],['Aprobado','Aprobado'],['Rechazado','Rechazado'],['No coincide','No coincide']]},mi_cuenta:{table:'accountMoveTable',column:5,items:[['Todos',''],['Pendiente','Pendiente'],['Aprobado','Aprobado'],['Rechazado','Rechazado'],['No coincide','No coincide']]},secretas:{table:'secTable',column:7,items:[['Todos',''],['Activos','Activo'],['Inactivos','Inactivo']]}};const SENDWAYO_STATUS_ACTIVE={};
 function setGenericTableStatus(tableId,column,status,button){SENDWAYO_STATUS_ACTIVE[tableId]=status;const bar=document.querySelector('[data-sendwayo-status-for="'+tableId+'"]');if(bar)bar.querySelectorAll('button').forEach(b=>b.classList.remove('active'));if(button)button.classList.add('active');document.querySelectorAll('#'+tableId+' tbody tr').forEach(tr=>{const value=String(tr.cells[column]?.innerText||'').trim();tr.style.display=!status||value.toLowerCase().includes(status.toLowerCase())?'':'none'})}
 function ensureStandardStatusBars(){Object.entries(SENDWAYO_STATUS_CONFIG).forEach(([view,cfg])=>{const root=document.getElementById('view-'+view),table=document.getElementById(cfg.table);if(!root||!table)return;let bar=root.querySelector('[data-sendwayo-status-for="'+cfg.table+'"]');if(!bar){bar=document.createElement('div');bar.className='status-bar';bar.setAttribute('data-sendwayo-status-for',cfg.table);bar.innerHTML=cfg.items.map((it,i)=>'<button class="btn btn-light btn-sm '+(i===0?'active':'')+'" type="button">'+escapeHtml(it[0])+'</button>').join('');const buttons=[...bar.querySelectorAll('button')];buttons.forEach((b,i)=>b.addEventListener('click',()=>setGenericTableStatus(cfg.table,cfg.column,cfg.items[i][1],b)));const toolbar=root.querySelector('.table-toolbar');if(toolbar)root.querySelector('.card-header')?.after(bar)}const active=SENDWAYO_STATUS_ACTIVE[cfg.table];if(active!==undefined){const idx=Math.max(0,cfg.items.findIndex(it=>it[1]===active));setGenericTableStatus(cfg.table,cfg.column,active,bar.querySelectorAll('button')[idx]||bar.querySelector('button'))}})}
