@@ -3659,7 +3659,10 @@ function swDay(v){
   const d=swDate(v);if(!d)return '';
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
 }
-function swApproved(r){return String(r&&r.status||'').trim().toLowerCase()==='aprobado'}
+function swApproved(r){
+  const v=String(r&&r.status||'').trim().toLowerCase();
+  return v==='aprobado'||v==='approved';
+}
 function swRecords(col){
   const merged=new Map();
   const sources=[window.state,window.lastSyncedState,window.__SENDWAYO_LAST_STATE].filter(Boolean);
@@ -3669,21 +3672,23 @@ function swRecords(col){
   }
   return Array.from(merged.entries()).filter(x=>x[1]);
 }
+function swAmount(r){
+  return swNum(r?.amount??r?.monto??r?.net??r?.total??r?.value??r?.cost);
+}
 function swCommission(r,admin,uid,col){
-  let gross=swNum(r.commissionTotal??r.commission??r.commissionAmount??r.comision??r.fee);
-  // Si una operación aprobada antigua no guardó la comisión total, la reconstruimos
-  // desde el monto y la regla de su módulo. Nunca dejamos Ganancia de hoy en cero
-  // cuando la operación aprobada realmente generó comisión.
+  let gross=swNum(r?.commissionTotal??r?.commission??r?.commissionAmount??r?.comision??r?.fee);
   if(gross<=0){
-    const amount=swNum(r.amount);
+    const amount=swAmount(r);
     if(amount>0){
       let rate=0;
       if(col==='envios'){
         rate=0.10;
-        if(typeof commissionRateFor==='function'){
-          const configured=Number(commissionRateFor(col,r));
-          if(Number.isFinite(configured)&&configured>0)rate=configured;
-        }
+        try{
+          if(typeof commissionRateFor==='function'){
+            const configured=Number(commissionRateFor(col,r));
+            if(Number.isFinite(configured)&&configured>0)rate=configured;
+          }
+        }catch(_){}
       }else if(['recargas','paqueticos','pagos','paquetes'].includes(col)){
         rate=0.05;
       }
@@ -3692,16 +3697,16 @@ function swCommission(r,admin,uid,col){
   }
   if(gross<=0)return 0;
   if(admin){
-    const stored=swNum(r.commissionAdmin);
-    return stored>0?stored:Number((gross*.50).toFixed(2));
+    const stored=swNum(r?.commissionAdmin);
+    return stored>0?stored:Number((gross*0.50).toFixed(2));
   }
-  const owner=r.userId??r.remitterId??r.remitenteId??r.senderId;
+  const owner=r?.userId??r?.remitterId??r?.remitenteId??r?.senderId;
   if(String(owner)!==String(uid))return 0;
-  const stored=swNum(r.commissionUser);
-  return stored>0?stored:Number((gross*.50).toFixed(2));
+  const stored=swNum(r?.commissionUser);
+  return stored>0?stored:Number((gross*0.50).toFixed(2));
 }
 function swRecordDay(r){
- const keys=['reviewedAt','approvedAt','balanceSettledAt','processedAt','createdAt','updatedAt','date','timestamp','fecha','fechaAprobacion','approvedDate','processedDate'];
+ const keys=['reviewedAt','approvedAt','balanceSettledAt','processedAt','approvedAtMs','createdAt','createdAtMs','updatedAt','date','timestamp','fecha','fechaAprobacion','approvedDate','processedDate'];
  const today=swToday();
  for(const k of keys){if(swDay(r&&r[k])===today)return today;}
  const part=String(r?.id||'').split('_')[1];
@@ -3709,22 +3714,24 @@ function swRecordDay(r){
  return '';
 }
 function swDaily(uid,admin){
-  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},counts={};
+  const cols=['envios','recargas','paqueticos','pagos','paquetes'],out={},counts={},approved=[];
   let total=0,ops=0;
   for(const col of cols){
-    let amount=0,n=0,seen=new Set();
+    let amount=0,n=0;
     for(const [id,r] of swRecords(col)){
-      if(seen.has(id)||!swApproved(r)||swRecordDay(r)!==swToday())continue;
-      seen.add(id);
+      if(!swApproved(r)||swRecordDay(r)!==swToday())continue;
       n++;
-      amount+=swCommission(r,admin,uid,col);
+      const share=swCommission(r,admin,uid,col);
+      amount+=share;
+      approved.push({col,id,r,share});
     }
     out[col]=Number(amount.toFixed(2));
     counts[col]=n;
     total+=amount;
     ops+=n;
   }
-  return {by:out,counts,total:Number(total.toFixed(2)),ops};
+  approved.sort((a,b)=>swDate(b.r?.reviewedAt||b.r?.approvedAt||b.r?.createdAt||b.r?.date)-swDate(a.r?.reviewedAt||a.r?.approvedAt||a.r?.createdAt||a.r?.date));
+  return {by:out,counts,total:Number(total.toFixed(2)),ops,approved};
 }
 function swLabel(col){
   return ({envios:'Envíos',recargas:'Recargas',paqueticos:'Paqueticos',pagos:'Pagos / servicios',paquetes:'Paquetes'})[col]||col;
@@ -3736,7 +3743,14 @@ function swRenderGanancias(){
   if(!uid){list.innerHTML='<div class="muted">Inicie sesión para ver las ganancias de hoy.</div>';if(tot)tot.textContent=swMoney(0);return}
   const d=swDaily(uid,admin);
   const cols=['envios','recargas','paqueticos','pagos','paquetes'];
-  list.innerHTML=cols.map(col=>'<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+(d.counts[col]||0)+' operación'+((d.counts[col]||0)===1?'':'es')+' aprobada'+((d.counts[col]||0)===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('');
+  const resumen=cols.map(col=>'<div class="item-ganancia"><span><b>'+swEsc(swLabel(col))+'</b><br><small>'+(d.counts[col]||0)+' operación'+((d.counts[col]||0)===1?'':'es')+' aprobada'+((d.counts[col]||0)===1?'':'s')+' hoy</small></span><span class="detalles-tipo"><span class="titulo-label">Comisión</span><span class="monto-valor">'+swMoney(d.by[col]||0)+'</span></span></div>').join('');
+  const detalle=d.approved.length
+    ? '<div style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:10px"><b>Transacciones aprobadas hoy</b>'+d.approved.map(x=>{
+        const label=swLabel(x.col),amount=swAmount(x.r),id=x.id;
+        return '<div class="item-ganancia" style="padding:7px 0"><span><b>'+swEsc(label)+'</b><br><small>ID: '+swEsc(id)+' · Monto: '+swMoney(amount)+'</small></span><span class="detalles-tipo"><span class="titulo-label">Ganancia</span><span class="monto-valor">'+swMoney(x.share)+'</span></span></div>';
+      }).join('')+'</div>'
+    : '<div class="muted" style="margin-top:10px">No hay transacciones aprobadas registradas para hoy.</div>';
+  list.innerHTML=resumen+detalle;
   if(tot)tot.textContent=swMoney(d.total);
   card.dataset.swUpdated=String(Date.now());
 }
